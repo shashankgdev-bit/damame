@@ -1,0 +1,417 @@
+{
+  "facts": {
+    "usage_totals": {
+      "input_tokens": 81149,
+      "output_tokens": 1382522,
+      "cache_read_input_tokens": 436585792,
+      "cache_creation_input_tokens": 23155055,
+      "attribution": "aggregated"
+    },
+    "event_count": 3282,
+    "turn_count": 83,
+    "human_turn_count": 65,
+    "tool_call_count": 827,
+    "tool_error_count": 11,
+    "compactions": 2,
+    "cache_misses": 49,
+    "abandoned_branches": 8,
+    "chain_roots": 3,
+    "unknown_line_types": {}
+  },
+  "findings": [
+    {
+      "rule": {
+        "id": "cache-thrash",
+        "version": "0.1.0"
+      },
+      "category": "context-hygiene",
+      "severity": "major",
+      "confidence": {
+        "source": "deterministic"
+      },
+      "title": "5.9M input tokens missed the prompt cache (messages_changed)",
+      "description": "The API reported 20 responses with cache_miss_reason \"messages_changed\". 5.9M input tokens that could have been served from the prompt cache were re-processed at full input price. The prompt cache requires an exactly stable prefix; any change to earlier context invalidates every cached block after the change.",
+      "evidence": {
+        "events": [
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00112"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00204"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00281"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00356"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00374"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00431"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00529"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00576"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00754"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e00843"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01258"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01585"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01886"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01966"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02051"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02073"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02403"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02491"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02568"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03225"
+          }
+        ],
+        "metrics": {
+          "reason": "messages_changed",
+          "miss_count": 20,
+          "total_missed_input_tokens": 5855584
+        }
+      },
+      "savings": {
+        "tokens": {
+          "value": 5855584
+        },
+        "method": "cache_missed_input_tokens reported by the API in message.diagnostics for the cited responses",
+        "basis": "measured"
+      },
+      "recommendation": {
+        "resource": {
+          "kind": "prompting_pattern",
+          "ref": "stable-prompt-prefix"
+        },
+        "rationale": "The prompt cache keys on an exact prefix match. Keep earlier context byte-stable across requests — avoid rewriting the system prompt, reordering messages, or mutating prior content mid-session."
+      },
+      "dedupe_key": "124524409332a5b2"
+    },
+    {
+      "rule": {
+        "id": "abandoned-work",
+        "version": "0.1.0"
+      },
+      "category": "prompting",
+      "severity": "major",
+      "confidence": {
+        "source": "deterministic"
+      },
+      "title": "2.0M tokens spent on a branch abandoned by a rewind",
+      "description": "Work on this path (239 events, 2.0M tokens of recorded assistant usage) was discarded when the session was rewound to an earlier point. Rewinds are often deliberate exploration; if the direction change was foreseeable, an up-front scope statement or plan mode would have surfaced it before the spend.",
+      "evidence": {
+        "events": [
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01315"
+          }
+        ],
+        "metrics": {
+          "abandoned_event_count": 239,
+          "abandoned_usage_tokens": 1983191
+        }
+      },
+      "savings": {
+        "tokens": {
+          "value": 1983191
+        },
+        "method": "deduped input+output+cache-write usage of assistant responses on the abandoned branch; cache reads excluded",
+        "basis": "measured"
+      },
+      "recommendation": {
+        "resource": {
+          "kind": "prompting_pattern",
+          "ref": "plan-mode-first"
+        },
+        "rationale": "Stating the intended scope up front — or starting in plan mode so the approach is agreed before execution — surfaces a direction change before tokens are spent on a path that gets discarded."
+      },
+      "dedupe_key": "9167a68877bd67b0"
+    },
+    {
+      "rule": {
+        "id": "cache-thrash",
+        "version": "0.1.0"
+      },
+      "category": "context-hygiene",
+      "severity": "moderate",
+      "confidence": {
+        "source": "deterministic"
+      },
+      "title": "919.6k input tokens missed the prompt cache (tools_changed)",
+      "description": "The API reported 2 responses with cache_miss_reason \"tools_changed\": the set of tools visible to the model changed between requests, which invalidates the cached prompt prefix from the tools block onward. 919.6k input tokens that a stable tool set would have served from cache were re-processed at full input price. Enabling or disabling MCP servers or tools mid-session triggers this on every toggle.",
+      "evidence": {
+        "events": [
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02067"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02848"
+          }
+        ],
+        "metrics": {
+          "reason": "tools_changed",
+          "miss_count": 2,
+          "total_missed_input_tokens": 919570
+        }
+      },
+      "savings": {
+        "tokens": {
+          "value": 919570
+        },
+        "method": "cache_missed_input_tokens reported by the API in message.diagnostics for the cited responses",
+        "basis": "measured"
+      },
+      "recommendation": {
+        "resource": {
+          "kind": "config",
+          "ref": "stable-tool-availability"
+        },
+        "rationale": "Keep the set of enabled MCP servers and tools stable for the whole session: each mid-session toggle changes the tools block at the top of the prompt and invalidates the cache for everything after it. Configure the tool set before starting work instead of toggling servers mid-session."
+      },
+      "dedupe_key": "23126e29cd7dbf42"
+    },
+    {
+      "rule": {
+        "id": "cache-thrash",
+        "version": "0.1.0"
+      },
+      "category": "context-hygiene",
+      "severity": "moderate",
+      "confidence": {
+        "source": "deterministic"
+      },
+      "title": "284.0k input tokens missed the prompt cache (model_changed)",
+      "description": "The API reported 1 response with cache_miss_reason \"model_changed\". 284.0k input tokens that could have been served from the prompt cache were re-processed at full input price. The prompt cache requires an exactly stable prefix; any change to earlier context invalidates every cached block after the change.",
+      "evidence": {
+        "events": [
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02504"
+          }
+        ],
+        "metrics": {
+          "reason": "model_changed",
+          "miss_count": 1,
+          "total_missed_input_tokens": 284015
+        }
+      },
+      "savings": {
+        "tokens": {
+          "value": 284015
+        },
+        "method": "cache_missed_input_tokens reported by the API in message.diagnostics for the cited responses",
+        "basis": "measured"
+      },
+      "recommendation": {
+        "resource": {
+          "kind": "prompting_pattern",
+          "ref": "stable-prompt-prefix"
+        },
+        "rationale": "The prompt cache keys on an exact prefix match. Keep earlier context byte-stable across requests — avoid rewriting the system prompt, reordering messages, or mutating prior content mid-session."
+      },
+      "dedupe_key": "0c80f578c1c018cb"
+    },
+    {
+      "rule": {
+        "id": "compaction-burn",
+        "version": "0.1.0"
+      },
+      "category": "context-hygiene",
+      "severity": "moderate",
+      "confidence": {
+        "source": "deterministic"
+      },
+      "title": "2 context compactions in one session",
+      "description": "The context window filled to the compaction threshold 2 times. Each compaction pauses work while the conversation is summarized (5.6m of recorded compaction time in total), and detail not carried into the summary has to be re-established afterward. Repeated compactions indicate bulk tool output (full-file reads, wide search results) accumulating in the main context.",
+      "evidence": {
+        "events": [
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01569"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03236"
+          }
+        ],
+        "metrics": {
+          "compaction_count": 2,
+          "total_compaction_duration_ms": 333937
+        }
+      },
+      "savings": {
+        "wall_clock_ms": {
+          "value": 333937
+        },
+        "method": "compactMetadata.durationMs recorded by the CLI for each compaction",
+        "basis": "measured"
+      },
+      "recommendation": {
+        "resource": {
+          "kind": "subagent",
+          "ref": "Explore",
+          "available_in_session": true
+        },
+        "rationale": "Delegating bulk file reading and searching to the Explore subagent keeps that output out of the main context window — only the subagent's summary returns — delaying or avoiding compaction."
+      },
+      "dedupe_key": "ad2fdad2d8056a2c"
+    },
+    {
+      "rule": {
+        "id": "retry-storm",
+        "version": "0.1.0"
+      },
+      "category": "infra",
+      "severity": "info",
+      "confidence": {
+        "source": "deterministic"
+      },
+      "title": "16 transient API errors and 1 terminal API failure — infrastructure delay, not session behavior",
+      "description": "The API returned transient errors during this session; the client automatically retried, waiting a recorded total of 1.4m in backoff. 1 request failed terminally and was replaced by a synthetic error placeholder. This delay originated from provider-side availability, not from anything the user or the agent did, and must not count against the session. This finding contextualizes wall-clock numbers in other findings rather than flagging a problem to fix.",
+      "evidence": {
+        "events": [
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01315"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01316"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01317"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02273"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02274"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02275"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e02276"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03105"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03108"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03109"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03110"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03111"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03112"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03113"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03114"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e03223"
+          },
+          {
+            "session_id": "b1c87f7c-8362-45bf-837e-1ed8f1b55084",
+            "event_id": "e01314"
+          }
+        ],
+        "metrics": {
+          "api_error_count": 16,
+          "api_error_run_count": 5,
+          "error_placeholder_count": 1,
+          "total_retry_wait_ms": 81314
+        }
+      },
+      "savings": {
+        "wall_clock_ms": {
+          "value": 81314
+        },
+        "method": "retryInMs backoff waits recorded on api_error system events",
+        "basis": "measured"
+      },
+      "recommendation": {
+        "resource": {
+          "kind": "config",
+          "ref": "none-required"
+        },
+        "rationale": "Transient API errors are provider-side and outside the session's control; no configuration change is required. If large operations repeatedly hit overload errors, consider re-running them off-peak. Primarily, use this finding to discount the retry wait time when reading other findings in this report."
+      },
+      "dedupe_key": "b2bf8886c14f8698"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+export * from "./sanitize.js";
+
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
