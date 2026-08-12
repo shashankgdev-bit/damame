@@ -1,0 +1,14 @@
+{
+  "name": "@damame/report-html",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@damame/ir": "*",
+    "@damame/metrics": "*",
+    "@damame/rules": "*"
+  }
+}
