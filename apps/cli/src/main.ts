@@ -12,6 +12,7 @@ import { computeMetrics } from "@damame/metrics";
 import { DETECTORS, gradingVersion, runRules } from "@damame/rules";
 import { renderHtmlReport } from "@damame/report-html";
 import { renderTerminal } from "./render-terminal.js";
+import { feedbackStats, indexFindings, recordFeedback, VERDICTS, type Verdict } from "./feedback.js";
 
 const DAMAME_VERSION = "0.1.0";
 
@@ -69,6 +70,7 @@ program
       const metrics = computeMetrics(analyzed.session);
       const findings = runRules(analyzed.session, metrics, opts.rule ? { only: opts.rule } : {});
       const grading = gradingVersion(analyzed.session, DAMAME_VERSION);
+      indexFindings(analyzed.session, findings); // local-only; enables `damame feedback`
 
       if (opts.json) {
         console.log(
@@ -92,6 +94,44 @@ program
       }
     },
   );
+
+program
+  .command("feedback")
+  .description("Mark a finding helpful/wrong (feeds local per-rule precision stats), or show stats")
+  .argument("[key]", "finding dedupe key (or unique prefix) printed in the evidence line")
+  .argument("[verdict]", `one of: ${VERDICTS.join(" | ")}`)
+  .option("--note <text>", "why (recorded alongside the verdict)")
+  .action((key: string | undefined, verdict: string | undefined, opts: { note?: string }) => {
+    if (!key || key === "stats") {
+      const stats = feedbackStats();
+      if (stats.length === 0) {
+        console.log(pc.dim("no findings indexed yet — run `damame analyze` first"));
+        return;
+      }
+      console.log(pc.bold("rule".padEnd(28) + "series  emitted  helpful  wrong  n/a  precision"));
+      for (const s of stats) {
+        const precision =
+          s.precision === null ? pc.dim("—") : (s.precision >= 0.8 ? pc.green : pc.red)(s.precision.toFixed(2));
+        console.log(
+          `${s.rule_id.padEnd(28)}${s.rule_series.padEnd(8)}${String(s.emitted).padEnd(9)}${String(s.helpful).padEnd(9)}${String(s.wrong).padEnd(7)}${String(s.not_actionable).padEnd(5)}${precision}`,
+        );
+      }
+      console.log(pc.dim("\nprecision = helpful / (helpful + wrong); a series resets when a rule's thresholds change. Local only — nothing is uploaded."));
+      return;
+    }
+    if (!verdict || !VERDICTS.includes(verdict as Verdict)) {
+      console.error(pc.red(`verdict must be one of: ${VERDICTS.join(" | ")}`));
+      process.exitCode = 1;
+      return;
+    }
+    const result = recordFeedback(key, verdict as Verdict, opts.note);
+    if (!result.ok) {
+      console.error(pc.red(result.error));
+      process.exitCode = 1;
+      return;
+    }
+    console.log(`${pc.green("recorded")} ${verdict} on ${pc.bold(result.entry.rule_id)} — “${result.title}”`);
+  });
 
 async function resolveTarget(
   target: string | undefined,

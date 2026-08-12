@@ -35,10 +35,40 @@ states whether it was **measured** (tokens actually spent on identified waste) o
 - Pretending counterfactuals are facts. "This could have been one prompt" is a
   hypothesis; damame only ships hypothesis-grade claims labeled as such.
 
+## Usage
+
+```sh
+npm install
+npx tsx apps/cli/src/main.ts list                 # sessions on this machine, newest first
+npx tsx apps/cli/src/main.ts analyze --latest     # analyze the most recent session
+npx tsx apps/cli/src/main.ts analyze <id-prefix> --html report.html --json
+npx tsx apps/cli/src/main.ts rules                # the detector registry
+```
+
+### The feedback loop
+
+Every finding prints a short key in its evidence line. Tell damame when a
+finding was right or wrong — this is how per-rule precision gets measured
+instead of asserted:
+
+```sh
+npx tsx apps/cli/src/main.ts feedback <key> helpful|wrong|not-actionable [--note "why"]
+npx tsx apps/cli/src/main.ts feedback stats       # per-rule precision, local only
+```
+
+Verdicts live in `~/.damame/` and are keyed by rule id + major.minor version,
+so a rule whose thresholds change starts a fresh precision series. Nothing is
+ever uploaded. A rule whose observed precision stays low gets demoted or
+retired — that is a release commitment, not an aspiration.
+
 ## Status
 
-Early development. v1 scope: Claude Code JSONL adapter → normalized session IR →
-deterministic metrics → ~10 detectors → terminal / HTML / JSON reports.
+v0.1: Claude Code JSONL adapter → normalized session IR → deterministic
+metrics → 10 detectors → terminal / HTML / JSON reports, plus the local
+feedback loop. Validated against real 200MB+ transcripts; token accounting
+cross-checked against ccusage (<0.2% delta). Next: golden annotated corpus,
+then an opt-in LLM-judge layer that ships together with its validation
+harness (stability testing, human-agreement calibration, abstention).
 
 ## Layout
 
