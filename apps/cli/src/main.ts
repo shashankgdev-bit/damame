@@ -13,7 +13,7 @@ import { renderHtmlReport } from "@damame/report-html";
 import { renderTerminal } from "./render-terminal.js";
 import { feedbackStats, indexFindings, recordAnswer, type Question } from "./feedback.js";
 
-const DAMAME_VERSION = "0.3.0";
+const DAMAME_VERSION = "0.4.0";
 
 const program = new Command()
   .name("damame")
@@ -136,6 +136,23 @@ program
     const profile = buildProfile(summaries, probeEnvironment(cwds));
     if (opts.json) console.log(JSON.stringify(profile, null, 2));
     else console.log(renderProfile(profile));
+  });
+
+program
+  .command("audit")
+  .description("LLM second opinion: adversarially re-check findings against their evidence (opt-in)")
+  .argument("[target]", "transcript path or session id prefix")
+  .option("--latest", "audit the most recent session")
+  .option("--root <dir>", "projects root", defaultProjectsRoot())
+  .option("--model <model>", "audit model", "haiku")
+  .option("--escalate-model <model>", "model for splits/abstentions", "sonnet")
+  .option("--runs <n>", "runs per finding", "3")
+  .option("--backend <backend>", "claude-cli | api", "claude-cli")
+  .option("--yes", "skip the confirmation prompt")
+  .action(async (target: string | undefined, opts) => {
+    const { runAuditCommand, runAuditStats } = await import("./audit-cmd.js");
+    if (target === "stats") runAuditStats();
+    else await runAuditCommand(target, opts);
   });
 
 const ANSWER_MAP: Record<string, { question: Question; answer: boolean }> = {

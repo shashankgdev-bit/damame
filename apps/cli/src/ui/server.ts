@@ -14,8 +14,9 @@ import { DETECTORS, gradingVersion, runRules } from "@damame/rules";
 import { buildProfile, probeEnvironment, sessionSkills, summarizeWithCache } from "@damame/profile";
 import { feedbackStats, indexFindings, lastAnswers, recordAnswer, QUESTIONS, type Question } from "../feedback.js";
 import { computeRecurrence } from "../recurrence.js";
+import { auditorHealth, humanAgreement, lastAudits } from "@damame/judge";
 
-const DAMAME_VERSION = "0.3.0";
+const DAMAME_VERSION = "0.4.0";
 
 interface CacheEntry {
   mtimeMs: number;
@@ -238,12 +239,19 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
         // freeze answers recorded after the first view.
         const payload = (await analyzeSession(target.path)) as { findings: Array<{ dedupe_key: string }> };
         const answers = lastAnswers();
+        const audits = lastAudits();
         json(res, 200, {
           ...payload,
-          findings: payload.findings.map((f) => ({
-            ...f,
-            feedback: answers.get(f.dedupe_key) ?? { accurate: null, applicable: null },
-          })),
+          findings: payload.findings.map((f) => {
+            const audit = audits.get(f.dedupe_key);
+            return {
+              ...f,
+              feedback: answers.get(f.dedupe_key) ?? { accurate: null, applicable: null },
+              audit: audit
+                ? { accurate: audit.accurate, applicable: audit.applicable, model: audit.model, escalated: audit.escalated }
+                : null,
+            };
+          }),
         });
         return;
       }
@@ -276,6 +284,7 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
         json(res, 200, {
           rules: feedbackStats(),
           recurrence: await computeRecurrence(await discoverSessions(root)),
+          auditor: { health: auditorHealth(), agreement: humanAgreement(lastAnswers()) },
         });
         return;
       }

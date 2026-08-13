@@ -386,6 +386,11 @@ function findingCard(f) {
     </div>` : "";
   const res = f.recommendation.resource;
   const avail = res.available_in_session === true ? '<span class="tag avail">was available this session</span>' : "";
+  const auditChip = (v) => v.answer === null ? '<i style="color:var(--ink-3)">abstained</i>'
+    : `${v.answer ? '<i style="color:var(--pod-deep)">✓</i>' : '<i style="color:var(--major)">✗</i>'} <i style="color:var(--ink-3)">(${v.votes_true}/${v.votes_false})</i>`;
+  const auditLine = f.audit
+    ? `<div class="f-line"><span class="k">auditor</span><span style="font: 11px var(--mono)">accurate ${auditChip(f.audit.accurate)} · applicable ${auditChip(f.audit.applicable)} <i style="color:var(--ink-3)">· ${esc(f.audit.model)}${f.audit.escalated ? " +escalated" : ""} — independent LLM second opinion; your answer still counts separately</i></span></div>`
+    : "";
   return `
   <div class="finding" data-key="${esc(f.dedupe_key)}" data-turns="${esc(f.turn_indexes.join(","))}">
     <div class="f-head">
@@ -402,7 +407,7 @@ function findingCard(f) {
     </div>
     <div class="f-body">
       <div class="f-desc">${esc(f.description)}</div>
-      ${savLine}
+      ${savLine}${auditLine}
       <div class="f-line f-fix"><span class="k">fix</span>
         <span class="ref">${esc(res.kind)}: ${esc(res.ref)}</span>${avail}
         <span class="why">${esc(f.recommendation.rationale)}</span>
@@ -450,15 +455,22 @@ async function showRules() {
   const [rules, stats] = await Promise.all([api("/api/rules"), api("/api/feedback/stats")]);
   const byRule = Object.fromEntries(stats.rules.map((s) => [s.rule_id, s]));
   const recurrenceByRule = Object.fromEntries(stats.recurrence.map((r) => [r.rule_id, r]));
+  const agreementByRule = Object.fromEntries((stats.auditor?.agreement ?? []).map((a) => [a.rule_id, a]));
+  const health = stats.auditor?.health ?? [];
+  const degraded = health.some((h) => h.honeypots_total >= 5 && h.honeypot_catch_rate !== null && h.honeypot_catch_rate < 0.8);
+  const healthLine = health.length
+    ? `<div class="sub" style="margin-top:6px">auditor: ${health.map((h) => `${esc(h.series)} — honeypot catch ${h.honeypot_catch_rate === null ? "—" : Math.round(h.honeypot_catch_rate * 100) + "%"} (${h.honeypots_caught}/${h.honeypots_total}), abstain ${Math.round(h.abstention_rate * 100)}%`).join(" · ")}${degraded ? ' — <b style="color:var(--major)">catch rate degraded: treat auditor verdicts with care</b>' : ""}</div>`
+    : "";
   const pbar = (p) => p === null ? '<span class="mono" style="color:var(--ink-3)">—</span>'
     : `<div class="precision-bar" title="${p.toFixed(2)}"><i style="width:${Math.round(p * 100)}%"></i></div><span class="mono">${p.toFixed(2)}</span>`;
   $("view").innerHTML = `
     <span class="eyebrow">registry</span>
     <h1>Rules &amp; measured accuracy</h1>
     <div class="sub">factual = accurate-yes ÷ accurate answers (checkable against evidence). "Acted on" is behavioral: the pattern's frequency in your sessions before vs after damame first surfaced it — no opinion involved. All local.</div>
+    ${healthLine}
     <div class="section">
     <table class="rules">
-      <tr><th>rule</th><th>what it detects</th><th>emitted</th><th>accurate y/n</th><th>applies y/n</th><th>factual</th><th>acted on (before → after /100 turns)</th></tr>
+      <tr><th>rule</th><th>what it detects</th><th>emitted</th><th>accurate y/n</th><th>applies y/n</th><th>factual</th><th>auditor agrees</th><th>acted on (before → after /100 turns)</th></tr>
       ${rules.map((r) => {
         const s = byRule[r.id];
         const rec = recurrenceByRule[r.id];
@@ -472,6 +484,7 @@ async function showRules() {
           <td class="mono">${s ? `${s.accurate_yes}/${s.accurate_no}` : "0/0"}</td>
           <td class="mono">${s ? `${s.applicable_yes}/${s.applicable_no}` : "0/0"}</td>
           <td>${pbar(s ? s.factual_precision : null)}</td>
+          <td class="mono">${agreementByRule[r.id] ? `${agreementByRule[r.id].agreed_questions}/${agreementByRule[r.id].compared_questions}` : '<span style="color:var(--ink-3)">—</span>'}</td>
           <td>${acted}</td>
         </tr>`;
       }).join("")}

@@ -1,6 +1,6 @@
 {
   "name": "damame",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A profiler for your AI coding sessions — evidence-linked, deterministic, local-first.",
   "license": "MIT",
   "type": "module",
@@ -36,6 +36,7 @@
     "@damame/rules": "*",
     "commander": "^13.0.0",
     "picocolors": "^1.1.0",
-    "@damame/profile": "*"
+    "@damame/profile": "*",
+    "@damame/judge": "*"
   }
 }
