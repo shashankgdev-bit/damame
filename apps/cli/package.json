@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "damame": "./dist/main.js"
+    "damame": "dist/main.js"
   },
   "files": [
     "dist"
