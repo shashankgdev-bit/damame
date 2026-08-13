@@ -113,6 +113,13 @@ export function recordFeedback(
   return { ok: true, entry, title: target.title };
 }
 
+/** Latest verdict per finding key (users change their minds; last wins). */
+export function lastVerdicts(): Map<string, Verdict> {
+  const map = new Map<string, Verdict>();
+  for (const entry of readJsonl<FeedbackEntry>(feedbackPath())) map.set(entry.dedupe_key, entry.verdict);
+  return map;
+}
+
 export interface RuleStats {
   rule_id: string;
   rule_series: string;

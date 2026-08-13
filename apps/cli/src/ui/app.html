@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>damame</title>
+<style>
+/* ————— tokens: paper-ledger instrument. Light is home; dark is a full variant.
+   Severity is a STATUS palette: every use carries a text label or shape, never
+   color alone (validated for surface contrast in both modes). ————— */
+:root {
+  --paper: #FAFAF7; --card: #FFFFFF; --ink: #1C2420; --ink-2: #5A665F; --ink-3: #8A948C;
+  --hair: #E3E6E0; --hair-2: #EEF0EA;
+  --pod: #5B8C3E; --pod-deep: #3E6B2A; --pod-tint: #EAF2E2;
+  --major: #B33A28; --major-tint: #F7E9E6;
+  --moderate: #A16E1B; --moderate-tint: #F6EEDD;
+  --minor: #4E7FA8; --minor-tint: #E8EFF5;
+  --info: #7A837D; --info-tint: #EFF1EE;
+  --bar: #CBD2C7; --bar-notif: #DFE4DA;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #141815; --card: #1B211C; --ink: #E8ECE7; --ink-2: #9AA69D; --ink-3: #6E786F;
+    --hair: #2A302B; --hair-2: #222823;
+    --pod: #8FBF6A; --pod-deep: #A9D18A; --pod-tint: #24301E;
+    --major: #E0785C; --major-tint: #35221D;
+    --moderate: #D9A84E; --moderate-tint: #332A18;
+    --minor: #7FA7C9; --minor-tint: #1E2933;
+    --info: #8B948D; --info-tint: #232824;
+    --bar: #39423A; --bar-notif: #2C332D;
+  }
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+body { background: var(--paper); color: var(--ink); font: 14px/1.55 var(--sans); }
+.app { display: grid; grid-template-columns: 288px 1fr; height: 100vh; }
+@media (max-width: 860px) { .app { grid-template-columns: 1fr; } .side { display: none; } }
+
+/* ————— sidebar ————— */
+.side { border-right: 1px solid var(--hair); display: flex; flex-direction: column; min-height: 0; }
+.brand { display: flex; align-items: baseline; gap: 8px; padding: 18px 18px 14px; border-bottom: 1px solid var(--hair); }
+.brand b { font: 600 17px var(--mono); letter-spacing: -0.02em; }
+.brand b::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50% 50% 50% 2px; background: var(--pod); margin-right: 8px; }
+.brand span { color: var(--ink-3); font: 10.5px var(--mono); }
+.sessions { overflow-y: auto; flex: 1; padding: 8px; }
+.sess { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 8px; padding: 10px 10px 8px; cursor: pointer; color: var(--ink); }
+.sess:hover { background: var(--hair-2); }
+.sess.active { background: var(--pod-tint); }
+.sess .t { font-weight: 550; font-size: 13px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sess .m { color: var(--ink-3); font: 10.5px var(--mono); margin-top: 3px; }
+.side-foot { border-top: 1px solid var(--hair); padding: 10px; }
+.navbtn { width: 100%; background: none; border: 0; border-radius: 8px; text-align: left; padding: 9px 10px; cursor: pointer; color: var(--ink-2); font: 12px var(--mono); }
+.navbtn:hover, .navbtn.active { background: var(--hair-2); color: var(--ink); }
+.local-note { color: var(--ink-3); font: 10px var(--mono); padding: 6px 10px 2px; }
+
+/* ————— main ————— */
+.main { overflow-y: auto; min-height: 0; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 26px 32px 80px; }
+.eyebrow { font: 600 10px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font: 700 21px/1.3 var(--sans); letter-spacing: -0.02em; margin: 4px 0 2px; }
+.sub { color: var(--ink-2); font: 11.5px var(--mono); }
+.section { margin-top: 30px; }
+.section > .eyebrow { display: block; padding-bottom: 8px; border-bottom: 1px solid var(--hair); margin-bottom: 14px; }
+
+/* ————— waveform: the session drawn as its rhythm of turns ————— */
+.wavebox { margin-top: 22px; background: var(--card); border: 1px solid var(--hair); border-radius: 10px; padding: 14px 14px 8px; }
+.wavescroll { overflow-x: auto; }
+.wave-legend { display: flex; gap: 16px; padding: 8px 2px 4px; color: var(--ink-3); font: 10.5px var(--mono); flex-wrap: wrap; }
+.wave-legend i { font-style: normal; }
+.wave-legend .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+.wbar { transform-origin: bottom; }
+@media (prefers-reduced-motion: no-preference) {
+  .wbar { animation: rise 0.35s cubic-bezier(.2,.7,.3,1) backwards; }
+  @keyframes rise { from { transform: scaleY(0); } }
+}
+.tooltip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--paper); border-radius: 8px; padding: 8px 10px; font: 11px var(--mono); max-width: 320px; display: none; box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+.tooltip .tp { opacity: .75; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 3px; font-family: var(--sans); }
+
+/* ————— facts ————— */
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.fact { background: var(--card); border: 1px solid var(--hair); border-radius: 10px; padding: 12px 14px; }
+.fact .v { font: 600 17px var(--mono); letter-spacing: -0.01em; margin-top: 4px; }
+.fact .d { color: var(--ink-3); font: 10.5px var(--mono); margin-top: 3px; line-height: 1.6; }
+
+/* ————— findings ————— */
+.finding { background: var(--card); border: 1px solid var(--hair); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.f-head { display: flex; align-items: flex-start; gap: 10px; padding: 13px 14px 0; }
+.badge { font: 700 9.5px var(--mono); letter-spacing: 0.08em; border-radius: 5px; padding: 3px 7px; flex: none; margin-top: 2px; }
+.badge.major { color: var(--major); background: var(--major-tint); }
+.badge.moderate { color: var(--moderate); background: var(--moderate-tint); }
+.badge.minor { color: var(--minor); background: var(--minor-tint); }
+.badge.info { color: var(--info); background: var(--info-tint); }
+.f-title { font-weight: 600; font-size: 14px; flex: 1; }
+.f-rule { color: var(--ink-3); font: 10.5px var(--mono); white-space: nowrap; margin-top: 3px; }
+.f-body { padding: 6px 14px 13px 14px; }
+.f-desc { color: var(--ink-2); font-size: 13px; max-width: 72ch; }
+.f-line { margin-top: 9px; font: 12px var(--mono); display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.f-line .k { color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+.tag { font: 600 9.5px var(--mono); letter-spacing: .06em; border-radius: 4px; padding: 2px 6px; }
+.tag.measured { color: var(--pod-deep); background: var(--pod-tint); }
+.tag.modeled { color: var(--moderate); border: 1px solid var(--moderate); }
+.tag.avail { color: var(--pod-deep); background: var(--pod-tint); }
+.method { color: var(--ink-3); font: 11px var(--sans); font-style: italic; }
+.f-fix .ref { color: var(--ink); font-weight: 600; }
+.f-fix .why { color: var(--ink-2); font-family: var(--sans); }
+details.evidence { border-top: 1px solid var(--hair-2); margin-top: 11px; }
+details.evidence summary { cursor: pointer; padding: 8px 0 0; color: var(--ink-2); font: 11px var(--mono); list-style: none; }
+details.evidence summary::before { content: "▸ "; }
+details[open].evidence summary::before { content: "▾ "; }
+.ev { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px dashed var(--hair-2); font: 11px var(--mono); }
+.ev:last-child { border-bottom: 0; }
+.ev .kind { color: var(--ink-3); flex: none; width: 118px; }
+.ev .snip { color: var(--ink-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev .loc { color: var(--ink-3); flex: none; }
+.fb { display: flex; gap: 6px; flex: none; }
+.fb button { font: 11px var(--mono); border: 1px solid var(--hair); background: none; color: var(--ink-2); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+.fb button:hover { border-color: var(--ink-3); color: var(--ink); }
+.fb button.on-helpful { background: var(--pod-tint); border-color: var(--pod); color: var(--pod-deep); }
+.fb button.on-wrong { background: var(--major-tint); border-color: var(--major); color: var(--major); }
+.empty { background: var(--card); border: 1px dashed var(--hair); border-radius: 10px; padding: 18px; color: var(--ink-2); font-size: 13px; }
+.empty b { color: var(--pod-deep); }
+.infra-note { color: var(--ink-2); font-size: 12px; margin: -6px 0 12px; max-width: 72ch; }
+
+/* ————— inventory & rules ————— */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 11px var(--mono); border-radius: 6px; padding: 3px 9px; border: 1px solid var(--hair); color: var(--ink-3); }
+.chip.used { background: var(--pod-tint); border-color: transparent; color: var(--pod-deep); }
+.inv-label { font: 10px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); margin: 14px 0 7px; }
+table.rules { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.rules th { text-align: left; font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); padding: 8px 10px; border-bottom: 1px solid var(--hair); }
+table.rules td { padding: 9px 10px; border-bottom: 1px solid var(--hair-2); vertical-align: top; }
+table.rules td.mono { font: 12px var(--mono); white-space: nowrap; }
+.precision-bar { width: 90px; height: 6px; background: var(--hair); border-radius: 3px; overflow: hidden; }
+.precision-bar i { display: block; height: 100%; background: var(--pod); }
+.loading { color: var(--ink-3); font: 12px var(--mono); padding: 60px 0; text-align: center; }
+.grading { margin-top: 40px; border-top: 1px solid var(--hair); padding-top: 10px; color: var(--ink-3); font: 10.5px var(--mono); }
+button:focus-visible, .sess:focus-visible, summary:focus-visible { outline: 2px solid var(--pod); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side">
+    <div class="brand"><b>damame</b><span>session profiler</span></div>
+    <div class="sessions" id="sessions"></div>
+    <div class="side-foot">
+      <button class="navbtn" id="rulesBtn">rules &amp; precision</button>
+      <div class="local-note">local only — nothing leaves this machine</div>
+    </div>
+  </nav>
+  <main class="main"><div class="wrap" id="view"><div class="loading">reading sessions…</div></div></main>
+</div>
+<div class="tooltip" id="tip"></div>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtTok = (n) => n >= 1e9 ? (n/1e9).toFixed(1)+"B" : n >= 1e6 ? (n/1e6).toFixed(1)+"M" : n >= 1e3 ? (n/1e3).toFixed(1)+"k" : String(n);
+const fmtMs = (ms) => ms >= 36e5 ? (ms/36e5).toFixed(1)+"h" : ms >= 6e4 ? (ms/6e4).toFixed(1)+"m" : (ms/1e3).toFixed(1)+"s";
+const fmtDate = (iso) => iso ? iso.slice(0, 10) : "?";
+const fmtSize = (b) => b >= 1e6 ? (b/1e6).toFixed(0)+"MB" : (b/1e3).toFixed(0)+"KB";
+
+const state = { sessions: [], currentId: null, data: null, view: "session" };
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+  return res.json();
+}
+
+async function boot() {
+  state.sessions = await api("/api/sessions");
+  renderSidebar();
+  if (state.sessions.length) selectSession(state.sessions[0].id);
+  else $("view").innerHTML = '<div class="empty">No Claude Code sessions found under ~/.claude/projects. Work a session, then reopen damame.</div>';
+}
+
+function renderSidebar() {
+  $("sessions").innerHTML = state.sessions.map((s) => `
+    <button class="sess ${s.id === state.currentId && state.view === "session" ? "active" : ""}" data-id="${esc(s.id)}">
+      <div class="t">${esc(s.title || s.project.split("/").pop())}</div>
+      <div class="m">${esc(fmtDate(s.modified_at))} · ${esc(fmtSize(s.size_bytes))} · ${esc(s.id.slice(0, 8))}</div>
+    </button>`).join("");
+  for (const el of document.querySelectorAll(".sess")) el.onclick = () => selectSession(el.dataset.id);
+  $("rulesBtn").classList.toggle("active", state.view === "rules");
+}
+
+async function selectSession(id) {
+  state.view = "session"; state.currentId = id; renderSidebar();
+  const s = state.sessions.find((x) => x.id === id);
+  $("view").innerHTML = `<div class="loading">reading ${esc(fmtSize(s?.size_bytes ?? 0))} transcript…</div>`;
+  try {
+    state.data = await api("/api/session/" + id);
+    renderSession(state.data);
+  } catch (e) {
+    $("view").innerHTML = `<div class="empty">Could not analyze this session: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderSession(d) {
+  const f = d.facts;
+  const findings = d.findings.filter((x) => x.category !== "infra");
+  const infra = d.findings.filter((x) => x.category === "infra");
+  $("view").innerHTML = `
+    <span class="eyebrow">${esc(d.meta.project || "session")}</span>
+    <h1>${esc(d.meta.title)}</h1>
+    <div class="sub">${esc(fmtDate(d.meta.started_at))} → ${esc(fmtDate(d.meta.ended_at))} · CLI ${esc(d.meta.versions.filter(Boolean).join("–") || "?")}${d.meta.child_count ? ` · ${d.meta.child_count} subagent transcripts` : ""}</div>
+    <div class="wavebox">
+      <div class="wavescroll" id="wavescroll"></div>
+      <div class="wave-legend">
+        <i><span class="sw" style="background:var(--bar)"></span>tokens per turn (√ scale)</i>
+        <i><span class="sw" style="background:var(--major)"></span>tool errors</i>
+        <i><span class="sw" style="background:none;border-top:2px dashed var(--moderate);height:0;width:10px"></span>compaction</i>
+        <i><span class="sw" style="background:var(--pod)"></span>selected finding's turns</i>
+      </div>
+    </div>
+    <div class="section"><span class="eyebrow">Facts — measured, reproducible</span>
+      <div class="facts">
+        <div class="fact"><span class="eyebrow">tokens</span><div class="v">${fmtTok(f.total_tokens)}</div>
+          <div class="d">in ${fmtTok(f.usage.input_tokens||0)} · out ${fmtTok(f.usage.output_tokens||0)}<br>cache r ${fmtTok(f.usage.cache_read_input_tokens||0)} · w ${fmtTok(f.usage.cache_creation_input_tokens||0)}</div></div>
+        <div class="fact"><span class="eyebrow">turns</span><div class="v">${f.turn_count}</div><div class="d">${f.human_turn_count} human</div></div>
+        <div class="fact"><span class="eyebrow">tool calls</span><div class="v">${f.tool_call_count}</div><div class="d">${f.tool_error_count} errors</div></div>
+        <div class="fact"><span class="eyebrow">subagents</span><div class="v">${f.subagent_count}</div><div class="d">${d.meta.child_count} transcripts</div></div>
+        <div class="fact"><span class="eyebrow">friction</span><div class="v">${f.compactions + f.interruptions + f.denials}</div>
+          <div class="d">${f.compactions} compactions · ${f.interruptions} interrupts<br>${f.denials} denials · ${f.cache_misses} cache misses</div></div>
+        ${f.abandoned_tokens > 0 ? `<div class="fact"><span class="eyebrow">rewinds</span><div class="v">${fmtTok(f.abandoned_tokens)}</div><div class="d">${f.abandoned_branches} abandoned branches</div></div>` : ""}
+      </div>
+    </div>
+    <div class="section"><span class="eyebrow">Findings (${findings.length})</span><div id="findings"></div></div>
+    ${infra.length ? `<div class="section"><span class="eyebrow">Not your inefficiency</span>
+      <div class="infra-note">Provider-side delays recorded this session. They contextualize the numbers above and never count against you.</div>
+      <div id="infra"></div></div>` : ""}
+    <div class="section"><span class="eyebrow">What was available this session</span>
+      <div class="inv-label">skills · <span style="color:var(--pod-deep)">used</span> / unused (read from this session's own listings, not your current config)</div>
+      <div class="chips">${d.inventory.skills.map((s) => `<span class="chip ${s.used ? "used" : ""}">${esc(s.name)}</span>`).join("") || '<span class="chip">none recorded</span>'}</div>
+      <div class="inv-label">subagent types</div>
+      <div class="chips">${d.inventory.agents.map((a) => `<span class="chip">${esc(a)}</span>`).join("") || '<span class="chip">none recorded</span>'}</div>
+      <div class="inv-label">tools used (${d.inventory.observed_tools.length}) · ${d.inventory.deferred_count} more were available</div>
+      <div class="chips">${d.per_tool.map((t) => `<span class="chip">${esc(t.name)} ${t.calls}${t.errors ? `<span style="color:var(--major)"> ·${t.errors}err</span>` : ""}</span>`).join("")}</div>
+    </div>
+    <div class="grading">grading: damame ${esc(d.grading.damame_version)} · ir ${esc(d.grading.ir_version)} · adapter ${esc(d.grading.adapter)}@${esc(d.grading.adapter_version)} · ${Object.keys(d.grading.rule_versions).length} rules — reports are comparable only when these match</div>`;
+
+  renderWave(d.turns);
+  $("findings").innerHTML = findings.length
+    ? findings.map(findingCard).join("")
+    : `<div class="empty"><b>No rule fired.</b> The facts above still apply — no conservative detector found unambiguous waste. It does not mean the session was flawless.</div>`;
+  if (infra.length) $("infra").innerHTML = infra.map(findingCard).join("");
+  wireFindings(d);
+}
+
+function renderWave(turns) {
+  const n = turns.length;
+  const bw = 4, gap = 2, H = 76, pad = 14;
+  const width = Math.max(n * (bw + gap) + 10, 400);
+  const max = Math.sqrt(Math.max(...turns.map((t) => t.tokens), 1));
+  let bars = "";
+  turns.forEach((t, i) => {
+    const h = Math.max(2, Math.round((Math.sqrt(t.tokens) / max) * (H - 14)));
+    const x = i * (bw + gap) + 4;
+    const delay = Math.min(i * 2, 350);
+    bars += `<rect class="wbar" data-i="${i}" x="${x}" y="${H - h}" width="${bw}" height="${h}" rx="1.5"
+      fill="${t.origin === "human" ? "var(--bar)" : "var(--bar-notif)"}" style="animation-delay:${delay}ms"></rect>`;
+    if (t.errors > 0) bars += `<rect x="${x}" y="${H + 3}" width="${bw}" height="3" rx="1" fill="var(--major)"></rect>`;
+    if (t.compaction) bars += `<line x1="${x + bw + 1}" y1="4" x2="${x + bw + 1}" y2="${H}" stroke="var(--moderate)" stroke-width="1.5" stroke-dasharray="3 3"></line>`;
+  });
+  $("wavescroll").innerHTML = `<svg id="wave" width="${width}" height="${H + pad}" role="img" aria-label="tokens per turn across the session">${bars}</svg>`;
+  const tip = $("tip");
+  $("wave").addEventListener("mousemove", (e) => {
+    const bar = e.target.closest(".wbar");
+    if (!bar) { tip.style.display = "none"; return; }
+    const t = turns[+bar.dataset.i];
+    tip.innerHTML = `<b>turn ${t.i + 1}</b> · ${esc(t.origin)} · ${fmtTok(t.tokens)} tok · ${t.calls} calls${t.errors ? ` · <span style="color:var(--major)">${t.errors} err</span>` : ""}${t.wall_ms ? ` · ${fmtMs(t.wall_ms)}` : ""}${t.interrupted ? " · interrupted" : ""}${t.preview ? `<div class="tp">${esc(t.preview)}</div>` : ""}`;
+    tip.style.display = "block";
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - 340) + "px";
+    tip.style.top = (e.clientY + 14) + "px";
+  });
+  $("wave").addEventListener("mouseleave", () => { tip.style.display = "none"; });
+}
+
+function findingCard(f) {
+  const sav = f.savings;
+  const savLine = sav ? `
+    <div class="f-line"><span class="k">cost</span>
+      ${sav.tokens ? `<b>~${fmtTok(sav.tokens.value)} tokens</b>` : ""}
+      ${sav.wall_clock_ms ? `<b>${fmtMs(sav.wall_clock_ms.value)}</b>` : ""}
+      <span class="tag ${sav.basis}">${sav.basis === "measured" ? "measured" : "modeled estimate"}</span>
+      <span class="method">${esc(sav.method)}</span>
+    </div>` : "";
+  const res = f.recommendation.resource;
+  const avail = res.available_in_session === true ? '<span class="tag avail">was available this session</span>' : "";
+  return `
+  <div class="finding" data-key="${esc(f.dedupe_key)}" data-turns="${esc(f.turn_indexes.join(","))}">
+    <div class="f-head">
+      <span class="badge ${esc(f.severity)}">${esc(f.severity)}</span>
+      <span class="f-title">${esc(f.title)}</span>
+      <span class="f-rule">${esc(f.rule.id)}@${esc(f.rule.version)}</span>
+      <span class="fb">
+        <button data-v="helpful" class="${f.feedback === "helpful" ? "on-helpful" : ""}">Helpful</button>
+        <button data-v="wrong" class="${f.feedback === "wrong" ? "on-wrong" : ""}">Wrong</button>
+      </span>
+    </div>
+    <div class="f-body">
+      <div class="f-desc">${esc(f.description)}</div>
+      ${savLine}
+      <div class="f-line f-fix"><span class="k">fix</span>
+        <span class="ref">${esc(res.kind)}: ${esc(res.ref)}</span>${avail}
+        <span class="why">${esc(f.recommendation.rationale)}</span>
+      </div>
+      <details class="evidence"><summary>evidence — ${f.evidence.events.length} events · key ${esc(f.dedupe_key.slice(0, 8))}</summary>
+        ${f.evidence_excerpts.map((e) => `
+          <div class="ev"><span class="kind">${esc(e.kind)}</span><span class="snip">${esc(e.snippet)}</span><span class="loc">${esc((e.file || "").split("/").pop())}:${e.line}</span></div>`).join("")}
+      </details>
+    </div>
+  </div>`;
+}
+
+function wireFindings(d) {
+  for (const card of document.querySelectorAll(".finding")) {
+    card.addEventListener("mouseenter", () => highlightTurns(card.dataset.turns, true));
+    card.addEventListener("mouseleave", () => highlightTurns(card.dataset.turns, false));
+    for (const btn of card.querySelectorAll(".fb button")) {
+      btn.onclick = async () => {
+        const verdict = btn.dataset.v;
+        try {
+          await api("/api/feedback", { method: "POST", headers: { "content-type": "application/json" },
+            body: JSON.stringify({ key: card.dataset.key, verdict }) });
+          for (const b of card.querySelectorAll(".fb button")) b.className = "";
+          btn.className = "on-" + verdict;
+          const f = d.findings.find((x) => x.dedupe_key === card.dataset.key);
+          if (f) f.feedback = verdict;
+        } catch (e) { alert("could not record feedback: " + e.message); }
+      };
+    }
+  }
+}
+
+function highlightTurns(turnsAttr, on) {
+  if (!turnsAttr) return;
+  const set = new Set(turnsAttr.split(",").filter(Boolean).map(Number));
+  for (const bar of document.querySelectorAll("#wave .wbar")) {
+    if (set.has(+bar.dataset.i)) bar.setAttribute("fill", on ? "var(--pod)" : (state.data.turns[+bar.dataset.i].origin === "human" ? "var(--bar)" : "var(--bar-notif)"));
+  }
+}
+
+async function showRules() {
+  state.view = "rules"; renderSidebar();
+  $("view").innerHTML = '<div class="loading">reading rules…</div>';
+  const [rules, stats] = await Promise.all([api("/api/rules"), api("/api/feedback/stats")]);
+  const byRule = Object.fromEntries(stats.map((s) => [s.rule_id, s]));
+  $("view").innerHTML = `
+    <span class="eyebrow">registry</span>
+    <h1>Rules &amp; measured precision</h1>
+    <div class="sub">precision = helpful / (helpful + wrong), from your local feedback only. Unjudged rules show no number — accuracy is measured here, not asserted.</div>
+    <div class="section">
+    <table class="rules">
+      <tr><th>rule</th><th>category</th><th>what it detects</th><th>emitted</th><th>helpful</th><th>wrong</th><th>precision</th></tr>
+      ${rules.map((r) => {
+        const s = byRule[r.id];
+        const p = s && s.precision !== null ? s.precision : null;
+        return `<tr>
+          <td class="mono">${esc(r.id)}<br><span style="color:var(--ink-3)">v${esc(r.version)}</span></td>
+          <td class="mono">${esc(r.category)}</td>
+          <td>${esc(r.summary)}</td>
+          <td class="mono">${s ? s.emitted : 0}</td><td class="mono">${s ? s.helpful : 0}</td><td class="mono">${s ? s.wrong : 0}</td>
+          <td>${p === null ? '<span class="mono" style="color:var(--ink-3)">—</span>'
+            : `<div class="precision-bar" title="${p.toFixed(2)}"><i style="width:${Math.round(p * 100)}%"></i></div><span class="mono">${p.toFixed(2)}</span>`}</td>
+        </tr>`;
+      }).join("")}
+    </table></div>`;
+}
+
+$("rulesBtn").onclick = showRules;
+boot().catch((e) => { $("view").innerHTML = `<div class="empty">damame could not start: ${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>

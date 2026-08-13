@@ -39,8 +39,18 @@ states whether it was **measured** (tokens actually spent on identified waste) o
 
 ```sh
 npm install
+npx tsx apps/cli/src/main.ts        # opens the dashboard — prints a clickable local link
+```
+
+That's the main flow: a local web dashboard (127.0.0.1 only, nothing leaves your
+machine) with your session list, each session drawn as a waveform of its turns,
+findings with clickable evidence, and one-click feedback on every finding.
+
+For scripting and CI there's a full CLI:
+
+```sh
 npx tsx apps/cli/src/main.ts list                 # sessions on this machine, newest first
-npx tsx apps/cli/src/main.ts analyze --latest     # analyze the most recent session
+npx tsx apps/cli/src/main.ts analyze --latest     # terminal report for the most recent session
 npx tsx apps/cli/src/main.ts analyze <id-prefix> --html report.html --json
 npx tsx apps/cli/src/main.ts rules                # the detector registry
 ```

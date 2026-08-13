@@ -22,6 +22,23 @@ const program = new Command()
   .version(DAMAME_VERSION);
 
 program
+  .command("ui", { isDefault: true })
+  .description("Open the interactive dashboard (default) — local server, prints a clickable link")
+  .option("--port <n>", "port (default: random free port)")
+  .option("--root <dir>", "projects root", defaultProjectsRoot())
+  .option("--no-open", "don't auto-open the browser")
+  .action(async (opts: { port?: string; root: string; open: boolean }) => {
+    const { startUiServer } = await import("./ui/server.js");
+    const { url } = await startUiServer({
+      root: opts.root,
+      ...(opts.port ? { port: Number(opts.port) } : {}),
+      openBrowser: opts.open,
+    });
+    console.log(`\n  ${pc.bold("damame")} is running — open ${pc.underline(pc.green(url))}\n`);
+    console.log(pc.dim("  local only (127.0.0.1); nothing leaves this machine. Ctrl-C to stop.\n"));
+  });
+
+program
   .command("list")
   .description("List Claude Code sessions on this machine (newest first)")
   .option("--root <dir>", "projects root", defaultProjectsRoot())
