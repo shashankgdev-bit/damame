@@ -1,12 +1,34 @@
 {
   "name": "damame",
   "version": "0.1.0",
-  "private": true,
+  "description": "A profiler for your AI coding sessions — evidence-linked, deterministic, local-first.",
+  "license": "MIT",
   "type": "module",
   "bin": {
-    "damame": "./src/main.ts"
+    "damame": "./dist/main.js"
   },
-  "dependencies": {
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup && cp src/ui/app.html dist/app.html",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "claude-code",
+    "ai",
+    "session-analysis",
+    "profiler",
+    "developer-tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shashankgdev/damame.git"
+  },
+  "devDependencies": {
     "@damame/adapter-claude-code": "*",
     "@damame/ir": "*",
     "@damame/metrics": "*",

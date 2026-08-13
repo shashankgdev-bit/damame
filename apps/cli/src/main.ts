@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Command } from "commander";
