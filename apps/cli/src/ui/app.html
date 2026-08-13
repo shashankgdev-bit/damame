@@ -123,6 +123,42 @@ details[open].evidence summary::before { content: "▾ "; }
 .empty b { color: var(--pod-deep); }
 .infra-note { color: var(--ink-2); font-size: 12px; margin: -6px 0 12px; max-width: 72ch; }
 
+/* ————— skills profile ————— */
+.overview-nav { padding: 8px 8px 0; }
+.skillgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.skill { background: var(--card); border: 1px solid var(--hair); border-radius: 10px; padding: 14px; }
+.skill h3 { font: 600 14px var(--sans); margin: 0 0 2px; }
+.skill .tagline { color: var(--ink-3); font-size: 12px; }
+.state { display: inline-block; font: 600 9.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; border-radius: 5px; padding: 3px 7px; margin: 8px 0 6px; }
+.state.practiced_well { color: var(--pod-deep); background: var(--pod-tint); }
+.state.opportunities_missed { color: var(--moderate); background: var(--moderate-tint); }
+.state.not_needed { color: var(--ink-3); background: var(--hair-2); }
+.state.getting_started { color: var(--minor); background: var(--minor-tint); }
+.skill .rate { font: 12px var(--mono); color: var(--ink-2); }
+.skill .waste { font: 11.5px var(--mono); color: var(--moderate); margin-top: 3px; }
+.skill .next { margin-top: 9px; font-size: 12px; color: var(--ink-2); border-top: 1px dashed var(--hair-2); padding-top: 8px; }
+.skill .next b { color: var(--ink); font-weight: 600; }
+.skill details { margin-top: 8px; }
+.skill summary { cursor: pointer; color: var(--ink-3); font: 11px var(--mono); list-style: none; }
+.skill summary::before { content: "▸ "; }
+.skill details[open] summary::before { content: "▾ "; }
+.skill .note { margin-top: 8px; color: var(--ink-3); font-size: 11px; font-style: italic; }
+.rec { background: var(--card); border: 1px solid var(--hair); border-left: 3px solid var(--moderate); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+.rec .h { font-size: 13.5px; }
+.rec .t { margin-top: 5px; font-size: 12.5px; color: var(--ink-2); }
+.rec .t b { color: var(--ink); }
+.sess-skill { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed var(--hair-2); font-size: 13px; }
+.sess-skill:last-child { border-bottom: 0; }
+.sess-skill .v { flex: none; width: 120px; font: 600 9.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.sess-skill .v.used { color: var(--pod-deep); }
+.sess-skill .v.missed { color: var(--moderate); }
+.sess-skill .v.mixed { color: var(--minor); }
+.sess-skill .v.not_needed { color: var(--ink-3); }
+.sess-skill .s { color: var(--ink-2); flex: 1; }
+.sess-skill .links button { font: 10.5px var(--mono); background: none; border: 1px solid var(--hair); border-radius: 5px; color: var(--ink-2); padding: 1px 7px; cursor: pointer; }
+.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { 0% { outline: 2px solid var(--pod); outline-offset: 2px; } 100% { outline: 2px solid transparent; } }
+
 /* ————— inventory & rules ————— */
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { font: 11px var(--mono); border-radius: 6px; padding: 3px 9px; border: 1px solid var(--hair); color: var(--ink-3); }
@@ -143,6 +179,7 @@ button:focus-visible, .sess:focus-visible, summary:focus-visible { outline: 2px 
 <div class="app">
   <nav class="side">
     <div class="brand"><b>damame</b><span>session profiler</span></div>
+    <div class="overview-nav"><button class="navbtn" id="overviewBtn">your skills</button></div>
     <div class="sessions" id="sessions"></div>
     <div class="side-foot">
       <button class="navbtn" id="rulesBtn">rules &amp; precision</button>
@@ -172,8 +209,51 @@ async function api(path, opts) {
 async function boot() {
   state.sessions = await api("/api/sessions");
   renderSidebar();
-  if (state.sessions.length) selectSession(state.sessions[0].id);
+  if (state.sessions.length) showOverview();
   else $("view").innerHTML = '<div class="empty">No Claude Code sessions found under ~/.claude/projects. Work a session, then reopen damame.</div>';
+}
+
+async function showOverview() {
+  state.view = "overview"; state.currentId = null; renderSidebar();
+  $("overviewBtn").classList.add("active");
+  $("view").innerHTML = '<div class="loading">reading your sessions… (first run parses everything; afterwards it\'s instant)</div>';
+  let p;
+  try { p = await api("/api/profile"); }
+  catch (e) { $("view").innerHTML = `<div class="empty">Could not build the profile: ${esc(e.message)}</div>`; return; }
+  const g = p.generated_from;
+  $("view").innerHTML = `
+    <span class="eyebrow">your AI development skills</span>
+    <h1>How you're working with AI</h1>
+    <div class="sub">${g.sessions} sessions · ${esc(g.from ?? "?")} → ${esc(g.to ?? "?")} · assessed over the last ${g.window_days} days${p.sparse ? " · trends firm up as history accumulates" : ""}</div>
+    ${p.recommendations.length ? `<div class="section"><span class="eyebrow">Worth acting on</span>${p.recommendations.map((r) => `
+      <div class="rec">
+        <div class="h">${esc(r.headline)}</div>
+        <div class="t"><b>Try: ${esc(r.technique_title)}.</b> ${esc(r.lesson)}</div>
+      </div>`).join("")}</div>` : ""}
+    <div class="section"><span class="eyebrow">Skills — rated only against real opportunities</span>
+      <div class="skillgrid">${p.skills.map(skillCard).join("")}</div>
+    </div>
+    <div class="grading">techniques tried: ${p.technique_coverage.tried} of ${p.technique_coverage.total} · ${esc(p.methodology_note)}</div>`;
+}
+
+function skillCard(s) {
+  const rate = s.rate !== null ? `<div class="rate">used when needed: ${s.uses} of ${s.uses + s.misses}${s.trend === "up" ? " ↑" : s.trend === "down" ? " ↓" : ""}</div>` : "";
+  const waste = s.state === "opportunities_missed" && (s.missed_tokens > 0 || s.missed_wall_ms > 60000)
+    ? `<div class="waste">measured waste: ${s.missed_tokens > 0 ? "~" + fmtTok(s.missed_tokens) + " tokens" : ""}${s.missed_wall_ms > 60000 ? " · " + fmtMs(s.missed_wall_ms) : ""}</div>` : "";
+  const next = s.suggestion ? `<div class="next"><b>Next: ${esc(s.suggestion.title)}.</b> ${esc(s.suggestion.reason)}</div>` : "";
+  const note = s.measurement_note ? `<div class="note">${esc(s.measurement_note)}</div>` : "";
+  return `
+  <div class="skill">
+    <h3>${esc(s.title)}</h3>
+    <div class="tagline">${esc(s.tagline)}</div>
+    <span class="state ${esc(s.state)}">${esc(s.state_label)}</span>
+    <div class="tagline">${esc(s.state_blurb)}</div>
+    ${rate}${waste}${next}
+    <details><summary>techniques (${s.techniques.filter((t) => t.tried).length}/${s.techniques.length} tried)</summary>
+      <div class="chips" style="margin-top:8px">${s.techniques.map((t) => `<span class="chip ${t.tried ? "used" : ""}" title="${esc(t.lesson)}">${esc(t.title)}${t.count > 1 ? ` ${t.count}×` : ""}${t.source === "environment" ? " ⚙" : ""}</span>`).join("")}</div>
+    </details>
+    ${note}
+  </div>`;
 }
 
 function renderSidebar() {
@@ -184,6 +264,7 @@ function renderSidebar() {
     </button>`).join("");
   for (const el of document.querySelectorAll(".sess")) el.onclick = () => selectSession(el.dataset.id);
   $("rulesBtn").classList.toggle("active", state.view === "rules");
+  $("overviewBtn").classList.toggle("active", state.view === "overview");
 }
 
 async function selectSession(id) {
@@ -227,6 +308,15 @@ function renderSession(d) {
         ${f.abandoned_tokens > 0 ? `<div class="fact"><span class="eyebrow">rewinds</span><div class="v">${fmtTok(f.abandoned_tokens)}</div><div class="d">${f.abandoned_branches} abandoned branches</div></div>` : ""}
       </div>
     </div>
+    <div class="section"><span class="eyebrow">Skills in this session</span>
+      <div>${(d.skills ?? []).map((s) => `
+        <div class="sess-skill">
+          <span class="v ${esc(s.verdict)}">${esc(s.verdict.replace("_", " "))}</span>
+          <span class="s">${esc(s.sentence)}</span>
+          ${s.miss_keys.length ? `<span class="links"><button data-goto="${esc(s.miss_keys[0])}">view finding</button></span>` : ""}
+        </div>`).join("")}
+      </div>
+    </div>
     <div class="section"><span class="eyebrow">Findings (${findings.length})</span><div id="findings"></div></div>
     ${infra.length ? `<div class="section"><span class="eyebrow">Not your inefficiency</span>
       <div class="infra-note">Provider-side delays recorded this session. They contextualize the numbers above and never count against you.</div>
@@ -242,6 +332,12 @@ function renderSession(d) {
     <div class="grading">grading: damame ${esc(d.grading.damame_version)} · ir ${esc(d.grading.ir_version)} · adapter ${esc(d.grading.adapter)}@${esc(d.grading.adapter_version)} · ${Object.keys(d.grading.rule_versions).length} rules — reports are comparable only when these match</div>`;
 
   renderWave(d.turns);
+  for (const btn of document.querySelectorAll("[data-goto]")) {
+    btn.onclick = () => {
+      const card = document.querySelector(`.finding[data-key="${btn.dataset.goto}"]`);
+      if (card) { card.scrollIntoView({ behavior: "smooth", block: "center" }); card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash"); }
+    };
+  }
   $("findings").innerHTML = findings.length
     ? findings.map(findingCard).join("")
     : `<div class="empty"><b>No rule fired.</b> The facts above still apply — no conservative detector found unambiguous waste. It does not mean the session was flawless.</div>`;
@@ -371,6 +467,7 @@ async function showRules() {
 }
 
 $("rulesBtn").onclick = showRules;
+$("overviewBtn").onclick = showOverview;
 boot().catch((e) => { $("view").innerHTML = `<div class="empty">damame could not start: ${esc(e.message)}</div>`; });
 </script>
 </body>

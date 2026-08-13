@@ -11,9 +11,10 @@ import {
 } from "@damame/adapter-claude-code";
 import { computeMetrics, type MetricsBundle } from "@damame/metrics";
 import { DETECTORS, gradingVersion, runRules } from "@damame/rules";
+import { buildProfile, probeEnvironment, sessionSkills, summarizeWithCache } from "@damame/profile";
 import { feedbackStats, indexFindings, lastVerdicts, recordFeedback, VERDICTS, type Verdict } from "../feedback.js";
 
-const DAMAME_VERSION = "0.1.0";
+const DAMAME_VERSION = "0.2.0";
 
 interface CacheEntry {
   mtimeMs: number;
@@ -153,6 +154,7 @@ function buildSessionPayload(session: Session, metrics: MetricsBundle, findings:
       .slice(0, 12)
       .map(([name, s]) => ({ name, calls: s.calls, errors: s.errors })),
     findings: findingsOut,
+    skills: sessionSkills(session, metrics, findings),
     inventory: {
       skills: (session.environment?.skills ?? []).map((s) => ({ name: s.name, used: usedSkills.has(s.name) })),
       agents: (session.environment?.agents ?? []).filter((a) => !a.removed).map((a) => a.type),
@@ -250,6 +252,20 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
         }
         const result = recordFeedback(body.key, verdict, typeof body.note === "string" ? body.note : undefined);
         json(res, result.ok ? 200 : 400, result);
+        return;
+      }
+      if (req.method === "GET" && url.pathname === "/api/profile") {
+        const sessions = await discoverSessions(root);
+        const summaries = [];
+        for (const s of sessions) {
+          try {
+            summaries.push(await summarizeWithCache(s.path));
+          } catch {
+            // one unreadable session must not break the profile
+          }
+        }
+        const cwds = [...new Set(summaries.map((s) => s.cwd).filter((c): c is string => !!c))];
+        json(res, 200, buildProfile(summaries, probeEnvironment(cwds)));
         return;
       }
       if (req.method === "GET" && url.pathname === "/api/feedback/stats") {

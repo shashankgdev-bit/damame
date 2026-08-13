@@ -55,6 +55,24 @@ npx tsx apps/cli/src/main.ts analyze <id-prefix> --html report.html --json
 npx tsx apps/cli/src/main.ts rules                # the detector registry
 ```
 
+### Your AI skills profile
+
+The dashboard opens on **your skills**: seven AI-development competencies —
+Prompt Engineering, Planning & Decomposition, Agent Orchestration, Context
+Engineering, Tooling Fluency, Workflow Automation, Recovery & Verification —
+each assessed **only against real opportunities** found in your sessions.
+
+The rule that makes it fair: *rate = uses ÷ (uses + missed opportunities)*,
+where a "miss" is a deterministic finding proving the opportunity existed. If
+your recent work never called for a skill, it reads **"not needed recently"**
+— neutral, never a deficit. Each skill links named techniques (detected in
+your transcripts: tried / never tried, with short lessons), and every session
+gets a skills panel: "this session could have been better if the file survey
+had gone to the Explore agent — it was available."
+
+`damame profile` prints the same from the terminal. It measures **practice,
+not ability** — and it compares you only to your own past.
+
 ### The feedback loop
 
 Every finding prints a short key in its evidence line. Tell damame when a

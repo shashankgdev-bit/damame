@@ -13,7 +13,7 @@ import { renderHtmlReport } from "@damame/report-html";
 import { renderTerminal } from "./render-terminal.js";
 import { feedbackStats, indexFindings, recordFeedback, VERDICTS, type Verdict } from "./feedback.js";
 
-const DAMAME_VERSION = "0.1.0";
+const DAMAME_VERSION = "0.2.0";
 
 const program = new Command()
   .name("damame")
@@ -110,6 +110,33 @@ program
       }
     },
   );
+
+program
+  .command("profile")
+  .description("Your AI development skills across sessions — opportunity-aware, evidence-linked")
+  .option("--root <dir>", "projects root", defaultProjectsRoot())
+  .option("--json", "emit the profile as JSON")
+  .action(async (opts: { root: string; json?: boolean }) => {
+    const { buildProfile, probeEnvironment, summarizeWithCache } = await import("@damame/profile");
+    const { renderProfile } = await import("./render-profile.js");
+    const sessions = await discoverSessions(opts.root);
+    if (sessions.length === 0) {
+      console.log(pc.dim(`no sessions under ${opts.root}`));
+      return;
+    }
+    const summaries = [];
+    for (const s of sessions) {
+      try {
+        summaries.push(await summarizeWithCache(s.path));
+      } catch {
+        console.error(pc.dim(`skipped unreadable session ${s.sessionId.slice(0, 8)}`));
+      }
+    }
+    const cwds = [...new Set(summaries.map((s) => s.cwd).filter((c): c is string => !!c))];
+    const profile = buildProfile(summaries, probeEnvironment(cwds));
+    if (opts.json) console.log(JSON.stringify(profile, null, 2));
+    else console.log(renderProfile(profile));
+  });
 
 program
   .command("feedback")
