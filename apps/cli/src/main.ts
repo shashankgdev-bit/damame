@@ -11,9 +11,9 @@ import { computeMetrics } from "@damame/metrics";
 import { DETECTORS, gradingVersion, runRules } from "@damame/rules";
 import { renderHtmlReport } from "@damame/report-html";
 import { renderTerminal } from "./render-terminal.js";
-import { feedbackStats, indexFindings, recordFeedback, VERDICTS, type Verdict } from "./feedback.js";
+import { feedbackStats, indexFindings, recordAnswer, type Question } from "./feedback.js";
 
-const DAMAME_VERSION = "0.2.0";
+const DAMAME_VERSION = "0.3.0";
 
 const program = new Command()
   .name("damame")
@@ -138,42 +138,63 @@ program
     else console.log(renderProfile(profile));
   });
 
+const ANSWER_MAP: Record<string, { question: Question; answer: boolean }> = {
+  accurate: { question: "accurate", answer: true },
+  inaccurate: { question: "accurate", answer: false },
+  applicable: { question: "applicable", answer: true },
+  "not-applicable": { question: "applicable", answer: false },
+};
+
 program
   .command("feedback")
-  .description("Mark a finding helpful/wrong (feeds local per-rule precision stats), or show stats")
+  .description("Answer a finding's eval questions (accurate|inaccurate|applicable|not-applicable), or show stats")
   .argument("[key]", "finding dedupe key (or unique prefix) printed in the evidence line")
-  .argument("[verdict]", `one of: ${VERDICTS.join(" | ")}`)
-  .option("--note <text>", "why (recorded alongside the verdict)")
-  .action((key: string | undefined, verdict: string | undefined, opts: { note?: string }) => {
+  .argument("[answer]", `one of: ${Object.keys(ANSWER_MAP).join(" | ")}`)
+  .option("--note <text>", "why (recorded alongside the answer)")
+  .option("--root <dir>", "projects root (for recurrence stats)", defaultProjectsRoot())
+  .action(async (key: string | undefined, answer: string | undefined, opts: { note?: string; root: string }) => {
     if (!key || key === "stats") {
       const stats = feedbackStats();
       if (stats.length === 0) {
         console.log(pc.dim("no findings indexed yet — run `damame analyze` first"));
         return;
       }
-      console.log(pc.bold("rule".padEnd(28) + "series  emitted  helpful  wrong  n/a  precision"));
+      const fmt = (v: number | null) => (v === null ? pc.dim("—") : (v >= 0.8 ? pc.green : pc.yellow)(v.toFixed(2)));
+      console.log(pc.bold("rule".padEnd(28) + "emitted  accurate(y/n)  applicable(y/n)  factual  applies"));
       for (const s of stats) {
-        const precision =
-          s.precision === null ? pc.dim("—") : (s.precision >= 0.8 ? pc.green : pc.red)(s.precision.toFixed(2));
         console.log(
-          `${s.rule_id.padEnd(28)}${s.rule_series.padEnd(8)}${String(s.emitted).padEnd(9)}${String(s.helpful).padEnd(9)}${String(s.wrong).padEnd(7)}${String(s.not_actionable).padEnd(5)}${precision}`,
+          `${s.rule_id.padEnd(28)}${String(s.emitted).padEnd(9)}${`${s.accurate_yes}/${s.accurate_no}`.padEnd(15)}${`${s.applicable_yes}/${s.applicable_no}`.padEnd(17)}${fmt(s.factual_precision)}     ${fmt(s.applicability_rate)}`,
         );
       }
-      console.log(pc.dim("\nprecision = helpful / (helpful + wrong); a series resets when a rule's thresholds change. Local only — nothing is uploaded."));
+      console.log(pc.bold("\nActed on (behavioral — findings per 100 human turns, before → after first surfacing)"));
+      const { computeRecurrence } = await import("./recurrence.js");
+      const recurrence = await computeRecurrence(await discoverSessions(opts.root));
+      if (recurrence.length === 0) console.log(pc.dim("  nothing surfaced yet"));
+      for (const r of recurrence) {
+        const line =
+          r.verdict === "insufficient_history"
+            ? pc.dim("not enough history yet")
+            : `${r.rate_before!.toFixed(1)} → ${r.rate_after!.toFixed(1)}  ${
+                r.verdict === "improving" ? pc.green(`improving ${Math.round(r.change_pct!)}%`) : r.verdict === "worsening" ? pc.yellow("worsening") : pc.dim("unchanged")
+              }`;
+        console.log(`${r.rule_id.padEnd(28)}${line}`);
+      }
+      console.log(pc.dim("\nfactual = accurate-yes / all accurate answers. Recurrence is measured from your later sessions — no opinion involved. Local only."));
       return;
     }
-    if (!verdict || !VERDICTS.includes(verdict as Verdict)) {
-      console.error(pc.red(`verdict must be one of: ${VERDICTS.join(" | ")}`));
+    const mapped = ANSWER_MAP[answer ?? ""];
+    if (!mapped) {
+      console.error(pc.red(`answer must be one of: ${Object.keys(ANSWER_MAP).join(" | ")}`));
       process.exitCode = 1;
       return;
     }
-    const result = recordFeedback(key, verdict as Verdict, opts.note);
+    const result = recordAnswer(key, mapped.question, mapped.answer, opts.note);
     if (!result.ok) {
       console.error(pc.red(result.error));
       process.exitCode = 1;
       return;
     }
-    console.log(`${pc.green("recorded")} ${verdict} on ${pc.bold(result.entry.rule_id)} — “${result.title}”`);
+    console.log(`${pc.green("recorded")} ${mapped.question}=${mapped.answer} on ${pc.bold(result.rule_id)} — “${result.title}”`);
   });
 
 async function resolveTarget(

@@ -80,9 +80,16 @@ finding was right or wrong — this is how per-rule precision gets measured
 instead of asserted:
 
 ```sh
-npx tsx apps/cli/src/main.ts feedback <key> helpful|wrong|not-actionable [--note "why"]
-npx tsx apps/cli/src/main.ts feedback stats       # per-rule precision, local only
+npx tsx apps/cli/src/main.ts feedback <key> accurate|inaccurate|applicable|not-applicable
+npx tsx apps/cli/src/main.ts feedback stats       # factual precision + acted-on rates, local only
 ```
+
+Feedback is two narrow questions instead of one fuzzy "helpful": **accurate?**
+(did the cited events happen as described — checkable against the evidence)
+and **applicable?** (was the suggestion usable there). The third dimension —
+did it actually change anything — is never asked as an opinion: **recurrence
+tracking** measures each flagged pattern's frequency in your sessions before
+vs after damame first surfaced it. Behavior, not self-assessment.
 
 Verdicts live in `~/.damame/` and are keyed by rule id + major.minor version,
 so a rule whose thresholds change starts a fresh precision series. Nothing is

@@ -100,7 +100,7 @@ function summaryTemplate(id: string, date: string): SessionSummary {
     ].map((s) => [s, { uses: 0, misses: 0, miss_keys: [] as string[], missed_tokens: 0, missed_wall_ms: 0 }]),
   ) as unknown as SessionSummary["skills"];
   return {
-    schema: 2,
+    schema: 3,
     session_id: id,
     path: `/tmp/${id}.jsonl`,
     started_at: date,
@@ -110,6 +110,7 @@ function summaryTemplate(id: string, date: string): SessionSummary {
     tool_calls: 10,
     skills,
     techniques: {},
+    rule_counts: {},
     tools_used: [],
     skills_available: 0,
     skills_invoked: 0,

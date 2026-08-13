@@ -12,9 +12,10 @@ import {
 import { computeMetrics, type MetricsBundle } from "@damame/metrics";
 import { DETECTORS, gradingVersion, runRules } from "@damame/rules";
 import { buildProfile, probeEnvironment, sessionSkills, summarizeWithCache } from "@damame/profile";
-import { feedbackStats, indexFindings, lastVerdicts, recordFeedback, VERDICTS, type Verdict } from "../feedback.js";
+import { feedbackStats, indexFindings, lastAnswers, recordAnswer, QUESTIONS, type Question } from "../feedback.js";
+import { computeRecurrence } from "../recurrence.js";
 
-const DAMAME_VERSION = "0.2.0";
+const DAMAME_VERSION = "0.3.0";
 
 interface CacheEntry {
   mtimeMs: number;
@@ -234,23 +235,26 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
           return;
         }
         // Feedback state is overlaid per request — the analysis cache must not
-        // freeze verdicts recorded after the first view.
+        // freeze answers recorded after the first view.
         const payload = (await analyzeSession(target.path)) as { findings: Array<{ dedupe_key: string }> };
-        const verdicts = lastVerdicts();
+        const answers = lastAnswers();
         json(res, 200, {
           ...payload,
-          findings: payload.findings.map((f) => ({ ...f, feedback: verdicts.get(f.dedupe_key) ?? null })),
+          findings: payload.findings.map((f) => ({
+            ...f,
+            feedback: answers.get(f.dedupe_key) ?? { accurate: null, applicable: null },
+          })),
         });
         return;
       }
       if (req.method === "POST" && url.pathname === "/api/feedback") {
         const body = JSON.parse(await readBody(req));
-        const verdict = body.verdict as Verdict;
-        if (typeof body.key !== "string" || !VERDICTS.includes(verdict)) {
-          json(res, 400, { error: `need {key, verdict: ${VERDICTS.join("|")}}` });
+        const question = body.question as Question;
+        if (typeof body.key !== "string" || !QUESTIONS.includes(question) || typeof body.answer !== "boolean") {
+          json(res, 400, { error: `need {key, question: ${QUESTIONS.join("|")}, answer: boolean}` });
           return;
         }
-        const result = recordFeedback(body.key, verdict, typeof body.note === "string" ? body.note : undefined);
+        const result = recordAnswer(body.key, question, body.answer, typeof body.note === "string" ? body.note : undefined);
         json(res, result.ok ? 200 : 400, result);
         return;
       }
@@ -269,7 +273,10 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
         return;
       }
       if (req.method === "GET" && url.pathname === "/api/feedback/stats") {
-        json(res, 200, feedbackStats());
+        json(res, 200, {
+          rules: feedbackStats(),
+          recurrence: await computeRecurrence(await discoverSessions(root)),
+        });
         return;
       }
       if (req.method === "GET" && url.pathname === "/api/rules") {

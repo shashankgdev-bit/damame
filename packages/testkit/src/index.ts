@@ -337,6 +337,8 @@ export class TranscriptBuilder {
   }
 }
 
-export function fixture(sessionId?: string): TranscriptBuilder {
-  return new TranscriptBuilder(sessionId);
+export function fixture(sessionId?: string, startIso?: string): TranscriptBuilder {
+  return sessionId !== undefined && startIso !== undefined
+    ? new TranscriptBuilder(sessionId, startIso)
+    : new TranscriptBuilder(sessionId);
 }

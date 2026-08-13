@@ -22,7 +22,7 @@ export interface SkillTally {
 }
 
 export interface SessionSummary {
-  schema: 2;
+  schema: 3;
   session_id: string;
   path: string;
   title?: string;
@@ -34,6 +34,8 @@ export interface SessionSummary {
   tool_calls: number;
   skills: Record<SkillId, SkillTally>;
   techniques: Record<string, number>;
+  /** Findings per rule id in this session — feeds recurrence tracking. */
+  rule_counts: Record<string, number>;
   /** Distinct tool names + skill names available that session (for coverage). */
   tools_used: string[];
   skills_available: number;
@@ -59,6 +61,11 @@ export function summarizeSession(session: Session, metrics: MetricsBundle, findi
     }
   }
 
+  const ruleCounts: Record<string, number> = {};
+  for (const finding of findings) {
+    ruleCounts[finding.rule.id] = (ruleCounts[finding.rule.id] ?? 0) + 1;
+  }
+
   // misses: findings mapped to skills (infra findings never map — fairness)
   for (const finding of findings) {
     const skillId = skillForRule(finding.rule.id);
@@ -71,7 +78,7 @@ export function summarizeSession(session: Session, metrics: MetricsBundle, findi
   }
 
   return {
-    schema: 2,
+    schema: 3,
     session_id: session.id,
     path: (session.metadata?.transcript_path as string) ?? "",
     ...(session.title ? { title: session.title } : {}),
@@ -83,6 +90,7 @@ export function summarizeSession(session: Session, metrics: MetricsBundle, findi
     tool_calls: metrics.totals.tool_call_count,
     skills,
     techniques,
+    rule_counts: ruleCounts,
     tools_used: session.environment?.core_tools_observed ?? [],
     skills_available: session.environment?.skills.length ?? 0,
     skills_invoked: session.environment?.invoked_skills.length ?? 0,

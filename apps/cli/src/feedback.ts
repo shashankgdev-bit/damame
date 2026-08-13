@@ -4,18 +4,29 @@ import { join } from "node:path";
 import type { Finding, Session } from "@damame/ir";
 
 /**
- * The local feedback loop — the seed of per-rule precision tracking.
+ * The local feedback loop — per-rule precision measured, not asserted.
  *
- * `analyze` appends every emitted finding to a local index (keyed by
- * dedupe_key, so re-analyzing the same session is idempotent). The user can
- * then record a verdict per finding. Verdicts join findings on
- * (dedupe_key, rule id, rule major.minor) — a threshold change bumps the rule
- * version and starts a fresh precision series, exactly as the validation plan
- * specifies. Everything stays on disk under ~/.damame; nothing is uploaded.
+ * "Helpful/wrong" turned out to bundle questions of very different judgment
+ * difficulty, so feedback is decomposed into two narrow, more objective
+ * questions per finding:
+ *   - accurate:   did the cited events happen as described? (checkable
+ *                 against the evidence links — anyone can judge this)
+ *   - applicable: was the suggested alternative actually usable there?
+ * The third dimension — "did it change anything" — is deliberately NOT an
+ * opinion question: recurrence tracking measures it from later sessions.
+ *
+ * Answers join findings on (dedupe_key, rule id, rule major.minor); a
+ * threshold change starts a fresh precision series. Everything stays on disk
+ * under ~/.damame; nothing is uploaded.
  */
 
-export type Verdict = "helpful" | "wrong" | "not-actionable";
-export const VERDICTS: Verdict[] = ["helpful", "wrong", "not-actionable"];
+export type Question = "accurate" | "applicable";
+export const QUESTIONS: Question[] = ["accurate", "applicable"];
+
+export const QUESTION_COPY: Record<Question, { ask: string; yes: string; no: string }> = {
+  accurate: { ask: "Accurate?", yes: "events happened as described", no: "the description is factually wrong" },
+  applicable: { ask: "Applicable?", yes: "the suggestion was usable here", no: "the suggestion didn't fit this situation" },
+};
 
 interface IndexEntry {
   dedupe_key: string;
@@ -26,11 +37,22 @@ interface IndexEntry {
   first_seen: string;
 }
 
-interface FeedbackEntry {
+interface AnswerEntry {
   dedupe_key: string;
   rule_id: string;
   rule_series: string; // major.minor — precision series key
-  verdict: Verdict;
+  question: Question;
+  answer: boolean;
+  at: string;
+  note?: string;
+}
+
+/** Legacy v1 entries (helpful | wrong | not-actionable). */
+interface LegacyEntry {
+  dedupe_key: string;
+  rule_id: string;
+  rule_series: string;
+  verdict: "helpful" | "wrong" | "not-actionable";
   at: string;
   note?: string;
 }
@@ -56,9 +78,28 @@ function readJsonl<T>(path: string): T[] {
     });
 }
 
-/** major.minor of a semver string — the precision-series key. */
 function series(version: string): string {
   return version.split(".").slice(0, 2).join(".");
+}
+
+/** All answers, with legacy verdicts mapped onto the question model. */
+function readAnswers(): AnswerEntry[] {
+  const out: AnswerEntry[] = [];
+  for (const raw of readJsonl<AnswerEntry | LegacyEntry>(feedbackPath())) {
+    if ("question" in raw) {
+      out.push(raw);
+      continue;
+    }
+    const base = { dedupe_key: raw.dedupe_key, rule_id: raw.rule_id, rule_series: raw.rule_series, at: raw.at, ...(raw.note ? { note: raw.note } : {}) };
+    if (raw.verdict === "helpful") {
+      out.push({ ...base, question: "accurate", answer: true }, { ...base, question: "applicable", answer: true });
+    } else if (raw.verdict === "wrong") {
+      out.push({ ...base, question: "accurate", answer: false });
+    } else {
+      out.push({ ...base, question: "applicable", answer: false });
+    }
+  }
+  return out;
 }
 
 /** Record emitted findings so later feedback can resolve keys. Idempotent. */
@@ -84,80 +125,98 @@ export function indexFindings(session: Session, findings: Finding[], now = new D
   return fresh.length;
 }
 
-export function recordFeedback(
+export function readIndex(): Array<{ dedupe_key: string; rule_id: string; rule_version: string; session_id: string; title: string; first_seen: string }> {
+  return readJsonl<IndexEntry>(indexPath());
+}
+
+export function recordAnswer(
   keyPrefix: string,
-  verdict: Verdict,
+  question: Question,
+  answer: boolean,
   note?: string,
   now = new Date(),
-): { ok: true; entry: FeedbackEntry; title: string } | { ok: false; error: string } {
+): { ok: true; rule_id: string; title: string } | { ok: false; error: string } {
   const index = readJsonl<IndexEntry>(indexPath());
   const matches = index.filter((e) => e.dedupe_key.startsWith(keyPrefix));
   if (matches.length === 0) {
-    return { ok: false, error: `no indexed finding matches "${keyPrefix}" — run \`damame analyze\` first; keys are printed in each finding's evidence line` };
+    return { ok: false, error: `no indexed finding matches "${keyPrefix}" — analyze the session first; keys appear in each finding's evidence line` };
   }
   const distinct = new Set(matches.map((m) => m.dedupe_key));
   if (distinct.size > 1) {
     return { ok: false, error: `"${keyPrefix}" is ambiguous (${distinct.size} findings) — use more characters of the key` };
   }
   const target = matches[0]!;
-  const entry: FeedbackEntry = {
+  const entry: AnswerEntry = {
     dedupe_key: target.dedupe_key,
     rule_id: target.rule_id,
     rule_series: series(target.rule_version),
-    verdict,
+    question,
+    answer,
     at: now.toISOString(),
     ...(note ? { note } : {}),
   };
   mkdirSync(dataDir(), { recursive: true });
   appendFileSync(feedbackPath(), JSON.stringify(entry) + "\n");
-  return { ok: true, entry, title: target.title };
+  return { ok: true, rule_id: target.rule_id, title: target.title };
 }
 
-/** Latest verdict per finding key (users change their minds; last wins). */
-export function lastVerdicts(): Map<string, Verdict> {
-  const map = new Map<string, Verdict>();
-  for (const entry of readJsonl<FeedbackEntry>(feedbackPath())) map.set(entry.dedupe_key, entry.verdict);
+export interface AnswerState {
+  accurate: boolean | null;
+  applicable: boolean | null;
+}
+
+/** Latest answer per finding per question (users change their minds; last wins). */
+export function lastAnswers(): Map<string, AnswerState> {
+  const map = new Map<string, AnswerState>();
+  for (const entry of readAnswers()) {
+    const state = map.get(entry.dedupe_key) ?? { accurate: null, applicable: null };
+    state[entry.question] = entry.answer;
+    map.set(entry.dedupe_key, state);
+  }
   return map;
 }
 
 export interface RuleStats {
   rule_id: string;
   rule_series: string;
-  helpful: number;
-  wrong: number;
-  not_actionable: number;
-  /** helpful / (helpful + wrong); not-actionable is excluded from precision. */
-  precision: number | null;
   emitted: number;
+  accurate_yes: number;
+  accurate_no: number;
+  applicable_yes: number;
+  applicable_no: number;
+  /** Factual precision — the core trust metric. */
+  factual_precision: number | null;
+  applicability_rate: number | null;
 }
 
 export function feedbackStats(): RuleStats[] {
   const index = readJsonl<IndexEntry>(indexPath());
-  const feedback = readJsonl<FeedbackEntry>(feedbackPath());
+  const seriesByKey = new Map(index.map((e) => [e.dedupe_key, `${e.rule_id}@${series(e.rule_version)}`]));
 
-  // Last verdict per finding wins (users change their minds).
-  const lastVerdict = new Map<string, FeedbackEntry>();
-  for (const entry of feedback) lastVerdict.set(entry.dedupe_key, entry);
+  // last answer per (finding, question) wins
+  const last = new Map<string, AnswerEntry>();
+  for (const entry of readAnswers()) last.set(`${entry.dedupe_key}|${entry.question}`, entry);
 
   const byRule = new Map<string, RuleStats>();
   for (const e of index) {
     const key = `${e.rule_id}@${series(e.rule_version)}`;
     const stats =
       byRule.get(key) ??
-      ({ rule_id: e.rule_id, rule_series: series(e.rule_version), helpful: 0, wrong: 0, not_actionable: 0, precision: null, emitted: 0 } satisfies RuleStats);
+      ({ rule_id: e.rule_id, rule_series: series(e.rule_version), emitted: 0, accurate_yes: 0, accurate_no: 0, applicable_yes: 0, applicable_no: 0, factual_precision: null, applicability_rate: null } satisfies RuleStats);
     stats.emitted += 1;
     byRule.set(key, stats);
   }
-  for (const entry of lastVerdict.values()) {
-    const stats = byRule.get(`${entry.rule_id}@${entry.rule_series}`);
+  for (const entry of last.values()) {
+    const stats = byRule.get(seriesByKey.get(entry.dedupe_key) ?? `${entry.rule_id}@${entry.rule_series}`);
     if (!stats) continue;
-    if (entry.verdict === "helpful") stats.helpful += 1;
-    else if (entry.verdict === "wrong") stats.wrong += 1;
-    else stats.not_actionable += 1;
+    if (entry.question === "accurate") entry.answer ? (stats.accurate_yes += 1) : (stats.accurate_no += 1);
+    else entry.answer ? (stats.applicable_yes += 1) : (stats.applicable_no += 1);
   }
   for (const stats of byRule.values()) {
-    const judged = stats.helpful + stats.wrong;
-    stats.precision = judged > 0 ? stats.helpful / judged : null;
+    const fa = stats.accurate_yes + stats.accurate_no;
+    stats.factual_precision = fa > 0 ? stats.accurate_yes / fa : null;
+    const ap = stats.applicable_yes + stats.applicable_no;
+    stats.applicability_rate = ap > 0 ? stats.applicable_yes / ap : null;
   }
   return [...byRule.values()].sort((a, b) => a.rule_id.localeCompare(b.rule_id));
 }

@@ -30,7 +30,7 @@ export async function summarizeWithCache(transcriptPath: string): Promise<Sessio
   if (existsSync(file)) {
     try {
       const cached = JSON.parse(readFileSync(file, "utf8")) as CacheEntry;
-      if (cached.mtime_ms === stat.mtimeMs && cached.size === stat.size && cached.summary?.schema === 2) {
+      if (cached.mtime_ms === stat.mtimeMs && cached.size === stat.size && cached.summary?.schema === 3) {
         return cached.summary;
       }
     } catch {
