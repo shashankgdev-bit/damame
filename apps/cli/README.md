@@ -29,4 +29,4 @@ For scripting: `damame list`, `damame analyze --latest [--json|--html out.html]`
 - **Honest baselines.** "You had X and didn't use it" is checked against what
   was available *in that session's own transcript*, not your current config.
 
-Full source, rule documentation, and methodology: https://github.com/shashankgdev/damame
+Full source, rule documentation, and methodology: https://github.com/shashankgdev-bit/damame
