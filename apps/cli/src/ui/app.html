@@ -260,7 +260,8 @@ function skillCard(s) {
 function renderSidebar() {
   $("sessions").innerHTML = state.sessions.map((s) => `
     <button class="sess ${s.id === state.currentId && state.view === "session" ? "active" : ""}" data-id="${esc(s.id)}">
-      <div class="t">${esc(s.title || s.project.split("/").pop())}</div>
+      <div class="m" style="margin:0 0 2px;color:var(--pod-deep)">${esc((s.project || "").split("/").pop() || "?")}</div>
+      <div class="t">${esc(s.title || s.id.slice(0, 8))}</div>
       <div class="m">${esc(fmtDate(s.modified_at))} · ${esc(fmtSize(s.size_bytes))} · ${esc(s.id.slice(0, 8))}</div>
     </button>`).join("");
   for (const el of document.querySelectorAll(".sess")) el.onclick = () => selectSession(el.dataset.id);
