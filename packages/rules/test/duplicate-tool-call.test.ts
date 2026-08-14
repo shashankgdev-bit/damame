@@ -20,22 +20,22 @@ describe("duplicate-tool-call", () => {
   it("fires on 3 identical Reads with identical output and no state change between", async () => {
     const path = fixture()
       .human("what does api.ts do")
-      .readOk("/home/user/project/api.ts", 800)
+      .readOk("/home/user/project/api.ts", 1500)
       .assistantText("looking at it")
-      .readOk("/home/user/project/api.ts", 800)
-      .readOk("/home/user/project/api.ts", 800)
+      .readOk("/home/user/project/api.ts", 1500)
+      .readOk("/home/user/project/api.ts", 1500)
       .writeTemp();
     const findings = await run(path);
     expect(findings).toHaveLength(1);
     const f = findings[0]!;
     expect(f.rule.id).toBe("duplicate-tool-call");
     expect(f.confidence.source).toBe("deterministic");
-    expect(f.severity).toBe("minor"); // 1600 repeated bytes < min_repeated_bytes
+    expect(f.severity).toBe("minor"); // 3000 repeated bytes < min_repeated_bytes
     expect(f.evidence.events).toHaveLength(3);
     expect(f.evidence.metrics?.occurrences).toBe(3);
-    expect(f.evidence.metrics?.repeated_output_bytes).toBe(1600);
+    expect(f.evidence.metrics?.repeated_output_bytes).toBe(3000);
     expect(f.savings?.basis).toBe("modeled");
-    expect(f.savings?.tokens?.value).toBe(400); // 1600 bytes / 4
+    expect(f.savings?.tokens?.value).toBe(750); // 3000 bytes / 4
     expect(f.savings?.method).toContain("4 bytes/token");
     expect(f.recommendation.resource.kind).toBe("prompting_pattern");
     expect(f.recommendation.resource.ref).toBe("reference-earlier-output");
@@ -85,7 +85,7 @@ describe("duplicate-tool-call", () => {
   it("does NOT fire when outputs differ across occurrences", async () => {
     const path = fixture()
       .human("watch the file")
-      .readOk("/home/user/project/api.ts", 800)
+      .readOk("/home/user/project/api.ts", 1500)
       .readOk("/home/user/project/api.ts", 900)
       .readOk("/home/user/project/api.ts", 1000)
       .writeTemp();
@@ -106,9 +106,9 @@ describe("duplicate-tool-call", () => {
   it("is idempotent: same session → same dedupe keys", async () => {
     const path = fixture()
       .human("look")
-      .readOk("/x.ts", 800)
-      .readOk("/x.ts", 800)
-      .readOk("/x.ts", 800)
+      .readOk("/x.ts", 1500)
+      .readOk("/x.ts", 1500)
+      .readOk("/x.ts", 1500)
       .writeTemp();
     const [a, b] = [await run(path), await run(path)];
     expect(a.length).toBeGreaterThan(0);

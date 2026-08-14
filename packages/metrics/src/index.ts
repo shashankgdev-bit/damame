@@ -231,14 +231,21 @@ function findDuplicates(events: Event[], callById: Map<string, ToolCallEvent>): 
     if (event.kind === "tool_result" && event.call_event_id) {
       resultByCallEventId.set(event.call_event_id, event);
       const call = callById.get(event.call_event_id);
-      if (call && STATE_CHANGING_TOOLS.has(call.name) && !event.is_error) stateChangeOrders.push(order);
+      // ATTEMPTS count, not just successes: after a failed Edit the agent
+      // cannot know the file is unchanged without re-reading, so a repeat
+      // across any state-changing attempt is not pure waste.
+      if (call && STATE_CHANGING_TOOLS.has(call.name)) stateChangeOrders.push(order);
     }
   });
 
   events.forEach((event, order) => {
     if (event.kind !== "tool_call" || event.on_abandoned_branch) return;
+    const result = resultByCallEventId.get(event.event_id);
+    // Repeating a FAILING call is an error-loop pattern, not redundant work —
+    // the error-run analysis owns it. Only successful repeats count here.
+    if (result?.is_error) return;
     const list = byHash.get(event.input_hash) ?? [];
-    list.push({ call: event, result: resultByCallEventId.get(event.event_id), order });
+    list.push({ call: event, result, order });
     byHash.set(event.input_hash, list);
   });
 

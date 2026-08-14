@@ -19,12 +19,16 @@ const SKIPPED_TOOLS = new Set(["TodoWrite", "AskUserQuestion"]);
  */
 export const duplicateToolCall: Detector = {
   id: "duplicate-tool-call",
-  version: "0.1.0",
+  version: "0.2.0", // 0.2.0: errored repeats excluded (error-loop rules own those)
   category: "redundant-work",
   summary: "Identical tool calls repeated with byte-identical results and no state change between",
   defaults: {
     min_occurrences: 3,
     min_repeated_bytes: 20_000,
+    /** The occurrence branch also needs non-trivial repeated bytes — three
+     * identical tiny reads (e.g. diagnostic re-reads during an error loop)
+     * are not worth a finding. */
+    occurrence_min_repeated_bytes: 2_000,
   },
   detect(ctx): Finding[] {
     const minOccurrences = ctx.config.min_occurrences as number;
@@ -47,7 +51,9 @@ export const duplicateToolCall: Detector = {
       if (!group.identical_results) continue;
       if (group.state_change_between) continue;
       const occurrences = group.call_event_ids.length;
-      const meetsCount = occurrences >= minOccurrences;
+      const meetsCount =
+        occurrences >= minOccurrences &&
+        group.repeated_output_bytes >= (ctx.config.occurrence_min_repeated_bytes as number);
       const meetsBytes = group.repeated_output_bytes >= minRepeatedBytes;
       if (!meetsCount && !meetsBytes) continue;
 

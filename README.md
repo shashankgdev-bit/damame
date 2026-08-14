@@ -73,6 +73,27 @@ had gone to the Explore agent — it was available."
 `damame profile` prints the same from the terminal. It measures **practice,
 not ability** — and it compares you only to your own past.
 
+### Measured accuracy — the ground-truth corpus
+
+Every detector is continuously evaluated against a **synthetic ground-truth
+corpus**: generated sessions with inefficiencies *planted by construction*
+(plus clean look-alike sessions where any finding is automatically a false
+positive). Because detectors are deterministic, the CI gate demands perfection
+— one missed plant or one false positive fails the build.
+
+Current result over 280 generated sessions (20 per archetype, seeded):
+
+| rule | recall | precision |
+|---|---|---|
+| all 10 rules | **1.00** | **1.00** |
+
+Run it yourself: `npx tsx scripts/corpus-eval.ts 20 7`. Building this gate
+immediately caught two real detector-quality bugs (double-reporting of failed
+repeats, noise on tiny diagnostic re-reads) before any user saw them — that
+is what it exists for. Synthetic recall proves detectors catch what they
+claim; the feedback loop and recurrence tracking below cover whether findings
+matter in real sessions.
+
 ### The feedback loop
 
 Every finding prints a short key in its evidence line. Tell damame when a

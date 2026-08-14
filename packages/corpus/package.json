@@ -1,0 +1,16 @@
+{
+  "name": "@damame/corpus",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@damame/adapter-claude-code": "*",
+    "@damame/ir": "*",
+    "@damame/metrics": "*",
+    "@damame/rules": "*",
+    "@damame/testkit": "*"
+  }
+}
