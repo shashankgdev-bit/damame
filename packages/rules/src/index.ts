@@ -12,6 +12,11 @@ import { abandonedWork } from "./detectors/abandoned-work.js";
 import { missedDelegation } from "./detectors/missed-delegation.js";
 import { oversizedContextReads } from "./detectors/oversized-context-reads.js";
 import { retryStorm } from "./detectors/retry-storm.js";
+import { pasteRelay } from "./detectors/paste-relay.js";
+import { repeatedDelegation } from "./detectors/repeated-delegation.js";
+import { eternalSession } from "./detectors/eternal-session.js";
+import { idleGapNotifications } from "./detectors/idle-gap-notifications.js";
+import { postEditRitual } from "./detectors/post-edit-ritual.js";
 
 export type { Detector, DetectorContext, RuleConfig } from "./types.js";
 export * from "./helpers.js";
@@ -32,6 +37,11 @@ export const DETECTORS: Detector[] = [
   missedDelegation,
   oversizedContextReads,
   retryStorm,
+  pasteRelay,
+  repeatedDelegation,
+  eternalSession,
+  idleGapNotifications,
+  postEditRitual,
 ];
 
 export const TOMBSTONED_RULE_IDS: string[] = [];

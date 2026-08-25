@@ -12,15 +12,48 @@ rules; every finding cites the exact transcript events it keys on; every savings
 states whether it was **measured** (tokens actually spent on identified waste) or
 **modeled** (a stated-assumption estimate).
 
+## How damame validates itself
+
+The hardest problem in a tool that judges AI sessions is not parsing — it's **trust**: who
+validates the validator? Damame's answer is that every layer is graded by a *different* mechanism,
+and no layer ever grades its own homework:
+
+- **Detectors are graded by planted crimes.** A synthetic ground-truth corpus generates sessions
+  with inefficiencies *planted by construction*, plus innocent look-alikes engineered to sit just
+  under thresholds. CI demands perfect recall on plants and zero false positives on innocents —
+  one miss fails the build. The gate has caught real detector bugs before any user saw them.
+- **The LLM judge is graded by counterfeits.** When an LLM audits findings, every batch silently
+  includes *honeypots* — findings corrupted by construction (evidence swapped, counts inflated)
+  that the judge must refute. Its catch-rate is a live, label-free accuracy score; verdicts also
+  pass a mechanical quote gate (citations that don't literally appear are discarded), majority
+  voting with abstention, and calibration against human answers.
+- **The AI-written brief is graded by citations.** The session story generator never sees the raw
+  transcript — only a measured digest — and every claim must cite digest items. A dumb string
+  check deletes uncited claims before render.
+- **The score is graded by ordering.** Sessions with planted waste must score strictly below clean
+  ones; innocents and provider-caused problems must stay high — enforced in CI. Formulas are
+  published in [docs/score.md](docs/score.md) and versioned; any change resets comparability.
+- **Everything is graded by you, twice.** Two narrow feedback questions per finding (accurate? /
+  applicable?) build public per-rule precision — and *behavioral recurrence* measures whether
+  flagged patterns actually shrink in your later sessions, which no opinion can fake. Rules have
+  been changed by this loop (resume-orphaned branches were being blamed as rewinds; a user's
+  transcript proved otherwise; the rule was fixed and its record reset).
+
+Full methodology: [docs/judge.md](docs/judge.md) · [docs/score.md](docs/score.md) ·
+[docs/playbooks.md](docs/playbooks.md)
+
 ## Principles
 
 - **Local-first, zero telemetry.** Your transcripts never leave your machine.
 - **Deterministic core.** Same session in, same findings out. v1 contains no LLM
   judgment at all; when a judgment layer arrives it will be opt-in, clearly labeled,
   and shipped together with its validation harness.
-- **Findings, not scores.** There is no composite grade, no leaderboard, and no plan
-  for either until per-rule precision is measured and published. A finding you can
-  verify beats a number you can't.
+- **Findings first; scores only as validated lenses.** Early damame shipped no
+  composite grade at all — a number you can't verify is worse than no number. The
+  session score exists now *because* it could finally be validated: published formulas,
+  versioned like rules, corpus-gated (planted waste must lower it, innocence must not),
+  and every point traceable to a finding you can check. The findings remain the truth;
+  the score only summarizes them.
 - **Honest baselines.** "You had X available and didn't use it" is checked against the
   availability recorded *in that session's own transcript*, not your current config —
   because your installed tools change over time.
@@ -55,9 +88,32 @@ npx tsx apps/cli/src/main.ts analyze <id-prefix> --html report.html --json
 npx tsx apps/cli/src/main.ts rules                # the detector registry
 ```
 
+### The session brief — what was this chat, in plain language
+
+Opening a session auto-generates a short **brief**: what the session was
+about, how the human and Claude worked together, and how the work was done
+mechanically — written for someone who has never heard of MCP. The generator
+(your local `claude` login; cached after first open) never sees the raw
+transcript: it receives a **structured digest** of sampled prompts and
+measured stats, and **every claim must cite digest items** — citations are
+verified mechanically and uncited claims are dropped. Hover any claim's ◦
+marker to see exactly what it rests on.
+
+### Playbooks — recommendations that are retrieved, never improvised
+
+Curated knowledge about kinds of sessions lives in
+[`packages/playbooks/`](packages/playbooks/) — known mistakes and fixes,
+grounded in real transcripts, each backed by a deterministic **signature
+detector** with its own corpus gate. A session sees a playbook entry only when
+its signature *actually fired there* (matching works by brief tags or by a
+two-signature quorum — the quorum path needs no LLM at all). Entries without a
+detector yet are reference-only, never auto-recommended. How the library
+grows — including the community pattern-card pipeline — is documented in
+[docs/playbooks.md](docs/playbooks.md).
+
 ### Your AI skills profile
 
-The dashboard opens on **your skills**: seven AI-development competencies —
+The **your skills** view (sidebar → more) tracks seven AI-development competencies —
 Prompt Engineering, Planning & Decomposition, Agent Orchestration, Context
 Engineering, Tooling Fluency, Workflow Automation, Recovery & Verification —
 each assessed **only against real opportunities** found in your sessions.
@@ -72,6 +128,17 @@ had gone to the Explore agent — it was available."
 
 `damame profile` prints the same from the terminal. It measures **practice,
 not ability** — and it compares you only to your own past.
+
+### The session score — validated, not vibes
+
+Each session opens with a score: **overall 0–100 plus five parameters** (cost efficiency,
+context hygiene, redundant work, missed capabilities, prompting & recovery), with a
+"capabilities exercised n/7" strip that is recognition only — never averaged in. Every formula
+is published in [docs/score.md](docs/score.md); clicking the score shows every penalty and the
+finding behind it. Validity is enforced in CI: sessions with planted waste must score below
+clean ones, innocent look-alikes must stay high, and provider-side problems can never lower
+your score. Formula changes bump `score@N` and reset comparability — scores are versioned like
+rules.
 
 ### Measured accuracy — the ground-truth corpus
 

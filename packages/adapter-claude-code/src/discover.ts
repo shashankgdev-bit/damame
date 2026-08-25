@@ -71,23 +71,48 @@ export async function parseSessionWithChildren(transcriptPath: string): Promise<
     if (existsSync(workflowsDir)) {
       for (const entry of await readdir(workflowsDir, { withFileTypes: true })) {
         if (entry.isDirectory()) {
-          await ingestSubagentDir(join(workflowsDir, entry.name), session, children);
+          // The directory name IS the workflow runId — the only place the
+          // link between a Workflow spawn (child_ref = runId) and its step
+          // agents is recorded on disk.
+          await ingestSubagentDir(join(workflowsDir, entry.name), session, children, entry.name);
         }
       }
     }
   }
 
-  // Roll deduped child usage into the matching subagent_run events.
+  // Roll deduped child usage into the matching subagent_run events. Direct
+  // Agent spawns match one child by agent_id; Workflow spawns carry the runId
+  // as child_ref and own every step agent ingested under that run directory.
   const childByRef = new Map(children.map((c) => [c.metadata?.agent_id as string | undefined, c]));
+  const childrenByRunId = new Map<string, Session[]>();
+  for (const c of children) {
+    const runId = c.metadata?.workflow_run_id as string | undefined;
+    if (!runId) continue;
+    const group = childrenByRunId.get(runId) ?? [];
+    group.push(c);
+    childrenByRunId.set(runId, group);
+  }
   for (const event of session.events) {
     if (event.kind !== "subagent_run" || !event.child_ref) continue;
     const child = childByRef.get(event.child_ref);
-    if (child?.usage_totals) event.usage = child.usage_totals;
+    if (child?.usage_totals) {
+      event.usage = child.usage_totals;
+      continue;
+    }
+    const group = childrenByRunId.get(event.child_ref);
+    if (group?.length) {
+      event.usage = group.reduce((sum, c) => addUsage(sum, c.usage_totals), emptyAggregatedUsage());
+    }
   }
   return { session, children };
 }
 
-async function ingestSubagentDir(dir: string, parent: Session, children: Session[]): Promise<void> {
+async function ingestSubagentDir(
+  dir: string,
+  parent: Session,
+  children: Session[],
+  workflowRunId?: string,
+): Promise<void> {
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -124,7 +149,11 @@ async function ingestSubagentDir(dir: string, parent: Session, children: Session
           ...(spawnDepth !== undefined ? { spawn_depth: spawnDepth } : {}),
         },
       });
-      child.metadata = { ...child.metadata, agent_id: agentId };
+      child.metadata = {
+        ...child.metadata,
+        agent_id: agentId,
+        ...(workflowRunId ? { workflow_run_id: workflowRunId } : {}),
+      };
       children.push(child);
     } catch {
       // A corrupt child transcript must not fail the main analysis.

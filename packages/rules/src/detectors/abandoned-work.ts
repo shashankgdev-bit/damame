@@ -19,7 +19,7 @@ import { eventRefs, finding, formatTokens } from "../helpers.js";
  */
 export const abandonedWork: Detector = {
   id: "abandoned-work",
-  version: "0.1.0",
+  version: "0.2.0", // 0.2.0: resume-orphaned branches (reopen/crash tails) split from rewinds — info severity, no user action. Real-user feedback fix.
   category: "prompting",
   summary: "Large token spend on a branch discarded when the session was rewound",
   defaults: {
@@ -33,6 +33,42 @@ export const abandonedWork: Detector = {
     for (const branch of ctx.metrics.abandoned_branches) {
       if (!branch.root_event_id) continue;
       if (branch.usage_tokens < min) continue;
+      // A branch orphaned by a session reopen/crash is not a user decision:
+      // report it for cost visibility only, in the not-your-inefficiency
+      // bucket, with nothing to fix.
+      if (branch.fork_kind !== "rewind") {
+        out.push(
+          finding({
+            rule: { id: this.id, version: this.version },
+            category: "infra",
+            severity: "info",
+            confidence: { source: "deterministic" },
+            title: `${formatTokens(branch.usage_tokens)} tokens on a branch orphaned by a session resume`,
+            description:
+              `Work on this path (${branch.event_count} events, ${formatTokens(branch.usage_tokens)} tokens ` +
+              `of recorded assistant usage) ended up off the live conversation after the session was closed ` +
+              `and reopened (or recovered from a failure) — the resumed thread continued from an earlier ` +
+              `point. The work itself (files written, commands run) still happened; only its conversation ` +
+              `lines are off the final path. This is a harness/lifecycle artifact, not a user action, and ` +
+              `there is nothing to fix.`,
+            evidence: {
+              events: eventRefs(ctx.session, [branch.root_event_id]),
+              metrics: {
+                abandoned_event_count: branch.event_count,
+                abandoned_usage_tokens: branch.usage_tokens,
+                fork_kind: branch.fork_kind ?? "resume",
+              },
+            },
+            recommendation: {
+              resource: { kind: "config", ref: "none-required" },
+              rationale:
+                "Orphaned resume tails originate in session lifecycle (reopen after close, crash recovery), " +
+                "not in how the session was driven; reported for cost visibility only.",
+            },
+          }),
+        );
+        continue;
+      }
       out.push(
         finding({
           rule: { id: this.id, version: this.version },
@@ -42,14 +78,15 @@ export const abandonedWork: Detector = {
           title: `${formatTokens(branch.usage_tokens)} tokens spent on a branch abandoned by a rewind`,
           description:
             `Work on this path (${branch.event_count} events, ${formatTokens(branch.usage_tokens)} tokens ` +
-            `of recorded assistant usage) was discarded when the session was rewound to an earlier point. ` +
-            `Rewinds are often deliberate exploration; if the direction change was foreseeable, an up-front ` +
-            `scope statement or plan mode would have surfaced it before the spend.`,
+            `of recorded assistant usage) was discarded when the session was rewound to an earlier point ` +
+            `within the same sitting. Rewinds are often deliberate exploration; if the direction change was ` +
+            `foreseeable, an up-front scope statement or plan mode would have surfaced it before the spend.`,
           evidence: {
             events: eventRefs(ctx.session, [branch.root_event_id]),
             metrics: {
               abandoned_event_count: branch.event_count,
               abandoned_usage_tokens: branch.usage_tokens,
+              fork_kind: "rewind",
             },
           },
           savings: {

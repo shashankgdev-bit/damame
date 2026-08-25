@@ -46,6 +46,11 @@ const ALL_RULES = [
   "missed-delegation",
   "oversized-context-reads",
   "retry-storm",
+  "paste-relay",
+  "repeated-delegation",
+  "eternal-session",
+  "idle-gap-notifications",
+  "post-edit-ritual",
 ];
 
 /** forbidden = everything except the expected rules and rules the noise may legitimately brush. */
@@ -306,6 +311,252 @@ export const ARCHETYPES: Record<string, (seed: number) => GeneratedSession> = {
     return {
       jsonl: b.build(),
       manifest: { archetype: "retry-storm", seed, expected: ["retry-storm"], forbidden: forbid(["retry-storm"]) },
+    };
+  },
+
+  "paste-relay"(seed) {
+    const r = rng(seed);
+    const b = base(seed, "pasterly");
+    b.human("I'll paste each reviewer verdict block as I collect them");
+    b.assistantText("Ready — paste them in and I'll log each one.");
+    for (let i = 0; i < int(r, 8, 12); i++) {
+      b.human(`Difficulty: ${i + 1} | Reviewer verdict for pasted block\n` + "data ".repeat(int(r, 500, 700)));
+      b.assistantText("Recorded that verdict block.");
+    }
+    b.assistantText("All verdict blocks recorded and summarized.");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: { archetype: "paste-relay", seed, expected: ["paste-relay"], forbidden: forbid(["paste-relay"]) },
+    };
+  },
+
+  "paste-relay-under"(seed) {
+    // Five structurally-similar large pastes — one short of min_occurrences — must NOT fire.
+    const r = rng(seed);
+    const b = base(seed, "pasteund");
+    b.human("Pasting the verdicts I have so far");
+    b.assistantText("Go ahead.");
+    for (let i = 0; i < 5; i++) {
+      b.human(`Difficulty: ${i + 1} | Reviewer verdict for pasted block\n` + "data ".repeat(int(r, 500, 700)));
+      b.assistantText("Recorded.");
+    }
+    b.lastPrompt();
+    return { jsonl: b.build(), manifest: { archetype: "paste-relay-under", seed, expected: [], forbidden: ALL_RULES } };
+  },
+
+  "repeated-delegation"(seed) {
+    const r = rng(seed);
+    const b = base(seed, "redelegn");
+    b.agentListing(["general-purpose"]);
+    b.human("run the cold-opus probe over every open case");
+    const n = int(r, 6, 10);
+    for (let i = 0; i < n; i++) {
+      b.tool(
+        "Task",
+        {
+          subagent_type: "general-purpose",
+          description: `Cold-Opus probe ${i + 1}`,
+          prompt: `Run the standard probe procedure against case ${i + 1} and report the outcome.`,
+        },
+        { content: `probe ${i + 1} complete`, toolUseResult: { agentId: `agent-probe-${i + 1}`, status: "completed" } },
+      );
+    }
+    b.assistantText("All probes complete.");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: { archetype: "repeated-delegation", seed, expected: ["repeated-delegation"], forbidden: forbid(["repeated-delegation"]) },
+    };
+  },
+
+  "few-repeated-spawns"(seed) {
+    // The same delegation improvised only 4 times — one under threshold → must NOT fire.
+    const r = rng(seed);
+    const b = base(seed, "fewspawn");
+    b.agentListing(["general-purpose"]);
+    b.human("probe the first few cases");
+    for (let i = 0; i < 4; i++) {
+      b.tool(
+        "Task",
+        {
+          subagent_type: "general-purpose",
+          description: `Cold-Opus probe ${i + 1}`,
+          prompt: `Run the standard probe procedure against case ${i + 1} and report the outcome.`,
+        },
+        { content: `probe ${i + 1} complete`, toolUseResult: { agentId: `agent-probe-${i + 1}`, status: "completed" } },
+      );
+    }
+    b.assistantText("Done with the first batch.");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return { jsonl: b.build(), manifest: { archetype: "few-repeated-spawns", seed, expected: [], forbidden: ALL_RULES } };
+  },
+
+  "eternal-session"(seed) {
+    // One transcript resumed for weeks: many chain roots (parentUuid: null
+    // lines), repeated compactions, a multi-week span, and a ledger file that
+    // already carries the memory. compaction-burn legitimately overlaps here
+    // (3+ compactions), hence the forbid() exception.
+    const r = rng(seed);
+    const b = base(seed, "eternalz");
+    const startMs = Date.parse(`2026-07-${String(1 + (seed % 27)).padStart(2, "0")}T09:00:00.000Z`);
+    b.human("continue the ongoing project work");
+    b.readOk("/proj/LEDGER.md", int(r, 400, 1_200));
+    b.assistantText("Resuming from the ledger.");
+    const resumes = int(r, 18, 30);
+    for (let i = 0; i < resumes; i++) {
+      b.push({
+        uuid: `resume-root-${i + 1}`,
+        parentUuid: null,
+        sessionId: b.sessionId,
+        timestamp: new Date(startMs + 60_000 + i * 1_000).toISOString(),
+        cwd: "/home/user/project",
+        gitBranch: "main",
+        version: "2.1.200",
+        userType: "external",
+        entrypoint: "cli",
+        isSidechain: false,
+        slug: "fixture-session",
+        type: "user",
+        message: { role: "user", content: [{ type: "text", text: `pick up where we left off (${i + 1})` }] },
+        origin: { kind: "human" },
+      });
+    }
+    for (let i = 0, n = int(r, 3, 6); i < n; i++) b.compactBoundary();
+    b.tick(int(r, 10, 40) * 86_400_000);
+    b.assistantText("Ledger updated; stopping here.");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: {
+        archetype: "eternal-session",
+        seed,
+        expected: ["eternal-session"],
+        forbidden: forbid(["eternal-session"], ["compaction-burn"]),
+      },
+    };
+  },
+
+  "multi-sitting-task"(seed) {
+    // A normal task picked up across two days: a handful of resumes and a
+    // single compaction — below eternal-session on every axis (and below
+    // compaction-burn's 2-compaction floor). Must NOT fire anything.
+    const r = rng(seed);
+    const b = base(seed, "twositng");
+    const startMs = Date.parse(`2026-07-${String(1 + (seed % 27)).padStart(2, "0")}T09:00:00.000Z`);
+    b.human("continue yesterday's refactor");
+    b.assistantText("Picking the task back up.");
+    const resumes = int(r, 3, 5);
+    for (let i = 0; i < resumes; i++) {
+      b.push({
+        uuid: `resume-root-${i + 1}`,
+        parentUuid: null,
+        sessionId: b.sessionId,
+        timestamp: new Date(startMs + 60_000 + i * 1_000).toISOString(),
+        cwd: "/home/user/project",
+        gitBranch: "main",
+        version: "2.1.200",
+        userType: "external",
+        entrypoint: "cli",
+        isSidechain: false,
+        slug: "fixture-session",
+        type: "user",
+        message: { role: "user", content: [{ type: "text", text: `pick up where we left off (${i + 1})` }] },
+        origin: { kind: "human" },
+      });
+    }
+    b.compactBoundary();
+    b.tick(2 * 86_400_000);
+    b.assistantText("Refactor finished.");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: { archetype: "multi-sitting-task", seed, expected: [], forbidden: ALL_RULES },
+    };
+  },
+
+  "idle-gap-notifications"(seed) {
+    const r = rng(seed);
+    const b = base(seed, "idlegaps");
+    b.human("kick off the refactor");
+    b.assistantText("Refactor step complete; ready for the next instruction.");
+    // 6 gaps of 10-15 minutes each: count >= 5 and total >= 30min, safely
+    // above every default threshold. No tools run, so nothing else can trip.
+    for (let i = 0; i < 6; i++) {
+      b.tick(int(r, 600_000, 900_000));
+      b.human(`continue with step ${i + 1}`);
+      b.assistantText(`Step ${i + 1} complete; waiting for the next instruction.`);
+    }
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: {
+        archetype: "idle-gap-notifications",
+        seed,
+        expected: ["idle-gap-notifications"],
+        forbidden: forbid(["idle-gap-notifications"]),
+      },
+    };
+  },
+
+  "post-edit-ritual"(seed) {
+    // The same verification ritual follows every edit across task folders —
+    // 11-14 pairs, safely above the calibrated threshold of 10.
+    const r = rng(seed);
+    const b = base(seed, "ritualzz");
+    b.human("build and verify each task");
+    const n = int(r, 11, 14);
+    for (let i = 0; i < n; i++) {
+      b.readOk(`/proj/day${i}/test.py`, int(r, 300, 900), { offset: 1, limit: 60 });
+      b.tool("Edit", { file_path: `/proj/day${i}/test.py`, old_string: "a", new_string: "b" }, { content: "ok", toolUseResult: { filePath: `/proj/day${i}/test.py` } });
+      b.tool("Bash", { command: `cd /proj/day${i} && python3 - <<'PY'\nprint("oracle")\nPY` }, { content: "oracle ok" });
+    }
+    b.assistantText("all verified");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: { archetype: "post-edit-ritual", seed, expected: ["post-edit-ritual"], forbidden: forbid(["post-edit-ritual"]) },
+    };
+  },
+
+  "post-edit-varied"(seed) {
+    // Edits followed by genuinely different commands — no family accumulates.
+    const r = rng(seed);
+    const b = base(seed, "variedcm");
+    b.human("assorted work");
+    const cmds = ["npm test", "git status", "cat notes.md", "make lint", "pwd", "df -h", "uname -a", "true", "env", "uptime", "hostname", "date"];
+    for (let i = 0; i < 12; i++) {
+      b.tool("Edit", { file_path: `/proj/f${i}.ts`, old_string: "x", new_string: "y" }, { content: "ok", toolUseResult: { filePath: `/proj/f${i}.ts` } });
+      b.tool("Bash", { command: cmds[i % cmds.length]! }, { content: "ok" });
+    }
+    b.assistantText("done");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return { jsonl: b.build(), manifest: { archetype: "post-edit-varied", seed, expected: [], forbidden: ALL_RULES } };
+  },
+
+  "brief-think-pauses"(seed) {
+    // Frequent short pauses between turns — normal human think time, each
+    // under the 5-minute minimum gap → must NOT fire.
+    const r = rng(seed);
+    const b = base(seed, "quickres");
+    b.human("start the task");
+    b.assistantText("Started; here is the first result.");
+    for (let i = 0; i < 8; i++) {
+      b.tick(int(r, 60_000, 150_000));
+      b.human(`tweak ${i + 1}`);
+      b.assistantText(`Tweak ${i + 1} applied.`);
+    }
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: { archetype: "brief-think-pauses", seed, expected: [], forbidden: ALL_RULES },
     };
   },
 };

@@ -1,17 +1,19 @@
 {
-  "name": "@damame/corpus",
+  "name": "@damame/brief",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
-  "devDependencies": {
+  "dependencies": {
     "@damame/adapter-claude-code": "*",
     "@damame/ir": "*",
+    "@damame/judge": "*",
     "@damame/metrics": "*",
-    "@damame/rules": "*",
-    "@damame/testkit": "*",
-    "@damame/score": "*"
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@damame/testkit": "*"
   }
 }

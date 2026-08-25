@@ -46,6 +46,11 @@ interface LineNode {
   timestamp?: string;
   /** Last transcript line number this uuid appeared on (chronology proxy). */
   lastLine: number;
+  /** sessionId of the sitting that wrote this line — resumes change it,
+   * which is how a resume fork is told apart from an in-session rewind. */
+  sessionId?: string;
+  /** Which sitting (save-marker interval) first wrote this uuid. */
+  sitting?: number;
 }
 
 interface PendingCall {
@@ -79,6 +84,7 @@ export async function parseTranscriptFile(filePath: string, opts: ParseOptions =
   const referencedAgentIds: string[] = [];
   const retractedMessageUuids: string[] = [];
   const rootUuids: string[] = [];
+  let sittingCounter = 0;
 
   const env: EnvironmentSnapshot = {
     captured_from: ["transcript_attachments", "observed_use"],
@@ -136,6 +142,8 @@ export async function parseTranscriptFile(filePath: string, opts: ParseOptions =
     node.lastLine = lineNo;
     if (eventId) node.eventIds.push(eventId);
     if (typeof raw.timestamp === "string") node.timestamp = raw.timestamp;
+    if (typeof raw.sessionId === "string") node.sessionId = raw.sessionId;
+    node.sitting ??= sittingCounter;
     return node;
   }
 
@@ -209,6 +217,10 @@ export async function parseTranscriptFile(filePath: string, opts: ParseOptions =
           break;
         case "last-prompt":
           if (typeof raw.leafUuid === "string") leafUuid = raw.leafUuid;
+          // A last-prompt line is written when the session is saved/closed —
+          // it delimits "sittings". Lines after it belong to the next sitting,
+          // which is how resume-orphaned forks are told apart from rewinds.
+          sittingCounter += 1;
           skippedLineTypes["last-prompt"] = (skippedLineTypes["last-prompt"] ?? 0) + 1;
           break;
         default:
@@ -470,6 +482,7 @@ export async function parseTranscriptFile(filePath: string, opts: ParseOptions =
         spawn_tool: "Workflow",
         ...(runId ? { child_ref: runId } : {}),
         child_kind: "workflow" as const,
+        ...(typeof tur.workflowName === "string" && tur.workflowName ? { name: tur.workflowName } : {}),
         ...(typeof tur.status === "string" ? { status: tur.status } : {}),
       });
     }
@@ -686,6 +699,7 @@ export async function parseTranscriptFile(filePath: string, opts: ParseOptions =
       root_event_id?: string;
       event_count: number;
       usage_tokens: number;
+      fork_kind: "rewind" | "resume";
     }> = [];
 
     /** All uuids in the subtree rooted at `rootUuid` (cycle-guarded). */
@@ -738,6 +752,18 @@ export async function parseTranscriptFile(filePath: string, opts: ParseOptions =
           }
         }
         if (eventCount > 0) {
+          // Rewind vs resume: a true rewind forks WITHIN one sitting. When
+          // the live continuation was written in a different sitting (a
+          // later save-marker interval, or a different sessionId in stitched
+          // files), the dead branch is a tail orphaned by a reopen/crash —
+          // no user action, and blaming a "rewind" would be a measured
+          // applicability failure (it was, on real data).
+          const dead = nodes.get(childUuid);
+          const liveNode = nodes.get(live);
+          const sameSession =
+            !dead?.sessionId || !liveNode?.sessionId || dead.sessionId === liveNode.sessionId;
+          const sameSitting = (dead?.sitting ?? 0) === (liveNode?.sitting ?? 0);
+          const fork_kind: "rewind" | "resume" = sameSession && sameSitting ? "rewind" : "resume";
           summaries.push({
             fork_parent_uuid: parentUuid,
             ...(rootEventId ? { root_event_id: rootEventId } : {}),
@@ -746,6 +772,7 @@ export async function parseTranscriptFile(filePath: string, opts: ParseOptions =
               (usage.input_tokens ?? 0) +
               (usage.output_tokens ?? 0) +
               (usage.cache_creation_input_tokens ?? 0),
+            fork_kind,
           });
         }
       }

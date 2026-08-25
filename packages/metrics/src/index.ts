@@ -45,7 +45,14 @@ export interface MetricsBundle {
   }>;
   permission_denials: Array<{ event_id: string; tool_name?: string }>;
   interruption_count: number;
-  abandoned_branches: Array<{ root_event_id?: string; event_count: number; usage_tokens: number }>;
+  abandoned_branches: Array<{
+    root_event_id?: string;
+    event_count: number;
+    usage_tokens: number;
+    /** "rewind" = forked within one sitting (user action); "resume" = tail
+     * orphaned by a reopen/crash (not a user action). */
+    fork_kind?: "rewind" | "resume";
+  }>;
   cache_misses: Array<{ event_id: string; reason: string; missed_input_tokens?: number }>;
   subagent_runs: Array<{
     event_id: string;

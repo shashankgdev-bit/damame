@@ -157,6 +157,8 @@ export const SubagentRunEventSchema = z.object({
   child_ref: z.string().optional(), // agentId or workflow runId
   child_kind: z.enum(["agent", "workflow"]).optional(),
   agent_type: z.string().optional(),
+  /** Resolved workflow name as recorded by the harness in the tool result. */
+  name: z.string().optional(),
   resolved_model: z.string().optional(),
   is_async: z.boolean().optional(),
   status: z.string().optional(),
