@@ -129,6 +129,14 @@ had gone to the Explore agent — it was available."
 `damame profile` prints the same from the terminal. It measures **practice,
 not ability** — and it compares you only to your own past.
 
+### damame-py — analytics across sessions (Python)
+
+`npx damame export --out export.json` dumps every session's analysis (scores, findings,
+feedback, recurrence — never transcript content) in a stable versioned schema, and the
+[`python/`](python/) package loads it into pandas: score trends over time, wasted tokens per
+rule, habit-fading curves, cache-efficiency per session, and the tool's own precision under
+your feedback. See [python/README.md](python/README.md).
+
 ### The session score — validated, not vibes
 
 Each session opens with a score: **overall 0–100 plus five parameters** (cost efficiency,

@@ -155,6 +155,16 @@ program
     else await runAuditCommand(target, opts);
   });
 
+program
+  .command("export")
+  .description("machine-readable dump of all sessions' analysis (stable schema — feeds damame-py, spreadsheets, CI)")
+  .option("--out <file>", "write to a file instead of stdout")
+  .option("--root <dir>", "projects root", defaultProjectsRoot())
+  .action(async (opts) => {
+    const { runExport } = await import("./export-cmd.js");
+    await runExport(opts, DAMAME_VERSION);
+  });
+
 const ANSWER_MAP: Record<string, { question: Question; answer: boolean }> = {
   accurate: { question: "accurate", answer: true },
   inaccurate: { question: "accurate", answer: false },

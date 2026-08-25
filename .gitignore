@@ -6,3 +6,7 @@ dist/
 reports/
 first.txt
 *.tgz
+__pycache__/
+*.egg-info/
+python/dist/
+.venv/
