@@ -156,11 +156,12 @@ corpus**: generated sessions with inefficiencies *planted by construction*
 positive). Because detectors are deterministic, the CI gate demands perfection
 — one missed plant or one false positive fails the build.
 
-Current result over 280 generated sessions (20 per archetype, seeded):
+Current result over 480 generated sessions (20 per each of 24 archetypes — 15 planting
+one waste pattern each, 9 innocent near-misses built one unit under a threshold — seeded):
 
 | rule | recall | precision |
 |---|---|---|
-| all 10 rules | **1.00** | **1.00** |
+| all 15 rules | **1.00** | **1.00** |
 
 Run it yourself: `npx tsx scripts/corpus-eval.ts 20 7`. Building this gate
 immediately caught two real detector-quality bugs (double-reporting of failed
@@ -194,12 +195,12 @@ retired — that is a release commitment, not an aspiration.
 
 ## Status
 
-v0.1: Claude Code JSONL adapter → normalized session IR → deterministic
-metrics → 10 detectors → terminal / HTML / JSON reports, plus the local
-feedback loop. Validated against real 200MB+ transcripts; token accounting
-cross-checked against ccusage (<0.2% delta). Next: golden annotated corpus,
-then an opt-in LLM-judge layer that ships together with its validation
-harness (stability testing, human-agreement calibration, abstention).
+v0.6: Claude Code JSONL adapter → normalized session IR → deterministic
+metrics → 15 detectors → local web dashboard + terminal / HTML / JSON reports,
+the validated session score, citation-gated session briefs, playbooks, the
+opt-in honeypot-calibrated LLM auditor, the local feedback + recurrence loop,
+and the versioned export consumed by damame-py. Validated against real 200MB+
+transcripts; token accounting cross-checked against ccusage (<0.2% delta).
 
 ## Layout
 
