@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>damame — Clay</title>
+<style>
+  /* ================= Clay — the evolved incumbent =================
+     Warm ivory ground, serif display, clay accent. Editorial calm.
+     Zone D deliberately shifts to a cool room — a trust feature. */
+
+  :root{
+    --ground:      #F0EFE9;
+    --ground-deep: #E9E7DE;
+    --card:        #FBFAF6;
+    --card-raised: #FEFDFA;
+    --ink:         #2F2A22;
+    --ink-soft:    #6B6152;
+    --ink-faint:   #97907F;
+    --hairline:    #E0DCD0;
+    --hairline-2:  #CFC9BA;
+    --clay:        #CC785C;
+    --clay-deep:   #9A4A2B;
+    --clay-dark:   #7E3B21;
+    --clay-wash:   #F4E7DF;
+    --clay-wash-2: #EEDCD1;
+    --ochre:       #8A6A2F;
+    --olive-wash:  #EBEAD8;
+    --olive-ink:   #5F5A34;
+    --slate-wash:  #E4E7E8;
+    --slate-ink:   #4E5B60;
+    --cool-ground: #E9ECEA;
+    --cool-card:   #F2F4F2;
+    --cool-ink:    #4C5A58;
+    --cool-line:   #CBD3CE;
+    --shadow-soft: 0 1px 2px rgba(92,72,50,.05), 0 10px 28px rgba(92,72,50,.07);
+    --shadow-hover:0 2px 4px rgba(92,72,50,.06), 0 16px 40px rgba(92,72,50,.11);
+    --serif: ui-serif, "Iowan Old Style", "Palatino Nova", Palatino, Georgia, "Times New Roman", serif;
+    --sans:  -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", sans-serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --r-card: 14px;
+    --r-chip: 999px;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
+
+  .wrap{ max-width:964px; margin:0 auto; padding:0 28px; }
+  @media (max-width:520px){ .wrap{ padding:0 18px; } }
+
+  a{ color:var(--clay-deep); text-decoration-color:var(--clay); text-underline-offset:3px; }
+  a:hover{ color:var(--clay-dark); }
+
+  :focus-visible{
+    outline:2px solid var(--clay-deep);
+    outline-offset:2px;
+    border-radius:4px;
+  }
+
+  /* ---- skip link ---- */
+  .skip{
+    position:absolute; left:-9999px; top:12px; z-index:50;
+    background:var(--ink); color:var(--card); padding:10px 18px;
+    border-radius:8px; font-size:14px; text-decoration:none;
+  }
+  .skip:focus-visible{ left:12px; }
+
+  /* ---- entrance motion (guarded) ---- */
+  @media (prefers-reduced-motion: no-preference){
+    .rise{
+      opacity:0; transform:translateY(14px);
+      animation:rise .7s cubic-bezier(.22,.65,.25,1) forwards;
+      animation-delay:var(--d, 0s);
+    }
+    @keyframes rise{ to{ opacity:1; transform:none; } }
+  }
+
+  /* ================= masthead ================= */
+  .masthead{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:30px 0 0;
+  }
+  .wordmark{
+    font-family:var(--serif); font-size:22px; font-weight:500;
+    letter-spacing:.01em; color:var(--ink); text-decoration:none;
+  }
+  .wordmark .dot{ color:var(--clay); }
+  .masthead .kind{
+    font-family:var(--mono); font-size:11.5px; color:var(--ink-faint);
+    letter-spacing:.06em;
+  }
+
+  /* ================= header / hero ================= */
+  .hero{
+    display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:56px;
+    padding:52px 0 56px;
+    border-bottom:1px solid var(--hairline-2);
+    align-items:start;
+  }
+  .eyebrow{
+    font-size:11px; text-transform:uppercase; letter-spacing:.16em;
+    color:var(--ink-soft); font-weight:600;
+  }
+  .hero .eyebrow{ font-family:var(--mono); font-weight:500; letter-spacing:.1em; text-transform:none; font-size:12.5px; }
+  .session-name{
+    font-family:var(--serif); font-weight:400; font-size:clamp(34px, 5.4vw, 46px);
+    letter-spacing:-.012em; line-height:1.12; margin-top:10px;
+  }
+  .story{
+    font-family:var(--serif); font-style:italic; font-weight:400;
+    font-size:18.5px; line-height:1.62; color:var(--ink-soft);
+    margin-top:16px; max-width:34em;
+  }
+  .stats{
+    margin-top:26px; font-family:var(--mono); font-size:12.5px;
+    color:var(--ink-faint); line-height:1.9;
+    font-variant-numeric:tabular-nums;
+  }
+  .stats b{ color:var(--ink-soft); font-weight:500; }
+  .stats .sep{ color:var(--hairline-2); padding:0 6px; }
+
+  .scoreblock{ padding-top:4px; }
+  .scoreblock .eyebrow{ margin-bottom:2px; }
+  .score-line{ display:flex; align-items:baseline; gap:8px; }
+  .score-num{
+    font-family:var(--serif); font-weight:300; font-size:clamp(76px, 11vw, 104px);
+    line-height:1; letter-spacing:-.03em; color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .score-of{
+    font-family:var(--serif); font-size:20px; color:var(--ink-faint); font-weight:400;
+  }
+  .params{ margin-top:20px; display:grid; gap:11px; }
+  .param{ display:grid; grid-template-columns:1fr 34px; gap:10px; align-items:center; }
+  .param .plabel{ font-size:12.5px; color:var(--ink-soft); line-height:1.3; }
+  .param .pnum{
+    font-family:var(--mono); font-size:12.5px; color:var(--ink);
+    text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .param .track{
+    grid-column:1 / -1; height:4px; border-radius:2px;
+    background:var(--ground-deep); overflow:hidden;
+  }
+  .param .fill{
+    display:block; height:100%; border-radius:2px;
+    background:linear-gradient(90deg, var(--clay), var(--clay-deep));
+    min-width:2px;
+  }
+  .param.zero .fill{ background:transparent; }
+  .params-note{ margin-top:14px; font-size:12px; color:var(--ink-faint); }
+
+  @media (max-width:760px){
+    .hero{ grid-template-columns:1fr; gap:36px; }
+    .scoreblock{ border-top:1px solid var(--hairline); padding-top:28px; }
+  }
+
+  /* ================= zones (shared) ================= */
+  .zone{ padding:52px 0 0; }
+  .zone-head{ margin-bottom:22px; }
+  .zone-head .eyebrow{ display:block; margin-bottom:8px; }
+  .zone-title{
+    font-family:var(--serif); font-weight:400; font-size:clamp(24px, 3.6vw, 30px);
+    letter-spacing:-.008em; line-height:1.2;
+  }
+  .zone-sub{ margin-top:8px; color:var(--ink-soft); font-size:14.5px; max-width:46em; }
+
+  /* ---- chips ---- */
+  .chip{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    padding:3px 10px; border-radius:var(--r-chip); white-space:nowrap;
+  }
+  .chip-quality{ background:var(--clay-wash);  color:var(--clay-deep); }
+  .chip-time   { background:var(--olive-wash); color:var(--olive-ink); }
+  .chip-limits { background:var(--slate-wash); color:var(--slate-ink); }
+  .chip-prov{
+    background:transparent; border:1px solid var(--hairline-2);
+    color:var(--ink-soft); text-transform:none; letter-spacing:.02em;
+    font-weight:500; font-size:11.5px;
+  }
+  .chip-prov .tick{ color:var(--clay-deep); font-weight:700; }
+  .chip-dest{
+    background:var(--ground-deep); color:var(--ink-soft);
+    font-family:var(--mono); text-transform:none; letter-spacing:0;
+    font-weight:500; font-size:11.5px;
+  }
+  .chip-detector{
+    background:transparent; border:1px dashed var(--hairline-2);
+    color:var(--ink-faint); font-family:var(--mono);
+    text-transform:none; letter-spacing:0; font-weight:400; font-size:11px;
+  }
+
+  /* ---- buttons ---- */
+  .btn{
+    font-family:var(--sans); font-size:13.5px; font-weight:600;
+    border-radius:9px; padding:9px 18px; cursor:pointer;
+    border:1px solid transparent;
+    transition:background-color .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .btn-primary{
+    background:var(--clay-deep); color:#FBF6F1;
+    box-shadow:0 1px 2px rgba(122,59,33,.25);
+  }
+  .btn-primary:hover{ background:var(--clay-dark); }
+  .btn-quiet{
+    background:transparent; color:var(--ink-soft);
+    border-color:var(--hairline-2);
+  }
+  .btn-quiet:hover{ background:var(--card); border-color:var(--ink-faint); }
+  .btn-ghost{
+    background:none; border:none; color:var(--ink-faint);
+    font-weight:500; padding:9px 8px; cursor:pointer; font-size:13px;
+  }
+  .btn-ghost:hover{ color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; }
+
+  /* ================= Zone A — the fix surface ================= */
+  .fixes-card{
+    background:var(--card); border:1px solid var(--hairline);
+    border-radius:var(--r-card); box-shadow:var(--shadow-soft);
+    overflow:hidden;
+  }
+  .fix-row{
+    display:flex; align-items:baseline; gap:14px;
+    padding:15px 24px; border-bottom:1px solid var(--hairline);
+  }
+  .fix-row:last-of-type{ border-bottom:none; }
+  .fix-row:hover{ background:var(--card-raised); }
+  .fix-glyph{ flex:none; width:18px; text-align:center; color:var(--ink-faint); font-size:14px; }
+  .fix-glyph::before{ content:"○"; }
+  .fixes-card.reviewed .fix-glyph{ color:var(--clay-deep); }
+  .fixes-card.reviewed .fix-glyph::before{ content:"✓"; font-weight:700; }
+  .fix-what{ flex:1; font-size:14.5px; min-width:0; }
+  .fix-row.more .fix-what{ color:var(--ink-soft); font-style:italic; }
+  .fix-dest{ flex:none; }
+  .fixes-foot{
+    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    padding:18px 24px; background:var(--ground-deep);
+    border-top:1px solid var(--hairline);
+    flex-wrap:wrap;
+  }
+  .ledger-note{ font-size:12.5px; color:var(--ink-soft); max-width:36em; }
+  @media (max-width:640px){
+    .fix-row{ flex-wrap:wrap; padding:14px 18px; }
+    .fix-dest{ margin-left:32px; }
+    .fixes-foot{ padding:16px 18px; }
+  }
+
+  /* ================= Zone B — the coach ================= */
+  .coach-grid{ display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  .coach-card.flagship{ grid-column:1 / -1; }
+  @media (max-width:720px){ .coach-grid{ grid-template-columns:1fr; } }
+
+  .coach-card{
+    background:var(--card-raised); border:1px solid var(--hairline);
+    border-radius:var(--r-card); box-shadow:var(--shadow-soft);
+    padding:26px 28px 22px; display:flex; flex-direction:column; gap:14px;
+    transition:box-shadow .18s ease;
+  }
+  .coach-card:hover{ box-shadow:var(--shadow-hover); }
+  .coach-card.flagship{
+    background:linear-gradient(160deg, var(--clay-wash) 0%, var(--card-raised) 46%);
+    border-top:3px solid var(--clay);
+    padding:32px 34px 26px;
+  }
+  .card-meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .card-meta .spacer{ flex:1; }
+  .recipe-kicker{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.08em;
+    color:var(--clay-deep); font-weight:500;
+  }
+  .coach-headline{
+    font-family:var(--serif); font-weight:400; font-size:21px;
+    line-height:1.36; letter-spacing:-.004em;
+  }
+  .coach-card.flagship .coach-headline{ font-size:clamp(23px, 3.4vw, 27px); max-width:26em; }
+  .coach-body{ font-size:14px; color:var(--ink-soft); max-width:56em; }
+  .proof{
+    font-family:var(--mono); font-size:12px; color:var(--ink-faint);
+    font-variant-numeric:tabular-nums; line-height:1.7;
+  }
+  .proof .plab{
+    text-transform:uppercase; letter-spacing:.12em; font-size:10px;
+    color:var(--ink-faint); margin-right:8px;
+  }
+  .votes{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); }
+  .card-actions{
+    display:flex; align-items:center; gap:10px; margin-top:4px;
+    padding-top:16px; border-top:1px solid var(--hairline);
+  }
+  .coach-card.flagship .card-actions{ border-top-color:var(--clay-wash-2); }
+
+  .dismiss-note{ display:none; font-size:13.5px; color:var(--ink-soft); }
+  .dismiss-note .undo{
+    background:none; border:none; cursor:pointer; padding:2px 4px;
+    color:var(--clay-deep); font-weight:600; font-size:13px;
+    text-decoration:underline; text-underline-offset:3px;
+  }
+  .coach-card.dismissed > *:not(.dismiss-note){ display:none; }
+  .coach-card.dismissed{ background:var(--card); border-style:dashed; box-shadow:none; }
+  .coach-card.dismissed .dismiss-note{ display:block; }
+
+  /* ================= Zone C — receipts ================= */
+  .receipts details{
+    background:var(--card); border:1px solid var(--hairline);
+    border-radius:var(--r-card);
+  }
+  .receipts summary{
+    list-style:none; cursor:pointer; padding:18px 24px;
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  }
+  .receipts summary::-webkit-details-marker{ display:none; }
+  .receipts summary .sum-title{ font-family:var(--serif); font-size:19px; font-weight:400; }
+  .receipts summary .sum-count{ font-family:var(--mono); font-size:12px; color:var(--ink-faint); font-variant-numeric:tabular-nums; }
+  .receipts summary .sum-hint{ margin-left:auto; font-size:12.5px; color:var(--ink-faint); }
+  .receipts summary .chev{
+    display:inline-block; transition:transform .18s ease; color:var(--ink-faint); font-size:12px;
+  }
+  .receipts details[open] .chev{ transform:rotate(90deg); }
+  @media (prefers-reduced-motion: reduce){ .receipts .chev{ transition:none; } }
+
+  .receipt-rows{ border-top:1px solid var(--hairline); }
+  .receipt{
+    display:grid; grid-template-columns:96px minmax(0,1fr) auto;
+    gap:6px 18px; align-items:baseline;
+    padding:14px 24px; border-bottom:1px solid var(--hairline);
+    font-size:14px;
+  }
+  .receipt:last-child{ border-bottom:none; }
+  .receipt:hover{ background:var(--card-raised); }
+  .sev{
+    font-family:var(--mono); font-size:11px; letter-spacing:.05em;
+    white-space:nowrap; font-variant-numeric:tabular-nums;
+  }
+  .sev-major   { color:var(--clay-deep); }
+  .sev-moderate{ color:var(--ochre); }
+  .sev-minor   { color:var(--ink-faint); }
+  .receipt-main{ min-width:0; }
+  .receipt-headline{ line-height:1.45; }
+  .receipt-headline .cur{
+    font-size:10.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase;
+    padding:1px 7px; border-radius:var(--r-chip); margin-right:8px;
+    position:relative; top:-1px;
+  }
+  .receipt .proof{ margin-top:2px; }
+  .receipt-act{ white-space:nowrap; }
+  .evidence-link{
+    background:none; border:none; cursor:pointer; padding:2px 0;
+    font-size:12.5px; color:var(--ink-soft);
+    text-decoration:underline; text-decoration-color:var(--hairline-2); text-underline-offset:3px;
+    font-variant-numeric:tabular-nums;
+  }
+  .evidence-link:hover{ color:var(--clay-deep); text-decoration-color:var(--clay); }
+  @media (max-width:640px){
+    .receipt{ grid-template-columns:1fr; padding:14px 18px; }
+    .receipt-act{ white-space:normal; }
+  }
+
+  .clean-note{
+    margin-top:18px; padding:18px 24px;
+    border:1px dashed var(--hairline-2); border-radius:var(--r-card);
+    background:transparent;
+  }
+  .clean-note .clean-title{
+    font-family:var(--serif); font-size:16px; font-weight:400; margin-bottom:8px;
+  }
+  .clean-chips{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:10px; }
+  .clean-note p{ font-size:13px; color:var(--ink-soft); max-width:52em; }
+
+  /* ================= Zone D — a different room ================= */
+  .infra{
+    margin-top:56px;
+    background:var(--cool-ground);
+    border-top:1px solid var(--cool-line);
+    border-bottom:1px solid var(--cool-line);
+    padding:44px 0 48px;
+  }
+  .infra .zone-title, .infra .zone-sub{ color:var(--cool-ink); }
+  .infra .eyebrow{ color:var(--cool-ink); opacity:.75; }
+  .infra-rows{ display:grid; gap:14px; margin-top:22px; }
+  .infra-row{
+    background:var(--cool-card); border:1px solid var(--cool-line);
+    border-radius:12px; padding:16px 22px;
+    display:flex; gap:14px; align-items:baseline;
+  }
+  .infra-glyph{ flex:none; color:var(--cool-ink); opacity:.6; font-size:13px; }
+  .infra-row .headline{ font-size:14.5px; color:var(--cool-ink); }
+  .infra-row .proof{ color:var(--cool-ink); opacity:.62; margin-top:2px; }
+  .infra-assure{
+    margin-top:18px; font-size:13px; color:var(--cool-ink);
+    font-style:italic; font-family:var(--serif); font-size:14.5px;
+  }
+  @media (max-width:640px){ .infra-row{ flex-direction:column; gap:6px; padding:14px 18px; } }
+
+  /* ================= footer ================= */
+  .foot{ padding:48px 0 60px; }
+  .caps{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .caps .caps-label{ font-size:12.5px; color:var(--ink-soft); font-weight:600; margin-right:2px; }
+  .cap-chip{
+    font-size:12px; padding:4px 12px; border-radius:var(--r-chip);
+    background:var(--card); border:1px solid var(--hairline-2); color:var(--ink);
+  }
+  .cap-slot{
+    width:26px; height:26px; border-radius:50%;
+    border:1px dashed var(--hairline-2); display:inline-block;
+  }
+  .caps .frac{
+    font-family:var(--mono); font-size:12.5px; color:var(--ink-faint);
+    font-variant-numeric:tabular-nums; margin-left:4px;
+  }
+  .caps-highlights{
+    margin-top:10px; font-family:var(--mono); font-size:12px; color:var(--ink-faint);
+    font-variant-numeric:tabular-nums;
+  }
+  .caps-sub{ margin-top:6px; font-size:12px; color:var(--ink-faint); }
+  .foot-meta{
+    margin-top:34px; padding-top:22px; border-top:1px solid var(--hairline-2);
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    font-family:var(--mono); font-size:12px; color:var(--ink-faint);
+    font-variant-numeric:tabular-nums;
+  }
+  .foot-meta .privacy{ color:var(--ink-soft); }
+
+  /* ================= toast ================= */
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(8px);
+    background:var(--ink); color:#F5F2EA;
+    font-size:13.5px; padding:11px 20px; border-radius:10px;
+    box-shadow:0 8px 30px rgba(40,30,20,.3);
+    opacity:0; pointer-events:none; max-width:min(88vw, 480px); text-align:center;
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce){
+    .toast{ transition:none; transform:translateX(-50%); }
+    .toast.show{ transform:translateX(-50%); }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to report</a>
+
+<div class="wrap">
+  <header class="masthead rise" style="--d:0s">
+    <a class="wordmark" href="#main">damame<span class="dot">.</span></a>
+    <span class="kind">session report</span>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ header: identity · score · story ============ -->
+    <section class="hero rise" id="score" aria-label="Session identity and score" style="--d:.05s">
+      <div>
+        <p class="eyebrow">~/terminus2 &nbsp;·&nbsp; Jun 9 → Aug 28, 2026 &nbsp;·&nbsp; 80 days</p>
+        <h1 class="session-name">terminus2</h1>
+        <p class="story">An 80-day task-production marathon run inside a single chat — heavy
+        delegation and background automation done well, taxed hard by one eternal session
+        and a lot of hand-carried data.</p>
+        <p class="stats">
+          <b>962</b> turns<span class="sep">·</span><b>758</b> yours<span class="sep">·</span><b>7,719</b> tool calls<span class="sep">·</span><b>87</b> subagent runs<span class="sep">·</span><b>26</b> compactions<br>
+          <b>4.34B</b> tokens total<span class="sep">·</span><b>190M</b> fresh
+        </p>
+      </div>
+
+      <aside class="scoreblock" aria-label="Session score, 42 out of 100">
+        <p class="eyebrow">Session score</p>
+        <p class="score-line"><span class="score-num">42</span><span class="score-of">/ 100</span></p>
+        <div class="params" role="list" aria-label="Score parameters">
+          <div class="param" role="listitem">
+            <span class="plabel">Cost efficiency</span><span class="pnum">88</span>
+            <span class="track"><span class="fill" style="width:88%"></span></span>
+          </div>
+          <div class="param zero" role="listitem">
+            <span class="plabel">Context hygiene</span><span class="pnum">0</span>
+            <span class="track"><span class="fill"></span></span>
+          </div>
+          <div class="param zero" role="listitem">
+            <span class="plabel">Redundant work</span><span class="pnum">0</span>
+            <span class="track"><span class="fill"></span></span>
+          </div>
+          <div class="param" role="listitem">
+            <span class="plabel">Missed capabilities</span><span class="pnum">33</span>
+            <span class="track"><span class="fill" style="width:33%"></span></span>
+          </div>
+          <div class="param" role="listitem">
+            <span class="plabel">Prompting &amp; recovery</span><span class="pnum">88</span>
+            <span class="track"><span class="fill" style="width:88%"></span></span>
+          </div>
+        </div>
+        <p class="params-note">Five parameters. Infra weather never counts here.</p>
+      </aside>
+    </section>
+
+    <!-- ============ Zone A — the fix surface ============ -->
+    <section class="zone rise" aria-labelledby="fixes-h" style="--d:.12s">
+      <div class="zone-head">
+        <span class="eyebrow">Applied by damame, reviewed by you</span>
+        <h2 class="zone-title" id="fixes-h">damame can fix 4 things</h2>
+        <p class="zone-sub">Repeated rituals it watched you perform by hand, ready to become
+        hooks. One diff, one review — then they leave your plate.</p>
+      </div>
+
+      <div class="fixes-card" id="fixesCard">
+        <div class="fix-row">
+          <span class="fix-glyph" aria-hidden="true"></span>
+          <span class="fix-what">Automate the <strong>day80 explore</strong> check that followed your edits 48 times</span>
+          <span class="fix-dest chip chip-dest">PostToolUse hook → settings.json</span>
+        </div>
+        <div class="fix-row">
+          <span class="fix-glyph" aria-hidden="true"></span>
+          <span class="fix-what">Automate the <strong>warden sim</strong> run that followed edits 21 times</span>
+          <span class="fix-dest chip chip-dest">PostToolUse hook → settings.json</span>
+        </div>
+        <div class="fix-row">
+          <span class="fix-glyph" aria-hidden="true"></span>
+          <span class="fix-what">Automate the <strong>day72 verification</strong> ritual (13 times)</span>
+          <span class="fix-dest chip chip-dest">PostToolUse hook → settings.json</span>
+        </div>
+        <div class="fix-row more">
+          <span class="fix-glyph" aria-hidden="true"></span>
+          <span class="fix-what">8 more repeated rituals detected — include them in the batch</span>
+          <span class="fix-dest chip chip-dest">PostToolUse hooks</span>
+        </div>
+        <div class="fixes-foot">
+          <p class="ledger-note">After you apply: damame measures your next sessions and shows
+          what stopped happening — receipts, not promises.</p>
+          <button class="btn btn-primary" id="reviewDiff"
+            data-mock="Mocked in this prototype — all 4 fixes open as one reviewable diff.">Review the diff</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Zone B — the coach (the voice of the page) ============ -->
+    <section class="zone rise" aria-labelledby="coach-h" style="--d:.19s">
+      <div class="zone-head">
+        <span class="eyebrow">The coach</span>
+        <h2 class="zone-title" id="coach-h">Worth adopting</h2>
+        <p class="zone-sub">Three habits, grouped by root cause. Each earned its place —
+        and each can be dismissed.</p>
+      </div>
+
+      <div class="coach-grid">
+
+        <!-- flagship: freeze your own pattern -->
+        <article class="coach-card flagship" aria-labelledby="c3-h">
+          <div class="card-meta">
+            <span class="recipe-kicker">Freeze your own pattern</span>
+            <span class="spacer"></span>
+            <span class="chip chip-quality">quality</span>
+            <span class="chip chip-prov"><span class="tick" aria-hidden="true">✓</span> verified · curated from this transcript</span>
+          </div>
+          <h3 class="coach-headline" id="c3-h">You re-improvised the same delegation 5 times —
+          the skill you need already exists, written by you, in installments</h3>
+          <p class="coach-body">Each retelling of the cold-opus probe drifted a little. Your
+          5 versions are the draft: merge them into a saved skill/workflow and the best
+          version becomes the only version. (Your 89 slash-command uses prove the frozen
+          form wins.)</p>
+          <p class="proof"><span class="plab">proof</span>"cold-opus probe …" re-improvised ×5 · every instance linked below</p>
+          <div class="votes"><span class="chip chip-detector">repeated-delegation</span></div>
+          <div class="card-actions">
+            <button class="btn btn-primary" data-mock="Mocked in this prototype — opens your 5 versions side by side, ready to merge.">Show my 5 versions</button>
+            <button class="btn btn-ghost" data-dismiss>Not relevant</button>
+          </div>
+          <p class="dismiss-note">Marked not relevant — it won’t resurface in future reports.
+            <button class="undo" data-undo>Undo</button></p>
+        </article>
+
+        <!-- source access -->
+        <article class="coach-card" aria-labelledby="c1-h">
+          <div class="card-meta">
+            <span class="recipe-kicker">Stop hand-carrying data into the chat</span>
+            <span class="spacer"></span>
+            <span class="chip chip-time">time</span>
+          </div>
+          <h3 class="coach-headline" id="c1-h">Claude couldn’t check the grading site itself —
+          so you hand-carried the results, 170 times</h3>
+          <p class="coach-body">Every verification cycle stalled until you delivered the next
+          block by hand. Give Claude direct access to the source and the stall-fix-stall loop
+          becomes one continuous run.</p>
+          <p class="proof"><span class="plab">proof</span>170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates</p>
+          <div class="votes"><span class="chip chip-detector">paste-relay ×8</span>
+            <span class="chip chip-prov"><span class="tick" aria-hidden="true">✓</span> verified · curated from a real transcript</span></div>
+          <div class="card-actions">
+            <button class="btn btn-primary" data-mock="Mocked in this prototype — opens the recipe with its evidence links.">See the recipe</button>
+            <button class="btn btn-ghost" data-dismiss>Not relevant</button>
+          </div>
+          <p class="dismiss-note">Marked not relevant — it won’t resurface in future reports.
+            <button class="undo" data-undo>Undo</button></p>
+        </article>
+
+        <!-- session hygiene -->
+        <article class="coach-card" aria-labelledby="c2-h">
+          <div class="card-meta">
+            <span class="recipe-kicker">End each task with a notes.md handoff, start the next fresh</span>
+            <span class="spacer"></span>
+            <span class="chip chip-quality">quality</span>
+          </div>
+          <h3 class="coach-headline" id="c2-h">One chat became your permanent workspace —
+          Claude’s memory of this project is a 26th-generation summary</h3>
+          <p class="coach-body">80 days, 26 resumes, 26 compactions: every morning re-bought
+          the whole pile, and every compaction silently decided what your project’s history
+          was. Move memory to files (notes.md + CLAUDE.md); make fresh sessions cheap.</p>
+          <p class="proof"><span class="plab">proof</span>eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions</p>
+          <div class="votes">3 signals point here:
+            <span class="chip chip-detector">eternal-session</span>
+            <span class="chip chip-detector">cache-thrash</span>
+            <span class="chip chip-detector">compaction-burn</span>
+          </div>
+          <div class="votes"><span class="chip chip-prov"><span class="tick" aria-hidden="true">✓</span> verified · measured in this session</span></div>
+          <div class="card-actions">
+            <button class="btn btn-primary" data-mock="Mocked in this prototype — opens the end-of-task ritual, step by step.">See the ritual</button>
+            <button class="btn btn-ghost" data-dismiss>Not relevant</button>
+          </div>
+          <p class="dismiss-note">Marked not relevant — it won’t resurface in future reports.
+            <button class="undo" data-undo>Undo</button></p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ============ Zone C — receipts ============ -->
+    <section class="zone receipts rise" aria-labelledby="receipts-h" style="--d:.26s">
+      <div class="zone-head">
+        <span class="eyebrow">The ledger</span>
+        <h2 class="zone-title" id="receipts-h">Receipts</h2>
+        <p class="zone-sub">Every finding behind the score, with its evidence.
+          <a href="#score">See the score breakdown ↑</a></p>
+      </div>
+
+      <details open>
+        <summary>
+          <span class="chev" aria-hidden="true">▶</span>
+          <span class="sum-title">All findings</span>
+          <span class="sum-count">8 rows · tokens in the proof line only</span>
+          <span class="sum-hint">collapse</span>
+        </summary>
+        <div class="receipt-rows">
+
+          <div class="receipt">
+            <span class="sev sev-major">▲ major</span>
+            <div class="receipt-main">
+              <p class="receipt-headline"><span class="cur chip-limits">limits</span>The whole conversation got re-billed from scratch, repeatedly</p>
+              <p class="proof">cache-thrash · 17.5M missed input tokens (messages_changed)</p>
+            </div>
+            <span class="receipt-act"><button class="evidence-link" data-mock="Mocked in this prototype — jumps to the 8 evidence spans in the transcript.">show me where (8)</button></span>
+          </div>
+
+          <div class="receipt">
+            <span class="sev sev-major">▲ major</span>
+            <div class="receipt-main">
+              <p class="receipt-headline"><span class="cur chip-limits">limits</span>Mid-session tool changes broke the cache 4 ways</p>
+              <p class="proof">cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)</p>
+            </div>
+            <span class="receipt-act"><button class="evidence-link" data-mock="Mocked in this prototype — jumps to the 8 evidence spans in the transcript.">show me where (8)</button></span>
+          </div>
+
+          <div class="receipt">
+            <span class="sev sev-major">▲ major</span>
+            <div class="receipt-main">
+              <p class="receipt-headline"><span class="cur chip-quality">quality</span>26 compactions — details were lost to summaries 26 times</p>
+              <p class="proof">compaction-burn · measured pauses recorded</p>
+            </div>
+            <span class="receipt-act"><button class="evidence-link" data-mock="Mocked in this prototype — jumps to the 26 evidence spans in the transcript.">show me where (26)</button></span>
+          </div>
+
+          <div class="receipt">
+            <span class="sev sev-major">▲ major</span>
+            <div class="receipt-main">
+              <p class="receipt-headline"><span class="cur chip-time">time</span>You worked as the data courier, 8 different templates’ worth</p>
+              <p class="proof">paste-relay · 170 blocks · 1.64MB by hand</p>
+            </div>
+            <span class="receipt-act"><button class="evidence-link" data-mock="Mocked in this prototype — jumps to the 8 evidence spans in the transcript.">show me where (8)</button></span>
+          </div>
+
+          <div class="receipt">
+            <span class="sev sev-major">▲ major</span>
+            <div class="receipt-main">
+              <p class="receipt-headline"><span class="cur chip-quality">quality</span>One session spanned 80 days — a permanent workspace</p>
+              <p class="proof">eternal-session · 26 resumes · 26 compactions</p>
+            </div>
+            <span class="receipt-act"><button class="evidence-link" data-mock="Mocked in this prototype — jumps to the evidence span in the transcript.">show me where (1)</button></span>
+          </div>
+
+          <div class="receipt">
+            <span class="sev sev-moderate">◆ moderate</span>
+            <div class="receipt-main">
+              <p class="receipt-headline"><span class="cur chip-limits">limits</span>A direction change discarded 949k tokens of built work</p>
+              <p class="proof">abandoned-work · measured, rewind branch</p>
+            </div>
+            <span class="receipt-act"><button class="evidence-link" data-mock="Mocked in this prototype — jumps to the evidence span in the transcript.">show me where (1)</button></span>
+          </div>
+
+          <div class="receipt">
+            <span class="sev sev-moderate">◆ moderate</span>
+            <div class="receipt-main">
+              <p class="receipt-headline"><span class="cur chip-quality">quality</span>Same delegation re-improvised 5× — drift risk each time</p>
+              <p class="proof">repeated-delegation · no token claim (honest: the cost is drift)</p>
+            </div>
+            <span class="receipt-act"><button class="evidence-link" data-mock="Mocked in this prototype — jumps to the 5 evidence spans in the transcript.">show me where (5)</button></span>
+          </div>
+
+          <div class="receipt">
+            <span class="sev sev-minor">○ minor</span>
+            <div class="receipt-main">
+              <p class="receipt-headline"><span class="cur chip-time">time</span>11 manual rituals followed your edits (10–48× each)</p>
+              <p class="proof">post-edit-ritual · all 11 automatable as hooks</p>
+            </div>
+            <span class="receipt-act"><button class="evidence-link" data-mock="Mocked in this prototype — jumps to the 11 evidence spans in the transcript.">show me where (11)</button></span>
+          </div>
+
+        </div>
+      </details>
+
+      <div class="clean-note">
+        <p class="clean-title">Nothing caught in five categories</p>
+        <div class="clean-chips">
+          <span class="chip chip-detector">edit-fail-loop</span>
+          <span class="chip chip-detector">bash-error-loop</span>
+          <span class="chip chip-detector">duplicate-tool-call</span>
+          <span class="chip chip-detector">oversized-context-reads</span>
+          <span class="chip chip-detector">missed-delegation</span>
+        </div>
+        <p>233 tool errors occurred — none formed a loop. 87 delegations — none missed.
+        Silence here is earned, not assumed (and not proof of perfection).</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ Zone D — a different room ============ -->
+<section class="infra rise" aria-labelledby="infra-h" style="--d:.33s">
+  <div class="wrap">
+    <div class="zone-head">
+      <span class="eyebrow">A different room</span>
+      <h2 class="zone-title" id="infra-h">Not your inefficiency</h2>
+      <p class="zone-sub">Infrastructure weather, kept apart on purpose. Nothing in this room
+      touches your score — ever.</p>
+    </div>
+    <div class="infra-rows">
+      <div class="infra-row">
+        <span class="infra-glyph" aria-hidden="true">◌</span>
+        <div>
+          <p class="headline">344 transient API errors + 22 terminal failures — the provider’s weather</p>
+          <p class="proof">retry-storm · always excluded from your score</p>
+        </div>
+      </div>
+      <div class="infra-row">
+        <span class="infra-glyph" aria-hidden="true">◌</span>
+        <div>
+          <p class="headline">3 branches orphaned by session resumes — nobody’s fault, nothing to fix</p>
+          <p class="proof">abandoned-work (infra) · 357k + 265k + 875k tokens</p>
+        </div>
+      </div>
+    </div>
+    <p class="infra-assure">These never count against you.</p>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer class="foot rise" style="--d:.4s">
+    <div class="caps" aria-label="Capabilities exercised: 4 of 7">
+      <span class="caps-label">Capabilities exercised</span>
+      <span class="cap-chip">subagents</span>
+      <span class="cap-chip">workflows</span>
+      <span class="cap-chip">skills</span>
+      <span class="cap-chip">background tasks</span>
+      <span class="cap-slot" aria-hidden="true"></span>
+      <span class="cap-slot" aria-hidden="true"></span>
+      <span class="cap-slot" aria-hidden="true"></span>
+      <span class="frac">4 / 7</span>
+    </div>
+    <p class="caps-highlights">220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads</p>
+    <p class="caps-sub">Recognition, not a grade.</p>
+
+    <div class="foot-meta">
+      <span>damame 0.6.0 · score@1 · adapter claude-code 0.1.0</span>
+      <span class="privacy">Analyzed locally. Nothing left your machine.</span>
+    </div>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Embedded session data — the single source this page renders from -->
+<script type="application/json" id="session-data">
+{"comment":"Real analysis output from the terminus2 session (563ddaa0), reshaped into the new three-surface structure. All numbers are genuine damame findings.","session":{"name":"terminus2","project":"~/terminus2","span":"Jun 9 → Aug 28, 2026 · 80 days","score":42,"parameters":[{"id":"cost-efficiency","label":"Cost efficiency","score":88},{"id":"context-hygiene","label":"Context hygiene","score":0},{"id":"redundant-work","label":"Redundant work","score":0},{"id":"missed-capabilities","label":"Missed capabilities","score":33},{"id":"prompting-recovery","label":"Prompting & recovery","score":88}],"story":"An 80-day task-production marathon run inside a single chat — heavy delegation and background automation done well, taxed hard by one eternal session and a lot of hand-carried data.","stats":{"turns":962,"human_turns":758,"tool_calls":7719,"subagent_runs":87,"compactions":26,"tokens_total":"4.34B","tokens_fresh":"190M"}},"fixes":{"headline_count":4,"items":[{"what":"Automate the day80 explore check that followed your edits 48 times","destination":"PostToolUse hook → settings.json","kind":"hook"},{"what":"Automate the warden sim run that followed edits 21 times","destination":"PostToolUse hook → settings.json","kind":"hook"},{"what":"Automate the day72 verification ritual (13 times)","destination":"PostToolUse hook → settings.json","kind":"hook"},{"what":"8 more repeated rituals detected — include them in the batch","destination":"PostToolUse hooks","kind":"hook-more"}],"ledger_note":"After you apply: damame measures your next sessions and shows what stopped happening — receipts, not promises."},"coach":[{"id":"source-access","impact":"time","headline":"Claude couldn't check the grading site itself — so you hand-carried the results, 170 times","body":"Every verification cycle stalled until you delivered the next block by hand. Give Claude direct access to the source and the stall-fix-stall loop becomes one continuous run.","proof":"170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates","detector_votes":["paste-relay ×8"],"recipe":"Stop hand-carrying data into the chat","provenance":{"status":"verified","source":"curated from a real transcript"},"actions":["See the recipe","Not relevant"]},{"id":"session-hygiene","impact":"quality","headline":"One chat became your permanent workspace — Claude's memory of this project is a 26th-generation summary","body":"80 days, 26 resumes, 26 compactions: every morning re-bought the whole pile, and every compaction silently decided what your project's history was. Move memory to files (notes.md + CLAUDE.md); make fresh sessions cheap.","proof":"eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions","detector_votes":["eternal-session","cache-thrash","compaction-burn"],"recipe":"End each task with a notes.md handoff, start the next fresh","provenance":{"status":"verified","source":"measured in this session"},"actions":["See the ritual","Not relevant"]},{"id":"freeze-pattern","impact":"quality","headline":"You re-improvised the same delegation 5 times — the skill you need already exists, written by you, in installments","body":"Each retelling of the cold-opus probe drifted a little. Your 5 versions are the draft: merge them into a saved skill/workflow and the best version becomes the only version. (Your 89 slash-command uses prove the frozen form wins.)","proof":"\"cold-opus probe …\" re-improvised ×5 · every instance linked below","detector_votes":["repeated-delegation"],"recipe":"Freeze your own pattern","provenance":{"status":"verified","source":"curated from this transcript"},"actions":["Show my 5 versions","Not relevant"],"flagship":true}],"receipts":[{"severity":"major","currency":"limits","headline":"The whole conversation got re-billed from scratch, repeatedly","proof":"cache-thrash · 17.5M missed input tokens (messages_changed)","evidence_n":8},{"severity":"major","currency":"limits","headline":"Mid-session tool changes broke the cache 4 ways","proof":"cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)","evidence_n":8},{"severity":"major","currency":"quality","headline":"26 compactions — details were lost to summaries 26 times","proof":"compaction-burn · measured pauses recorded","evidence_n":26},{"severity":"major","currency":"time","headline":"You worked as the data courier, 8 different templates' worth","proof":"paste-relay · 170 blocks · 1.64MB by hand","evidence_n":8},{"severity":"major","currency":"quality","headline":"One session spanned 80 days — a permanent workspace","proof":"eternal-session · 26 resumes · 26 compactions","evidence_n":1},{"severity":"moderate","currency":"limits","headline":"A direction change discarded 949k tokens of built work","proof":"abandoned-work · measured, rewind branch","evidence_n":1},{"severity":"moderate","currency":"quality","headline":"Same delegation re-improvised 5× — drift risk each time","proof":"repeated-delegation · no token claim (honest: the cost is drift)","evidence_n":5},{"severity":"minor","currency":"time","headline":"11 manual rituals followed your edits (10–48× each)","proof":"post-edit-ritual · all 11 automatable as hooks","evidence_n":11}],"clean":["edit-fail-loop","bash-error-loop","duplicate-tool-call","oversized-context-reads","missed-delegation"],"clean_note":"233 tool errors occurred — none formed a loop. 87 delegations — none missed. Silence here is earned, not assumed (and not proof of perfection).","not_yours":[{"headline":"344 transient API errors + 22 terminal failures — the provider's weather","proof":"retry-storm · always excluded from your score"},{"headline":"3 branches orphaned by session resumes — nobody's fault, nothing to fix","proof":"abandoned-work (infra) · 357k + 265k + 875k tokens"}],"capabilities":{"exercised":["subagents","workflows","skills","background tasks"],"of":7,"highlights":"220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads"},"footer":{"versions":"damame 0.6.0 · score@1 · adapter claude-code 0.1.0","privacy":"Analyzed locally. Nothing left your machine."}}
+</script>
+
+<script>
+  (function(){
+    "use strict";
+
+    /* ---- toast (mock-action feedback) ---- */
+    var toast = document.getElementById("toast");
+    var toastTimer = null;
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 3200);
+    }
+
+    /* ---- every [data-mock] button announces its mocked action ---- */
+    var mocks = document.querySelectorAll("[data-mock]");
+    for (var i = 0; i < mocks.length; i++){
+      mocks[i].addEventListener("click", function(){
+        showToast(this.getAttribute("data-mock"));
+      });
+    }
+
+    /* ---- Zone A empties: reviewing the diff checks off the batch ---- */
+    var review = document.getElementById("reviewDiff");
+    var fixesCard = document.getElementById("fixesCard");
+    if (review && fixesCard){
+      review.addEventListener("click", function(){
+        fixesCard.classList.add("reviewed");
+      });
+    }
+
+    /* ---- coach cards: real dismiss with undo ---- */
+    var dismissers = document.querySelectorAll("[data-dismiss]");
+    for (var j = 0; j < dismissers.length; j++){
+      dismissers[j].addEventListener("click", function(){
+        var card = this.closest(".coach-card");
+        if (!card) return;
+        card.classList.add("dismissed");
+        var undo = card.querySelector("[data-undo]");
+        if (undo) undo.focus();
+      });
+    }
+    var undos = document.querySelectorAll("[data-undo]");
+    for (var k = 0; k < undos.length; k++){
+      undos[k].addEventListener("click", function(){
+        var card = this.closest(".coach-card");
+        if (!card) return;
+        card.classList.remove("dismissed");
+        var first = card.querySelector(".btn-primary");
+        if (first) first.focus();
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

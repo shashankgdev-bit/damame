@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>damame — Editorial</title>
+<style>
+  /* ============ tokens ============ */
+  :root{
+    --paper:#F8F5EE;
+    --paper-deep:#F0EBDF;
+    --ink:#201B14;
+    --ink-soft:#6B6254;
+    --rule:#CDC4B2;
+    --rule-dark:#201B14;
+    --red:#A31621;
+    --red-deep:#7C0E17;
+    --weather-bg:#E7EAEC;
+    --weather-rule:#9FA9B3;
+    --weather-ink:#3A4550;
+    --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --measure:64ch;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{transition:none!important;animation:none!important}
+  }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-size:17px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .sheet{max-width:1080px;margin:0 auto;padding:0 24px 0}
+  @media (max-width:520px){ .sheet{padding:0 16px} body{font-size:16px} }
+
+  a{color:var(--ink);text-decoration-color:var(--red);text-decoration-thickness:1px;text-underline-offset:3px}
+  a:hover{color:var(--red)}
+  :focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:1px}
+  ::selection{background:var(--red);color:var(--paper)}
+
+  .skip{
+    position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);
+    padding:.6rem 1rem;font-family:var(--sans);font-size:.85rem;z-index:99;
+  }
+  .skip:focus-visible{left:12px;top:12px}
+
+  /* agate / small-caps utility voice */
+  .agate{
+    font-family:var(--sans);
+    font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);font-variant-numeric:tabular-nums;
+  }
+  .num{font-variant-numeric:tabular-nums}
+
+  /* ============ masthead ============ */
+  .masthead{padding-top:26px;text-align:center}
+  .edition{
+    display:flex;justify-content:space-between;gap:1rem;
+    border-top:1px solid var(--rule-dark);border-bottom:1px solid var(--rule);
+    padding:.45rem 0;margin-bottom:1.4rem;
+  }
+  .edition span{font-family:var(--sans);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  @media (max-width:640px){ .edition span:nth-child(2){display:none} }
+  .nameplate{
+    font-size:clamp(3.2rem,9vw,5.6rem);
+    font-weight:400;letter-spacing:-.015em;line-height:.95;
+  }
+  .nameplate .dot{color:var(--red)}
+  .plate-sub{
+    font-family:var(--sans);font-size:.72rem;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--ink-soft);margin:.7rem 0 1rem;
+  }
+  /* the Scotch rule: thick over thin */
+  .scotch{border:0;border-top:3px solid var(--rule-dark);margin:0 0 3px}
+  .scotch + .scotch-thin{border:0;border-top:1px solid var(--rule-dark);margin:0}
+
+  /* ============ front page ============ */
+  .front{
+    display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);
+    gap:0 2.6rem;padding:2.2rem 0 2.4rem;
+    border-bottom:1px solid var(--rule-dark);
+  }
+  @media (max-width:860px){ .front{grid-template-columns:1fr;gap:2.2rem} }
+  .kicker{
+    font-family:var(--sans);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--red);font-variant-numeric:tabular-nums;margin-bottom:.9rem;
+  }
+  .kicker b{color:var(--ink);font-weight:700}
+  .headline{
+    font-size:clamp(2.1rem,5vw,3.3rem);
+    line-height:1.06;font-weight:400;letter-spacing:-.01em;
+    margin-bottom:1.1rem;text-wrap:balance;
+  }
+  .deck{
+    font-size:1.16rem;line-height:1.5;font-style:italic;color:#3B342A;
+    max-width:var(--measure);
+    border-left:2px solid var(--red);padding-left:1rem;margin-bottom:1.3rem;
+  }
+  .byline{font-family:var(--sans);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:1.2rem}
+  .stats-agate{
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:.55rem 0;display:flex;flex-wrap:wrap;gap:.35rem 1.1rem;
+  }
+  .stats-agate span{font-family:var(--sans);font-size:.72rem;letter-spacing:.06em;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .stats-agate b{color:var(--ink);font-weight:600}
+
+  /* score box — the printed figure */
+  .scorebox{border-left:1px solid var(--rule);padding-left:2.4rem}
+  @media (max-width:860px){ .scorebox{border-left:0;padding-left:0;border-top:3px double var(--rule-dark);padding-top:1.4rem} }
+  .score-label{font-family:var(--sans);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft)}
+  .score-fig{
+    font-size:clamp(4.6rem,11vw,7.2rem);line-height:1;font-weight:400;
+    color:var(--red);font-variant-numeric:tabular-nums;letter-spacing:-.03em;
+  }
+  .score-fig small{font-size:.32em;color:var(--ink-soft);letter-spacing:0}
+  .score-caption{
+    font-size:.85rem;font-style:italic;color:var(--ink-soft);
+    margin:.3rem 0 1.2rem;max-width:34ch;
+  }
+  .params{width:100%;border-collapse:collapse;caption-side:top}
+  .params caption{text-align:left;font-family:var(--sans);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);padding-bottom:.4rem;border-bottom:1px solid var(--rule-dark)}
+  .params td{padding:.42rem 0;border-bottom:1px solid var(--rule);font-size:.9rem;vertical-align:middle}
+  .params td:last-child{text-align:right;font-variant-numeric:tabular-nums;width:3ch;font-weight:600}
+  .pbar{display:block;height:4px;background:var(--paper-deep);border:1px solid var(--rule);margin-top:.3rem;max-width:160px}
+  .pbar i{display:block;height:100%;background:var(--ink)}
+  .pzero td:last-child{color:var(--red)}
+  .pzero .pbar i{background:var(--red)}
+
+  /* ============ section heads ============ */
+  .sec-head{
+    text-align:center;margin:2.6rem 0 1.6rem;
+    border-top:1px solid var(--rule-dark);border-bottom:1px solid var(--rule);
+    padding:.5rem 0;
+  }
+  .sec-head .slug{
+    font-family:var(--sans);font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--ink);font-weight:700;
+  }
+  .sec-head .slug em{color:var(--red);font-style:normal}
+
+  /* ============ zone A — corrections ============ */
+  .corrections{
+    border:1px solid var(--rule-dark);
+    border-top:3px solid var(--rule-dark);
+    padding:1.6rem 1.8rem 1.5rem;
+    max-width:840px;margin:0 auto;
+    background:var(--paper);
+  }
+  @media (max-width:520px){ .corrections{padding:1.2rem 1rem} }
+  .corrections h2{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:400;line-height:1.15;margin-bottom:.35rem}
+  .corrections h2 .n{color:var(--red)}
+  .corr-sub{font-style:italic;color:var(--ink-soft);font-size:.95rem;margin-bottom:1.1rem}
+  .fixlist{list-style:none;border-top:1px solid var(--rule)}
+  .fixlist li{
+    display:flex;gap:1rem;align-items:baseline;justify-content:space-between;
+    padding:.6rem 0;border-bottom:1px solid var(--rule);
+  }
+  .fixlist .what{font-size:.95rem;max-width:52ch}
+  .fixlist .dest{
+    font-family:var(--mono);font-size:.72rem;color:var(--ink-soft);
+    white-space:nowrap;font-variant-numeric:tabular-nums;
+  }
+  @media (max-width:640px){
+    .fixlist li{flex-direction:column;gap:.15rem}
+    .fixlist .dest{white-space:normal}
+  }
+  .corr-actions{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;margin-top:1.2rem}
+  .btn{
+    font-family:var(--sans);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--ink);color:var(--paper);border:1px solid var(--ink);
+    padding:.62rem 1.3rem;cursor:pointer;transition:background .15s ease,color .15s ease;
+  }
+  .btn:hover{background:var(--red);border-color:var(--red)}
+  .btn-red{background:var(--red);border-color:var(--red)}
+  .btn-red:hover{background:var(--red-deep);border-color:var(--red-deep)}
+  .btn-ghost{
+    font-family:var(--sans);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--ink-soft);border:0;border-bottom:1px solid var(--rule);
+    padding:.3rem 0;cursor:pointer;transition:color .15s ease,border-color .15s ease;
+  }
+  .btn-ghost:hover{color:var(--red);border-color:var(--red)}
+  .ledger-note{font-style:italic;font-size:.88rem;color:var(--ink-soft);max-width:56ch}
+  .mock-note{
+    margin-top:1rem;padding:.7rem 1rem;border-left:2px solid var(--red);
+    background:var(--paper-deep);font-size:.88rem;font-style:italic;color:var(--ink-soft);
+  }
+  [hidden]{display:none!important}
+
+  /* ============ zone B — leaders ============ */
+  .lead-intro{text-align:center;font-style:italic;color:var(--ink-soft);max-width:52ch;margin:-0.6rem auto 1.8rem;font-size:.98rem}
+  .chips{display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.8rem}
+  .chip{
+    font-family:var(--sans);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;
+    border:1px solid var(--rule-dark);padding:.18rem .55rem;color:var(--ink);
+    font-variant-numeric:tabular-nums;background:var(--paper);
+  }
+  .chip-currency{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .chip-verified{border-color:var(--red);color:var(--red)}
+  .chip-votes{border-style:dashed;color:var(--ink-soft)}
+  .leader h3{font-size:clamp(1.35rem,2.8vw,1.8rem);font-weight:400;line-height:1.18;margin-bottom:.7rem;text-wrap:balance}
+  .leader .case{font-size:.98rem;max-width:var(--measure);color:#332D24;margin-bottom:.8rem}
+  .proof{
+    font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;line-height:1.6;
+    border-top:1px solid var(--rule);padding-top:.5rem;margin-bottom:1rem;
+  }
+  .proof::before{content:"PROOF · ";letter-spacing:.1em;color:var(--red)}
+  .leader-actions{display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap}
+  .dismissed-note{font-style:italic;color:var(--ink-soft);font-size:.92rem;padding:1rem 0}
+  .dismissed-note .btn-ghost{margin-left:.6rem}
+
+  /* flagship — pull-quote article */
+  .flagship{
+    border-top:3px solid var(--rule-dark);border-bottom:1px solid var(--rule-dark);
+    padding:1.8rem 0 1.6rem;margin-bottom:2rem;
+    display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0 2.6rem;
+  }
+  @media (max-width:860px){ .flagship{grid-template-columns:1fr;gap:1.4rem} }
+  .flag-eyebrow{font-family:var(--sans);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:.7rem}
+  .pull{
+    border-left:3px solid var(--red);padding:.2rem 0 .2rem 1.4rem;align-self:center;
+  }
+  .pull p{
+    font-size:clamp(1.45rem,3.2vw,2.05rem);line-height:1.22;font-style:italic;
+    letter-spacing:-.005em;text-wrap:balance;
+  }
+  .pull p::before{content:"\201C";color:var(--red)}
+  .pull p::after{content:"\201D";color:var(--red)}
+  .pull cite{display:block;font-style:normal;font-family:var(--sans);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-top:.8rem}
+
+  .leader-pair{
+    display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:.6rem;
+  }
+  .leader-pair .leader:first-child{border-right:1px solid var(--rule);padding-right:2.4rem}
+  .leader-pair .leader:last-child{padding-left:2.4rem}
+  .lead-eyebrow{font-family:var(--sans);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:.6rem}
+  @media (max-width:860px){
+    .leader-pair{grid-template-columns:1fr;gap:1.8rem}
+    .leader-pair .leader:first-child{border-right:0;padding-right:0;border-bottom:1px solid var(--rule);padding-bottom:1.8rem}
+    .leader-pair .leader:last-child{padding-left:0}
+  }
+
+  /* ============ zone C — the ledger ============ */
+  .ledger-wrap{border:0;margin:0 auto;max-width:920px}
+  .ledger-wrap > summary{
+    list-style:none;cursor:pointer;text-align:center;
+    font-family:var(--sans);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);padding:.4rem 0 1rem;
+  }
+  .ledger-wrap > summary::-webkit-details-marker{display:none}
+  .ledger-wrap > summary .disc::before{content:"▸ "}
+  .ledger-wrap[open] > summary .disc::before{content:"▾ "}
+  .ledger-wrap > summary:hover{color:var(--red)}
+  .table-scroll{overflow-x:auto}
+  .ledger{
+    width:100%;border-collapse:collapse;min-width:640px;
+    font-size:.88rem;
+  }
+  .ledger caption{
+    caption-side:top;text-align:left;padding-bottom:.5rem;
+    font-style:italic;color:var(--ink-soft);font-size:.88rem;
+  }
+  .ledger th{
+    font-family:var(--sans);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;
+    text-align:left;color:var(--ink-soft);font-weight:600;
+    border-top:3px solid var(--rule-dark);border-bottom:1px solid var(--rule-dark);
+    padding:.5rem .8rem .5rem 0;
+  }
+  .ledger td{
+    border-bottom:1px solid var(--rule);padding:.55rem .8rem .55rem 0;
+    vertical-align:baseline;font-variant-numeric:tabular-nums;
+  }
+  .ledger tbody tr{transition:background .12s ease}
+  .ledger tbody tr:hover{background:var(--paper-deep)}
+  .sev{white-space:nowrap;font-family:var(--sans);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase}
+  .sev-major{color:var(--red);font-weight:700}
+  .sev-moderate{color:var(--ink)}
+  .sev-minor{color:var(--ink-soft)}
+  .cur{font-family:var(--sans);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);white-space:nowrap}
+  .ledger .find{font-size:.95rem}
+  .ledger .proofcell{font-family:var(--mono);font-size:.7rem;color:var(--ink-soft)}
+  .fnmark{
+    font-family:var(--sans);font-size:.68rem;vertical-align:super;line-height:0;
+    color:var(--red);text-decoration:none;font-weight:700;padding-left:.15rem;
+  }
+  .fnmark:hover{color:var(--red-deep);text-decoration:underline}
+  .ledger-foot{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.7rem 0 0;font-size:.85rem}
+  .ledger-foot a{font-style:italic}
+
+  .footnotes{
+    max-width:920px;margin:1.6rem auto 0;padding-top:.6rem;
+    border-top:1px solid var(--rule-dark);
+    columns:2;column-gap:2.6rem;column-rule:1px solid var(--rule);
+  }
+  @media (max-width:720px){ .footnotes{columns:1} }
+  .footnotes h3{font-family:var(--sans);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;margin-bottom:.6rem;column-span:all}
+  .footnotes ol{list-style:none;counter-reset:fn}
+  .footnotes li{
+    counter-increment:fn;font-size:.8rem;color:var(--ink-soft);
+    padding:.22rem 0;font-variant-numeric:tabular-nums;break-inside:avoid;
+  }
+  .footnotes li::before{content:counter(fn) ".";color:var(--red);font-family:var(--sans);font-size:.7rem;font-weight:700;padding-right:.5rem}
+  .fn-link{font-style:italic}
+
+  .clean-box{
+    max-width:920px;margin:2rem auto 0;padding:1.1rem 0 0;
+    border-top:3px double var(--rule-dark);
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:1.4rem;
+  }
+  @media (max-width:720px){ .clean-box{grid-template-columns:1fr;gap:.8rem} }
+  .clean-box h3{font-family:var(--sans);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+  .clean-box h3 em{color:var(--red);font-style:normal}
+  .clean-rules{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
+  .clean-rules span{font-family:var(--mono);font-size:.7rem;border:1px solid var(--rule);padding:.15rem .5rem;color:var(--ink-soft)}
+  .clean-note{font-style:italic;font-size:.92rem;color:var(--ink-soft);max-width:52ch}
+
+  /* ============ zone D — the weather ============ */
+  .weather{
+    max-width:920px;margin:2.8rem auto 0;
+    background:var(--weather-bg);
+    border-top:3px solid var(--weather-ink);border-bottom:1px solid var(--weather-rule);
+    padding:1.5rem 1.8rem 1.4rem;color:var(--weather-ink);
+  }
+  @media (max-width:520px){ .weather{padding:1.2rem 1rem} }
+  .weather .slug{font-family:var(--sans);font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;font-weight:700;margin-bottom:.3rem}
+  .weather h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:400;font-style:italic;margin-bottom:.5rem}
+  .weather .disclaimer{
+    font-family:var(--sans);font-size:.78rem;letter-spacing:.04em;
+    border-bottom:1px solid var(--weather-rule);padding-bottom:.8rem;margin-bottom:.8rem;
+  }
+  .weather ul{list-style:none}
+  .weather li{padding:.55rem 0;border-bottom:1px solid var(--weather-rule)}
+  .weather li:last-child{border-bottom:0}
+  .weather .w-head{font-size:.95rem}
+  .weather .w-proof{font-family:var(--mono);font-size:.7rem;color:#5C6874;font-variant-numeric:tabular-nums;margin-top:.15rem}
+
+  /* ============ colophon ============ */
+  .colophon{
+    margin-top:3rem;border-top:1px solid var(--rule-dark);
+    padding:1.6rem 24px 2.6rem;text-align:center;
+  }
+  .cap-strip{
+    display:flex;justify-content:center;align-items:center;gap:.5rem;flex-wrap:wrap;
+    margin:.8rem 0 .4rem;
+  }
+  .cap{
+    font-family:var(--sans);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--rule-dark);padding:.2rem .6rem;
+  }
+  .cap-on{background:var(--ink);color:var(--paper)}
+  .cap-off{color:var(--ink-soft);border-style:dashed;border-color:var(--rule)}
+  .cap-highlights{font-family:var(--sans);font-size:.72rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;margin-bottom:1.4rem}
+  .colophon .fin{
+    font-family:var(--sans);font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--ink-soft);margin:1.6rem 0 1.2rem;
+  }
+  .colophon .fin::before,.colophon .fin::after{content:" — "}
+  .versions,.privacy{font-family:var(--sans);font-size:.72rem;color:var(--ink-soft);letter-spacing:.06em;font-variant-numeric:tabular-nums}
+  .privacy{margin-top:.3rem}
+  .privacy b{color:var(--ink);font-weight:600}
+
+  @media print{
+    .btn,.btn-ghost,.skip{display:none}
+    body{background:#fff}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the report</a>
+
+<header class="masthead sheet">
+  <div class="edition">
+    <span>Vol. 0.6 · No. 563d</span>
+    <span>Local edition — printed on your machine</span>
+    <span>Analyzed Aug 28, 2026</span>
+  </div>
+  <h1 class="nameplate">damame<span class="dot">.</span></h1>
+  <p class="plate-sub">The Session Ledger — a profiler’s report on your AI coding sessions</p>
+  <hr class="scotch"><hr class="scotch-thin">
+</header>
+
+<main id="main" class="sheet">
+
+  <!-- ============ FRONT PAGE: identity · score · story ============ -->
+  <section class="front" aria-labelledby="story-head">
+    <div class="story">
+      <p class="kicker">Session review · <b>terminus2</b> · ~/terminus2 · Jun 9 → Aug 28, 2026 · 80 days</p>
+      <h2 class="headline" id="story-head">A marathon, run inside a single chat.</h2>
+      <p class="deck">An 80-day task-production marathon run inside a single chat — heavy delegation and background automation done well, taxed hard by one eternal session and a lot of hand-carried data.</p>
+      <p class="byline">By the engine, from the transcript · nothing modeled where measured says otherwise</p>
+      <div class="stats-agate" role="list" aria-label="Session statistics">
+        <span role="listitem"><b>962</b> turns</span>
+        <span role="listitem"><b>758</b> human</span>
+        <span role="listitem"><b>7,719</b> tool calls</span>
+        <span role="listitem"><b>87</b> subagent runs</span>
+        <span role="listitem"><b>26</b> compactions</span>
+        <span role="listitem"><b>4.34B</b> tokens total</span>
+        <span role="listitem"><b>190M</b> fresh</span>
+      </div>
+    </div>
+
+    <aside class="scorebox" id="score-breakdown" aria-labelledby="score-label">
+      <p class="score-label" id="score-label">The session score</p>
+      <p class="score-fig num">42<small> / 100</small></p>
+      <p class="score-caption">One figure, five graded parameters. The two zeros below are where the taxes were paid.</p>
+      <table class="params">
+        <caption>Parameter grading — score@1</caption>
+        <tbody>
+          <tr>
+            <td>Cost efficiency
+              <span class="pbar" aria-hidden="true"><i style="width:88%"></i></span></td>
+            <td class="num">88</td>
+          </tr>
+          <tr class="pzero">
+            <td>Context hygiene
+              <span class="pbar" aria-hidden="true"><i style="width:0%"></i></span></td>
+            <td class="num">0</td>
+          </tr>
+          <tr class="pzero">
+            <td>Redundant work
+              <span class="pbar" aria-hidden="true"><i style="width:0%"></i></span></td>
+            <td class="num">0</td>
+          </tr>
+          <tr>
+            <td>Missed capabilities
+              <span class="pbar" aria-hidden="true"><i style="width:33%"></i></span></td>
+            <td class="num">33</td>
+          </tr>
+          <tr>
+            <td>Prompting &amp; recovery
+              <span class="pbar" aria-hidden="true"><i style="width:88%"></i></span></td>
+            <td class="num">88</td>
+          </tr>
+        </tbody>
+      </table>
+    </aside>
+  </section>
+
+  <!-- ============ ZONE A — corrections & amplifications ============ -->
+  <section aria-labelledby="zone-a-head">
+    <div class="sec-head"><span class="slug">Corrections &amp; Amplifications — <em>the fix surface</em></span></div>
+    <div class="corrections">
+      <h2 id="zone-a-head">damame can fix <span class="n num">4</span> things.</h2>
+      <p class="corr-sub">Machine-applicable, batched, and leaving your attention — review the whole set once.</p>
+      <ol class="fixlist">
+        <li>
+          <span class="what">Automate the day80 explore check that followed your edits 48&nbsp;times</span>
+          <span class="dest">PostToolUse hook → settings.json</span>
+        </li>
+        <li>
+          <span class="what">Automate the warden sim run that followed edits 21&nbsp;times</span>
+          <span class="dest">PostToolUse hook → settings.json</span>
+        </li>
+        <li>
+          <span class="what">Automate the day72 verification ritual (13&nbsp;times)</span>
+          <span class="dest">PostToolUse hook → settings.json</span>
+        </li>
+        <li>
+          <span class="what">8 more repeated rituals detected — include them in the batch</span>
+          <span class="dest">PostToolUse hooks</span>
+        </li>
+      </ol>
+      <div class="corr-actions">
+        <button type="button" class="btn btn-red" id="review-diff">Review the diff</button>
+        <p class="ledger-note">After you apply: damame measures your next sessions and shows what stopped happening — receipts, not promises.</p>
+      </div>
+      <p class="mock-note" id="diff-mock" hidden>Mock — in the product, a unified diff of settings.json and CLAUDE.md opens here for one approval covering all 11 hooks.</p>
+    </div>
+  </section>
+
+  <!-- ============ ZONE B — leaders (worth adopting) ============ -->
+  <section aria-labelledby="zone-b-head">
+    <div class="sec-head"><span class="slug" id="zone-b-head">Leaders — <em>worth adopting</em></span></div>
+    <p class="lead-intro">Three habits, argued once each and grouped by root cause. Adopt them or dismiss them — either answer is a good answer.</p>
+
+    <!-- flagship: freeze your own pattern -->
+    <article class="flagship leader" id="card-freeze-pattern" aria-labelledby="freeze-head">
+      <div class="card-body flag-main">
+        <p class="flag-eyebrow">The flagship leader · Recipe — freeze your own pattern</p>
+        <div class="chips">
+          <span class="chip chip-currency">Quality</span>
+          <span class="chip chip-verified">✓ Verified · curated from this transcript</span>
+          <span class="chip chip-votes">1 signal · repeated-delegation</span>
+        </div>
+        <h3 id="freeze-head">You re-improvised the same delegation 5 times — the skill you need already exists, written by you, in installments.</h3>
+        <p class="case">Each retelling of the cold-opus probe drifted a little. Your 5 versions are the draft: merge them into a saved skill or workflow and the best version becomes the only version. (Your 89 slash-command uses prove the frozen form wins.)</p>
+        <p class="proof num">“cold-opus probe …” re-improvised ×5 · every instance linked below</p>
+        <div class="leader-actions">
+          <button type="button" class="btn">Show my 5 versions</button>
+          <button type="button" class="btn-ghost" data-dismiss="card-freeze-pattern">Not relevant</button>
+        </div>
+      </div>
+      <blockquote class="pull card-body">
+        <p>Merge the five drafts, and the best version becomes the only version.</p>
+        <cite>— the case for freezing your own pattern</cite>
+      </blockquote>
+      <p class="dismissed-note" hidden>Marked not relevant — it won’t be argued again.
+        <button type="button" class="btn-ghost" data-restore="card-freeze-pattern">Restore</button></p>
+    </article>
+
+    <div class="leader-pair">
+      <!-- session hygiene -->
+      <article class="leader" id="card-session-hygiene" aria-labelledby="hygiene-head">
+        <div class="card-body">
+          <p class="lead-eyebrow">Recipe — end each task with a notes.md handoff, start the next fresh</p>
+          <div class="chips">
+            <span class="chip chip-currency">Quality</span>
+            <span class="chip chip-verified">✓ Verified · measured in this session</span>
+            <span class="chip chip-votes">3 signals point here · eternal-session · cache-thrash · compaction-burn</span>
+          </div>
+          <h3 id="hygiene-head">One chat became your permanent workspace — Claude’s memory of this project is a 26th-generation summary.</h3>
+          <p class="case">80 days, 26 resumes, 26 compactions: every morning re-bought the whole pile, and every compaction silently decided what your project’s history was. Move memory to files (notes.md + CLAUDE.md); make fresh sessions cheap.</p>
+          <p class="proof num">eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions</p>
+          <div class="leader-actions">
+            <button type="button" class="btn">See the ritual</button>
+            <button type="button" class="btn-ghost" data-dismiss="card-session-hygiene">Not relevant</button>
+          </div>
+        </div>
+        <p class="dismissed-note" hidden>Marked not relevant — it won’t be argued again.
+          <button type="button" class="btn-ghost" data-restore="card-session-hygiene">Restore</button></p>
+      </article>
+
+      <!-- source access -->
+      <article class="leader" id="card-source-access" aria-labelledby="source-head">
+        <div class="card-body">
+          <p class="lead-eyebrow">Recipe — stop hand-carrying data into the chat</p>
+          <div class="chips">
+            <span class="chip chip-currency">Time</span>
+            <span class="chip chip-verified">✓ Verified · curated from a real transcript</span>
+            <span class="chip chip-votes">1 signal · paste-relay ×8</span>
+          </div>
+          <h3 id="source-head">Claude couldn’t check the grading site itself — so you hand-carried the results, 170 times.</h3>
+          <p class="case">Every verification cycle stalled until you delivered the next block by hand. Give Claude direct access to the source and the stall-fix-stall loop becomes one continuous run.</p>
+          <p class="proof num">170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates</p>
+          <div class="leader-actions">
+            <button type="button" class="btn">See the recipe</button>
+            <button type="button" class="btn-ghost" data-dismiss="card-source-access">Not relevant</button>
+          </div>
+        </div>
+        <p class="dismissed-note" hidden>Marked not relevant — it won’t be argued again.
+          <button type="button" class="btn-ghost" data-restore="card-source-access">Restore</button></p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ ZONE C — the ledger (receipts) ============ -->
+  <section aria-labelledby="zone-c-head">
+    <div class="sec-head"><span class="slug" id="zone-c-head">The Ledger — <em>all receipts</em></span></div>
+
+    <details class="ledger-wrap" open>
+      <summary><span class="disc">The full ledger — 8 findings, 4 currencies, evidence on file</span></summary>
+      <div class="table-scroll">
+        <table class="ledger">
+          <caption>Every finding, one line each. Superscript numbers resolve to the evidence notes below.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Severity</th>
+              <th scope="col">Currency</th>
+              <th scope="col">Finding</th>
+              <th scope="col">Proof</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sev sev-major">▲ Major</td>
+              <td class="cur">Limits</td>
+              <td class="find">The whole conversation got re-billed from scratch, repeatedly<a class="fnmark" href="#fn1" aria-label="Evidence note 1">1</a></td>
+              <td class="proofcell num">cache-thrash · 17.5M missed input tokens (messages_changed)</td>
+            </tr>
+            <tr>
+              <td class="sev sev-major">▲ Major</td>
+              <td class="cur">Limits</td>
+              <td class="find">Mid-session tool changes broke the cache 4 ways<a class="fnmark" href="#fn2" aria-label="Evidence note 2">2</a></td>
+              <td class="proofcell num">cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)</td>
+            </tr>
+            <tr>
+              <td class="sev sev-major">▲ Major</td>
+              <td class="cur">Quality</td>
+              <td class="find">26 compactions — details were lost to summaries 26 times<a class="fnmark" href="#fn3" aria-label="Evidence note 3">3</a></td>
+              <td class="proofcell num">compaction-burn · measured pauses recorded</td>
+            </tr>
+            <tr>
+              <td class="sev sev-major">▲ Major</td>
+              <td class="cur">Time</td>
+              <td class="find">You worked as the data courier, 8 different templates’ worth<a class="fnmark" href="#fn4" aria-label="Evidence note 4">4</a></td>
+              <td class="proofcell num">paste-relay · 170 blocks · 1.64MB by hand</td>
+            </tr>
+            <tr>
+              <td class="sev sev-major">▲ Major</td>
+              <td class="cur">Quality</td>
+              <td class="find">One session spanned 80 days — a permanent workspace<a class="fnmark" href="#fn5" aria-label="Evidence note 5">5</a></td>
+              <td class="proofcell num">eternal-session · 26 resumes · 26 compactions</td>
+            </tr>
+            <tr>
+              <td class="sev sev-moderate">◆ Moderate</td>
+              <td class="cur">Limits</td>
+              <td class="find">A direction change discarded 949k tokens of built work<a class="fnmark" href="#fn6" aria-label="Evidence note 6">6</a></td>
+              <td class="proofcell num">abandoned-work · measured, rewind branch</td>
+            </tr>
+            <tr>
+              <td class="sev sev-moderate">◆ Moderate</td>
+              <td class="cur">Quality</td>
+              <td class="find">Same delegation re-improvised 5× — drift risk each time<a class="fnmark" href="#fn7" aria-label="Evidence note 7">7</a></td>
+              <td class="proofcell num">repeated-delegation · no token claim (honest: the cost is drift)</td>
+            </tr>
+            <tr>
+              <td class="sev sev-minor">○ Minor</td>
+              <td class="cur">Time</td>
+              <td class="find">11 manual rituals followed your edits (10–48× each)<a class="fnmark" href="#fn8" aria-label="Evidence note 8">8</a></td>
+              <td class="proofcell num">post-edit-ritual · all 11 automatable as hooks</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ledger-foot">
+        <a href="#score-breakdown">How these graded into 42 — the score table ↑</a>
+        <span class="agate">Severity marked by symbol and word, never color alone</span>
+      </div>
+
+      <nav class="footnotes" aria-label="Notes on the evidence">
+        <h3>Notes on the evidence — “show me where”</h3>
+        <ol>
+          <li id="fn1">8 excerpts on file · <a class="fn-link" href="#fn1" onclick="return false">show me where →</a></li>
+          <li id="fn2">8 excerpts on file · <a class="fn-link" href="#fn2" onclick="return false">show me where →</a></li>
+          <li id="fn3">26 excerpts on file · <a class="fn-link" href="#fn3" onclick="return false">show me where →</a></li>
+          <li id="fn4">8 excerpts on file · <a class="fn-link" href="#fn4" onclick="return false">show me where →</a></li>
+          <li id="fn5">1 excerpt on file · <a class="fn-link" href="#fn5" onclick="return false">show me where →</a></li>
+          <li id="fn6">1 excerpt on file · <a class="fn-link" href="#fn6" onclick="return false">show me where →</a></li>
+          <li id="fn7">5 excerpts on file · <a class="fn-link" href="#fn7" onclick="return false">show me where →</a></li>
+          <li id="fn8">11 excerpts on file · <a class="fn-link" href="#fn8" onclick="return false">show me where →</a></li>
+        </ol>
+      </nav>
+    </details>
+
+    <div class="clean-box">
+      <div>
+        <h3>Clean columns — <em>nothing caught</em></h3>
+        <div class="clean-rules">
+          <span>edit-fail-loop</span>
+          <span>bash-error-loop</span>
+          <span>duplicate-tool-call</span>
+          <span>oversized-context-reads</span>
+          <span>missed-delegation</span>
+        </div>
+      </div>
+      <p class="clean-note">233 tool errors occurred — none formed a loop. 87 delegations — none missed. Silence here is earned, not assumed (and not proof of perfection).</p>
+    </div>
+  </section>
+
+  <!-- ============ ZONE D — the provider's weather ============ -->
+  <aside class="weather" aria-labelledby="zone-d-head">
+    <p class="slug">In other news</p>
+    <h2 id="zone-d-head">The provider’s weather — not your inefficiency.</h2>
+    <p class="disclaimer">These findings live in a different room on purpose. They are infrastructure, not habit — and they never count against you or your score.</p>
+    <ul>
+      <li>
+        <p class="w-head">344 transient API errors + 22 terminal failures — the provider’s weather</p>
+        <p class="w-proof num">retry-storm · always excluded from your score</p>
+      </li>
+      <li>
+        <p class="w-head">3 branches orphaned by session resumes — nobody’s fault, nothing to fix</p>
+        <p class="w-proof num">abandoned-work (infra) · 357k + 265k + 875k tokens</p>
+      </li>
+    </ul>
+  </aside>
+
+</main>
+
+<!-- ============ colophon ============ -->
+<footer class="colophon">
+  <p class="agate">Capabilities exercised — 4 of 7 · recognition, not obligation</p>
+  <div class="cap-strip">
+    <span class="cap cap-on">Subagents</span>
+    <span class="cap cap-on">Workflows</span>
+    <span class="cap cap-on">Skills</span>
+    <span class="cap cap-on">Background tasks</span>
+    <span class="cap cap-off" aria-label="Three capabilities not yet exercised">+ 3 unexercised</span>
+  </div>
+  <p class="cap-highlights num">220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads</p>
+  <p class="fin">End of report</p>
+  <p class="versions num">damame 0.6.0 · score@1 · adapter claude-code 0.1.0</p>
+  <p class="privacy"><b>Analyzed locally.</b> Nothing left your machine.</p>
+</footer>
+
+<script>
+  // Mock: review-the-diff reveals a note about what the real action does.
+  (function () {
+    var btn = document.getElementById('review-diff');
+    var note = document.getElementById('diff-mock');
+    btn.addEventListener('click', function () {
+      var showing = note.hidden;
+      note.hidden = !showing;
+      btn.setAttribute('aria-expanded', String(showing));
+    });
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', 'diff-mock');
+  })();
+
+  // Real interaction: "Not relevant" dismisses a leader card; "Restore" brings it back.
+  (function () {
+    function setDismissed(card, dismissed) {
+      var bodies = card.querySelectorAll('.card-body');
+      for (var i = 0; i < bodies.length; i++) bodies[i].hidden = dismissed;
+      card.querySelector('.dismissed-note').hidden = !dismissed;
+    }
+    document.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t.hasAttribute && t.hasAttribute('data-dismiss')) {
+        var card = document.getElementById(t.getAttribute('data-dismiss'));
+        setDismissed(card, true);
+        card.querySelector('[data-restore]').focus();
+      } else if (t.hasAttribute && t.hasAttribute('data-restore')) {
+        var card2 = document.getElementById(t.getAttribute('data-restore'));
+        setDismissed(card2, false);
+        card2.querySelector('[data-dismiss]').focus();
+      }
+    });
+  })();
+
+  // Mock: adopt-style primary actions acknowledge without pretending to navigate.
+  (function () {
+    var adopts = document.querySelectorAll('.leader-actions .btn');
+    for (var i = 0; i < adopts.length; i++) {
+      adopts[i].addEventListener('click', function () {
+        var original = this.textContent;
+        if (this.dataset.mocked) return;
+        this.dataset.mocked = '1';
+        this.textContent = 'Mock — opens in the product';
+        var self = this;
+        setTimeout(function () {
+          self.textContent = original;
+          delete self.dataset.mocked;
+        }, 1600);
+      });
+    }
+  })();
+</script>
+</body>
+</html>

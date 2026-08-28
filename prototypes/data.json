@@ -1,0 +1,82 @@
+{
+  "comment": "Real analysis output from the terminus2 session (563ddaa0), reshaped into the new three-surface structure. All numbers are genuine damame findings.",
+  "session": {
+    "name": "terminus2",
+    "project": "~/terminus2",
+    "span": "Jun 9 → Aug 28, 2026 · 80 days",
+    "score": 42,
+    "parameters": [
+      { "id": "cost-efficiency", "label": "Cost efficiency", "score": 88 },
+      { "id": "context-hygiene", "label": "Context hygiene", "score": 0 },
+      { "id": "redundant-work", "label": "Redundant work", "score": 0 },
+      { "id": "missed-capabilities", "label": "Missed capabilities", "score": 33 },
+      { "id": "prompting-recovery", "label": "Prompting & recovery", "score": 88 }
+    ],
+    "story": "An 80-day task-production marathon run inside a single chat — heavy delegation and background automation done well, taxed hard by one eternal session and a lot of hand-carried data.",
+    "stats": { "turns": 962, "human_turns": 758, "tool_calls": 7719, "subagent_runs": 87, "compactions": 26, "tokens_total": "4.34B", "tokens_fresh": "190M" }
+  },
+  "fixes": {
+    "headline_count": 4,
+    "items": [
+      { "what": "Automate the day80 explore check that followed your edits 48 times", "destination": "PostToolUse hook → settings.json", "kind": "hook" },
+      { "what": "Automate the warden sim run that followed edits 21 times", "destination": "PostToolUse hook → settings.json", "kind": "hook" },
+      { "what": "Automate the day72 verification ritual (13 times)", "destination": "PostToolUse hook → settings.json", "kind": "hook" },
+      { "what": "8 more repeated rituals detected — include them in the batch", "destination": "PostToolUse hooks", "kind": "hook-more" }
+    ],
+    "ledger_note": "After you apply: damame measures your next sessions and shows what stopped happening — receipts, not promises."
+  },
+  "coach": [
+    {
+      "id": "source-access",
+      "impact": "time",
+      "headline": "Claude couldn't check the grading site itself — so you hand-carried the results, 170 times",
+      "body": "Every verification cycle stalled until you delivered the next block by hand. Give Claude direct access to the source and the stall-fix-stall loop becomes one continuous run.",
+      "proof": "170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates",
+      "detector_votes": ["paste-relay ×8"],
+      "recipe": "Stop hand-carrying data into the chat",
+      "provenance": { "status": "verified", "source": "curated from a real transcript" },
+      "actions": ["See the recipe", "Not relevant"]
+    },
+    {
+      "id": "session-hygiene",
+      "impact": "quality",
+      "headline": "One chat became your permanent workspace — Claude's memory of this project is a 26th-generation summary",
+      "body": "80 days, 26 resumes, 26 compactions: every morning re-bought the whole pile, and every compaction silently decided what your project's history was. Move memory to files (notes.md + CLAUDE.md); make fresh sessions cheap.",
+      "proof": "eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions",
+      "detector_votes": ["eternal-session", "cache-thrash", "compaction-burn"],
+      "recipe": "End each task with a notes.md handoff, start the next fresh",
+      "provenance": { "status": "verified", "source": "measured in this session" },
+      "actions": ["See the ritual", "Not relevant"]
+    },
+    {
+      "id": "freeze-pattern",
+      "impact": "quality",
+      "headline": "You re-improvised the same delegation 5 times — the skill you need already exists, written by you, in installments",
+      "body": "Each retelling of the cold-opus probe drifted a little. Your 5 versions are the draft: merge them into a saved skill/workflow and the best version becomes the only version. (Your 89 slash-command uses prove the frozen form wins.)",
+      "proof": "\"cold-opus probe …\" re-improvised ×5 · every instance linked below",
+      "detector_votes": ["repeated-delegation"],
+      "recipe": "Freeze your own pattern",
+      "provenance": { "status": "verified", "source": "curated from this transcript" },
+      "actions": ["Show my 5 versions", "Not relevant"],
+      "flagship": true
+    }
+  ],
+  "receipts": [
+    { "severity": "major", "currency": "limits", "headline": "The whole conversation got re-billed from scratch, repeatedly", "proof": "cache-thrash · 17.5M missed input tokens (messages_changed)", "evidence_n": 8 },
+    { "severity": "major", "currency": "limits", "headline": "Mid-session tool changes broke the cache 4 ways", "proof": "cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)", "evidence_n": 8 },
+    { "severity": "major", "currency": "quality", "headline": "26 compactions — details were lost to summaries 26 times", "proof": "compaction-burn · measured pauses recorded", "evidence_n": 26 },
+    { "severity": "major", "currency": "time", "headline": "You worked as the data courier, 8 different templates' worth", "proof": "paste-relay · 170 blocks · 1.64MB by hand", "evidence_n": 8 },
+    { "severity": "major", "currency": "quality", "headline": "One session spanned 80 days — a permanent workspace", "proof": "eternal-session · 26 resumes · 26 compactions", "evidence_n": 1 },
+    { "severity": "moderate", "currency": "limits", "headline": "A direction change discarded 949k tokens of built work", "proof": "abandoned-work · measured, rewind branch", "evidence_n": 1 },
+    { "severity": "moderate", "currency": "quality", "headline": "Same delegation re-improvised 5× — drift risk each time", "proof": "repeated-delegation · no token claim (honest: the cost is drift)", "evidence_n": 5 },
+    { "severity": "minor", "currency": "time", "headline": "11 manual rituals followed your edits (10–48× each)", "proof": "post-edit-ritual · all 11 automatable as hooks", "evidence_n": 11 }
+  ],
+  "clean": ["edit-fail-loop", "bash-error-loop", "duplicate-tool-call", "oversized-context-reads", "missed-delegation"],
+  "clean_note": "233 tool errors occurred — none formed a loop. 87 delegations — none missed. Silence here is earned, not assumed (and not proof of perfection).",
+  "not_yours": [
+    { "headline": "344 transient API errors + 22 terminal failures — the provider's weather", "proof": "retry-storm · always excluded from your score" },
+    { "headline": "3 branches orphaned by session resumes — nobody's fault, nothing to fix", "proof": "abandoned-work (infra) · 357k + 265k + 875k tokens" }
+  ],
+  "capabilities": { "exercised": ["subagents", "workflows", "skills", "background tasks"], "of": 7, "highlights": "220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads" },
+  "footer": { "versions": "damame 0.6.0 · score@1 · adapter claude-code 0.1.0", "privacy": "Analyzed locally. Nothing left your machine." }
+}

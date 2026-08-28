@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>damame — flight recorder</title>
+<style>
+  /* ================= FLIGHT RECORDER =================
+     avionics semantics: phosphor green = normal / armed,
+     amber = caution, cyan = advisory (infra, never yours).
+     mono = instrumentation · serif = the investigator's voice. */
+  :root{
+    --bg:        #14161a;
+    --panel:     #1a1d23;
+    --panel-in:  #16181e;
+    --line:      #2a2e37;
+    --line-soft: #22252d;
+    --text:      #d3d7de;
+    --muted:     #8a919d;
+    --dim:       #5a616d;
+    --phos:      #8fe3a4;
+    --phos-soft: rgba(143,227,164,.14);
+    --amber:     #e6b45c;
+    --amber-soft:rgba(230,180,92,.13);
+    --cyan:      #7cc4dc;
+    --cyan-soft: rgba(124,196,220,.10);
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --serif: ui-serif,"Iowan Old Style",Georgia,"Times New Roman",serif;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--bg);
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 28px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.014) 0 1px, transparent 1px 28px);
+    color:var(--text);
+    font:13px/1.55 var(--mono);
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1060px; margin:0 auto; padding:0 20px 56px; }
+  a{ color:var(--phos); }
+  button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--phos); outline-offset:2px; }
+  ::selection{ background:var(--phos); color:#10120f; }
+
+  .skip{
+    position:absolute; left:20px; top:-48px; z-index:10;
+    background:var(--phos); color:#10120f; padding:8px 14px;
+    font:600 12px var(--mono); text-decoration:none; letter-spacing:.06em;
+    transition:top .15s;
+  }
+  .skip:focus{ top:12px; }
+
+  /* ---------- instrument clusters (zone frames) ---------- */
+  .cluster{ position:relative; border:1px solid var(--line); background:var(--panel); margin-top:34px; }
+  .cluster-legend{
+    position:absolute; top:-8px; left:14px;
+    background:var(--bg); padding:0 8px;
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); white-space:nowrap;
+  }
+  .cluster-legend b{ color:var(--text); font-weight:600; }
+  .cluster-legend .lg-phos{ color:var(--phos); font-weight:600; }
+  .cluster-legend .lg-cyan{ color:var(--cyan); font-weight:600; }
+  .cluster-tag{
+    position:absolute; top:-8px; right:14px;
+    background:var(--bg); padding:0 8px;
+    font-size:10px; letter-spacing:.12em; color:var(--dim); text-transform:uppercase;
+  }
+  .cluster-pad{ padding:22px 20px 20px; }
+
+  /* ---------- masthead ---------- */
+  .topline{
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    padding:14px 0 12px; border-bottom:1px solid var(--line);
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+    flex-wrap:wrap;
+  }
+  .wordmark{ font-size:15px; letter-spacing:.26em; color:var(--text); font-weight:600; text-transform:lowercase; }
+  .wordmark .dot{ color:var(--phos); }
+  .head-grid{
+    display:grid; grid-template-columns:1fr 236px 268px; gap:0;
+    border:1px solid var(--line); border-top:none; background:var(--panel);
+  }
+  .head-cell{ padding:20px; min-width:0; }
+  .head-cell + .head-cell{ border-left:1px solid var(--line); }
+  .cell-legend{
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--dim); margin-bottom:12px;
+  }
+  .sess-name{ font-size:26px; font-weight:600; letter-spacing:.02em; line-height:1.1; }
+  .sess-meta{ color:var(--muted); font-size:12px; margin-top:6px; }
+  .sess-meta .sep{ color:var(--dim); padding:0 6px; }
+  .story{
+    font:italic 15px/1.55 var(--serif); color:var(--text);
+    margin-top:14px; max-width:52ch;
+    border-left:2px solid var(--line); padding-left:12px;
+  }
+  .tape{
+    display:flex; flex-wrap:wrap; margin-top:18px;
+    border:1px solid var(--line-soft); background:var(--panel-in);
+  }
+  .tape > div{
+    flex:1 1 auto; padding:7px 12px 8px; border-right:1px solid var(--line-soft);
+    min-width:86px;
+  }
+  .tape > div:last-child{ border-right:none; }
+  .tape .tl{ display:block; font-size:9px; letter-spacing:.12em; color:var(--dim); text-transform:uppercase; }
+  .tape .tv{ font-size:14px; color:var(--text); }
+  .tape .tv small{ font-size:10px; color:var(--muted); }
+
+  /* ---------- gauge ---------- */
+  .gauge-cell{ display:flex; flex-direction:column; align-items:center; }
+  .gauge{ width:100%; max-width:216px; display:block; }
+  .g-track{ fill:none; stroke:var(--line); stroke-width:2; stroke-dasharray:276.5 414.7; }
+  .g-fill{ fill:none; stroke:var(--phos); stroke-width:5; stroke-dasharray:116.1 414.7; }
+  .g-tick{ stroke:var(--dim); stroke-width:1.4; }
+  .g-tick.minor{ stroke:var(--line); }
+  .g-num{ fill:var(--dim); font:8.5px var(--mono); text-anchor:middle; }
+  .needle line{ stroke:var(--phos); stroke-width:2.4; }
+  .needle .tail{ stroke:var(--dim); stroke-width:2.4; }
+  .needle{ transform-box:view-box; transform-origin:100px 100px; transform:rotate(-19.2deg); }
+  .hub{ fill:var(--panel); stroke:var(--phos); stroke-width:1.6; }
+  .g-score{ fill:var(--text); font:600 32px var(--mono); text-anchor:middle; }
+  .g-cap{ fill:var(--dim); font:8.5px var(--mono); letter-spacing:.18em; text-anchor:middle; }
+  @keyframes sweep{ from{ transform:rotate(-120deg); } }
+  @keyframes arcgrow{ from{ stroke-dasharray:0 414.7; } }
+  .needle{ animation:sweep 1.2s cubic-bezier(.33,1.25,.45,1) 1; }
+  .g-fill{ animation:arcgrow 1.2s cubic-bezier(.33,1.25,.45,1) 1; }
+
+  /* ---------- parameter bars ---------- */
+  .param{ display:grid; grid-template-columns:1fr 34px; gap:0 10px; align-items:center; padding:6px 0; }
+  .param + .param{ border-top:1px solid var(--line-soft); }
+  .p-label{ font-size:11px; color:var(--muted); grid-column:1; }
+  .p-val{ grid-column:2; grid-row:1 / span 2; text-align:right; font-size:15px; color:var(--text); }
+  .p-val.zero{ color:var(--amber); }
+  .p-bar{ grid-column:1; height:5px; background:var(--panel-in); border:1px solid var(--line-soft); position:relative; margin-top:3px; }
+  .p-bar i{ position:absolute; inset:0 auto 0 0; background:var(--muted); }
+  .p-bar i.hi{ background:var(--phos); }
+  .p-bar i.lo{ background:var(--amber); }
+  .p-note{ font-size:10px; color:var(--dim); margin-top:10px; letter-spacing:.04em; }
+
+  /* ---------- zone A: fix checklist ---------- */
+  .fix-head{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .fix-title{ font-size:19px; font-weight:600; letter-spacing:.01em; }
+  .fix-title .n{ color:var(--phos); }
+  .fix-sub{ color:var(--muted); font-size:12px; }
+  .fix-list{ list-style:none; margin-top:16px; border-top:1px solid var(--line-soft); }
+  .fix-row{
+    display:grid; grid-template-columns:auto 1fr; gap:4px 16px; align-items:center;
+    padding:11px 4px; border-bottom:1px solid var(--line-soft);
+  }
+  .fix-row:hover{ background:var(--panel-in); }
+  .fix-what{ font-size:13px; }
+  .fix-dest{ grid-column:2; font-size:11px; color:var(--muted); }
+  .fix-dest::before{ content:"→ "; color:var(--dim); }
+  .sw{ position:relative; display:inline-flex; align-items:center; gap:9px; cursor:pointer; grid-row:1 / span 2; }
+  .sw input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .sw-track{ width:36px; height:18px; border:1px solid var(--line); background:var(--panel-in); position:relative; flex:none; }
+  .sw-track::after{
+    content:""; position:absolute; top:2px; left:2px; width:14px; height:12px;
+    background:var(--dim); transition:left .15s, background .15s;
+  }
+  .sw input:checked + .sw-track{ border-color:var(--phos); }
+  .sw input:checked + .sw-track::after{ left:18px; background:var(--phos); }
+  .sw input:focus-visible + .sw-track{ outline:2px solid var(--phos); outline-offset:2px; }
+  .sw-state{ font-size:9px; letter-spacing:.14em; width:44px; }
+  .sw-state::after{ content:"OFF"; color:var(--dim); }
+  .sw input:checked ~ .sw-state::after{ content:"ARMED"; color:var(--phos); }
+  .fix-actions{ display:flex; align-items:center; gap:16px; margin-top:16px; flex-wrap:wrap; }
+  .btn-primary{
+    border:1px solid var(--phos); color:var(--phos); background:var(--phos-soft);
+    padding:9px 18px; font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+  }
+  .btn-primary:hover{ background:var(--phos); color:#10120f; }
+  .btn-primary:disabled{ border-color:var(--line); color:var(--dim); background:none; cursor:not-allowed; }
+  .mock-status{ font-size:11px; color:var(--amber); min-height:1em; }
+  .ledger-note{ margin-top:14px; font-size:11px; color:var(--muted); border-top:1px dashed var(--line-soft); padding-top:12px; max-width:70ch; }
+  .ledger-note b{ color:var(--text); font-weight:600; }
+
+  /* ---------- zone B: coach ---------- */
+  .coach-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .coach-card{
+    border:1px solid var(--line); background:var(--panel-in);
+    padding:18px 18px 16px; display:flex; flex-direction:column; gap:11px; position:relative;
+  }
+  .coach-card:hover{ border-color:#3a4050; }
+  .coach-card.flagship{
+    grid-column:1 / -1; background:var(--panel);
+    border-color:var(--phos); box-shadow:inset 3px 0 0 var(--phos);
+  }
+  .chip-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid var(--line); padding:2px 9px;
+    font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted);
+  }
+  .chip i{ width:7px; height:7px; flex:none; display:inline-block; }
+  .chip-quality i{ background:var(--phos); }
+  .chip-quality{ color:var(--phos); border-color:rgba(143,227,164,.4); }
+  .chip-time i{ background:var(--cyan); }
+  .chip-time{ color:var(--cyan); border-color:rgba(124,196,220,.4); }
+  .chip-limits i{ background:var(--amber); }
+  .chip-limits{ color:var(--amber); border-color:rgba(230,180,92,.4); }
+  .chip-flag{ color:#10120f; background:var(--phos); border-color:var(--phos); font-weight:700; }
+  .chip-prov i{ border-radius:50%; }
+  .chip-prov.verified i{ background:var(--phos); }
+  .chip-prov.candidate i{ background:none; border:1px solid var(--muted); }
+  .coach-hl{ font:600 20px/1.32 var(--serif); letter-spacing:.002em; }
+  .flagship .coach-hl{ font-size:23px; max-width:34ch; }
+  .coach-body{ font:14px/1.6 var(--serif); color:var(--muted); max-width:66ch; }
+  .coach-body b{ color:var(--text); font-weight:600; }
+  .proof{ font-size:11px; color:var(--dim); border-top:1px solid var(--line-soft); padding-top:9px; }
+  .proof .pl{ color:var(--muted); letter-spacing:.1em; font-size:9px; text-transform:uppercase; margin-right:8px; }
+  .votes{ font-size:10.5px; color:var(--muted); }
+  .votes .vn{ color:var(--phos); }
+  .card-foot{ display:flex; align-items:center; gap:14px; margin-top:auto; flex-wrap:wrap; }
+  .btn-adopt{
+    border:1px solid var(--text); padding:7px 14px;
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  }
+  .btn-adopt:hover{ background:var(--text); color:var(--bg); }
+  .flagship .btn-adopt{ border-color:var(--phos); color:var(--phos); }
+  .flagship .btn-adopt:hover{ background:var(--phos); color:#10120f; }
+  .btn-quiet{ color:var(--dim); font-size:11px; letter-spacing:.06em; text-decoration:underline dotted; text-underline-offset:3px; }
+  .btn-quiet:hover{ color:var(--muted); }
+  .card-status{ font-size:10.5px; color:var(--amber); }
+  .dismiss-note{ display:none; align-items:baseline; gap:12px; color:var(--dim); font-size:12px; }
+  .coach-card.dismissed > :not(.dismiss-note){ display:none; }
+  .coach-card.dismissed .dismiss-note{ display:flex; }
+  .coach-card.dismissed{ border-style:dashed; box-shadow:none; background:none; }
+
+  /* ---------- zone C: receipts ---------- */
+  .ledger summary{
+    list-style:none; cursor:pointer; padding:16px 20px;
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  }
+  .ledger summary::-webkit-details-marker{ display:none; }
+  .ledger summary:hover{ background:var(--panel-in); }
+  .ledger summary .caret{ color:var(--dim); transition:transform .15s; display:inline-block; }
+  .ledger[open] summary .caret{ transform:rotate(90deg); }
+  .sum-title{ font-size:13px; letter-spacing:.04em; }
+  .sum-counts{ display:flex; gap:10px; font-size:10px; color:var(--muted); letter-spacing:.06em; }
+  .receipts{ border-top:1px solid var(--line-soft); }
+  .receipt{
+    display:grid; grid-template-columns:70px 64px 1fr auto; gap:2px 14px;
+    align-items:baseline; padding:10px 20px; border-bottom:1px solid var(--line-soft);
+  }
+  .receipt:last-child{ border-bottom:none; }
+  .receipt:hover{ background:var(--panel-in); }
+  .sev{ font-size:9.5px; letter-spacing:.1em; display:inline-flex; gap:6px; align-items:baseline; }
+  .sev .mk{ font-size:10px; }
+  .sev-maj{ color:var(--amber); }
+  .sev-mod{ color:var(--text); }
+  .sev-min{ color:var(--muted); }
+  .r-cur{ font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; }
+  .r-cur.quality{ color:var(--phos); }
+  .r-cur.time{ color:var(--cyan); }
+  .r-cur.limits{ color:var(--amber); }
+  .r-main{ min-width:0; }
+  .r-hl{ font-size:12.5px; }
+  .r-proof{ font-size:10.5px; color:var(--dim); }
+  .evi{
+    font-size:10px; letter-spacing:.08em; color:var(--muted);
+    border:1px solid var(--line); padding:3px 9px; white-space:nowrap;
+  }
+  .evi:hover{ color:var(--phos); border-color:var(--phos); }
+  .evi-note{ grid-column:3 / -1; font-size:10.5px; color:var(--amber); padding-top:2px; }
+  .clean-box{ border-top:1px solid var(--line); padding:14px 20px 16px; background:var(--panel-in); }
+  .clean-title{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:9px; }
+  .clean-title b{ color:var(--phos); font-weight:600; }
+  .clean-chips{ display:flex; gap:8px; flex-wrap:wrap; list-style:none; }
+  .clean-chips li{
+    border:1px solid var(--line-soft); padding:2px 9px; font-size:10.5px; color:var(--muted);
+    display:inline-flex; align-items:center; gap:7px;
+  }
+  .clean-chips li::before{ content:""; width:6px; height:6px; background:var(--phos); }
+  .clean-note{ font:italic 12.5px/1.55 var(--serif); color:var(--muted); margin-top:10px; max-width:70ch; }
+  .score-link{ display:inline-block; margin-top:12px; font-size:11px; letter-spacing:.08em; color:var(--phos); text-decoration:none; border-bottom:1px dotted var(--phos); }
+  .score-link:hover{ border-bottom-style:solid; }
+
+  /* ---------- zone D: infra room ---------- */
+  .infra{
+    border:1px dashed rgba(124,196,220,.45); background:var(--cyan-soft);
+    margin-top:40px; position:relative;
+  }
+  .infra .cluster-legend{ color:var(--cyan); }
+  .infra-copy{ font:italic 13.5px/1.55 var(--serif); color:var(--muted); max-width:64ch; }
+  .infra-copy b{ color:var(--cyan); font-style:normal; font-weight:600; font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; }
+  .infra-list{ list-style:none; margin-top:14px; }
+  .infra-row{
+    display:flex; gap:14px; align-items:baseline; justify-content:space-between;
+    padding:10px 4px; border-top:1px solid rgba(124,196,220,.18); flex-wrap:wrap;
+  }
+  .infra-main{ min-width:0; flex:1 1 320px; }
+  .infra-hl{ font-size:12.5px; color:var(--text); }
+  .infra-proof{ font-size:10.5px; color:var(--dim); }
+  .stamp{
+    flex:none; border:1px solid var(--cyan); color:var(--cyan);
+    font-size:9px; letter-spacing:.16em; padding:3px 9px; text-transform:uppercase;
+  }
+
+  /* ---------- footer ---------- */
+  .foot{ margin-top:40px; border-top:1px solid var(--line); padding-top:18px; }
+  .caps-legend{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:12px; }
+  .caps-legend b{ color:var(--text); }
+  .caps{ list-style:none; display:flex; gap:10px; flex-wrap:wrap; }
+  .cap{
+    display:inline-flex; align-items:center; gap:8px;
+    border:1px solid var(--line); padding:6px 12px;
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+  }
+  .cap .lamp{ width:8px; height:8px; flex:none; border:1px solid var(--dim); }
+  .cap.on{ color:var(--text); border-color:var(--line); }
+  .cap.on .lamp{ background:var(--phos); border-color:var(--phos); box-shadow:0 0 7px rgba(143,227,164,.55); }
+  .cap.off{ color:var(--dim); border-style:dashed; }
+  .caps-hi{ font-size:11px; color:var(--muted); margin-top:12px; }
+  .foot-lines{
+    display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    margin-top:22px; padding-top:14px; border-top:1px solid var(--line-soft);
+    font-size:10.5px; color:var(--dim); letter-spacing:.05em;
+  }
+  .foot-lines .privacy{ color:var(--muted); }
+  .foot-lines .privacy::before{ content:"● "; color:var(--phos); }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:920px){
+    .head-grid{ grid-template-columns:1fr 1fr; }
+    .ident-cell{ grid-column:1 / -1; border-bottom:1px solid var(--line); }
+    .head-cell + .head-cell{ border-left:none; }
+    .params-cell{ border-left:1px solid var(--line) !important; }
+  }
+  @media (max-width:680px){
+    .head-grid{ grid-template-columns:1fr; }
+    .params-cell{ border-left:none !important; border-top:1px solid var(--line); }
+    .gauge-cell{ border-top:1px solid var(--line); }
+    .coach-grid{ grid-template-columns:1fr; }
+    .receipt{ grid-template-columns:70px 1fr; }
+    .r-main{ grid-column:1 / -1; }
+    .evi{ grid-column:1 / -1; justify-self:start; margin-top:4px; }
+    .evi-note{ grid-column:1 / -1; }
+  }
+  @media (max-width:420px){
+    .wrap{ padding:0 12px 48px; }
+    .cluster-pad{ padding:20px 14px 16px; }
+    .receipt, .ledger summary, .clean-box{ padding-left:14px; padding-right:14px; }
+    .sess-name{ font-size:22px; }
+    .flagship .coach-hl{ font-size:20px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    *, *::before, *::after{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to report</a>
+
+<div class="wrap">
+
+  <!-- ============ MASTHEAD ============ -->
+  <header>
+    <div class="topline">
+      <span class="wordmark">damame<span class="dot">.</span></span>
+      <span>session profile · flight record</span>
+      <span>local-only analysis</span>
+    </div>
+
+    <div class="head-grid">
+      <div class="head-cell ident-cell">
+        <p class="cell-legend">Session ident</p>
+        <h1 class="sess-name">terminus2</h1>
+        <p class="sess-meta">~/terminus2<span class="sep">·</span>Jun 9 → Aug 28, 2026<span class="sep">·</span>80 days</p>
+        <p class="story">An 80-day task-production marathon run inside a single chat — heavy delegation and background automation done well, taxed hard by one eternal session and a lot of hand-carried data.</p>
+        <div class="tape" role="list" aria-label="Session statistics">
+          <div role="listitem"><span class="tl">Turns</span><span class="tv">962</span></div>
+          <div role="listitem"><span class="tl">Human</span><span class="tv">758</span></div>
+          <div role="listitem"><span class="tl">Tool calls</span><span class="tv">7,719</span></div>
+          <div role="listitem"><span class="tl">Subagents</span><span class="tv">87</span></div>
+          <div role="listitem"><span class="tl">Compactions</span><span class="tv">26</span></div>
+          <div role="listitem"><span class="tl">Tokens</span><span class="tv">4.34B <small>/ 190M fresh</small></span></div>
+        </div>
+      </div>
+
+      <div class="head-cell gauge-cell">
+        <p class="cell-legend">Session score</p>
+        <svg class="gauge" viewBox="0 0 200 168" role="img" aria-label="Session score: 42 out of 100">
+          <circle class="g-track" cx="100" cy="100" r="66" transform="rotate(150 100 100)"/>
+          <circle class="g-fill"  cx="100" cy="100" r="66" transform="rotate(150 100 100)"/>
+          <!-- major ticks at 0/20/40/60/80/100 -->
+          <line class="g-tick" x1="100" y1="32" x2="100" y2="40" transform="rotate(-120 100 100)"/>
+          <line class="g-tick" x1="100" y1="32" x2="100" y2="40" transform="rotate(-72 100 100)"/>
+          <line class="g-tick" x1="100" y1="32" x2="100" y2="40" transform="rotate(-24 100 100)"/>
+          <line class="g-tick" x1="100" y1="32" x2="100" y2="40" transform="rotate(24 100 100)"/>
+          <line class="g-tick" x1="100" y1="32" x2="100" y2="40" transform="rotate(72 100 100)"/>
+          <line class="g-tick" x1="100" y1="32" x2="100" y2="40" transform="rotate(120 100 100)"/>
+          <!-- minor ticks at 10/30/50/70/90 -->
+          <line class="g-tick minor" x1="100" y1="32" x2="100" y2="37" transform="rotate(-96 100 100)"/>
+          <line class="g-tick minor" x1="100" y1="32" x2="100" y2="37" transform="rotate(-48 100 100)"/>
+          <line class="g-tick minor" x1="100" y1="32" x2="100" y2="37" transform="rotate(0 100 100)"/>
+          <line class="g-tick minor" x1="100" y1="32" x2="100" y2="37" transform="rotate(48 100 100)"/>
+          <line class="g-tick minor" x1="100" y1="32" x2="100" y2="37" transform="rotate(96 100 100)"/>
+          <text class="g-num" x="58"  y="127">0</text>
+          <text class="g-num" x="54"  y="88">20</text>
+          <text class="g-num" x="80"  y="59">40</text>
+          <text class="g-num" x="120" y="59">60</text>
+          <text class="g-num" x="146" y="88">80</text>
+          <text class="g-num" x="142" y="127">100</text>
+          <g class="needle" aria-hidden="true">
+            <line x1="100" y1="100" x2="100" y2="42"/>
+            <line class="tail" x1="100" y1="100" x2="100" y2="111"/>
+          </g>
+          <circle class="hub" cx="100" cy="100" r="4.5"/>
+          <text class="g-score" x="100" y="151">42</text>
+          <text class="g-cap" x="100" y="164">SCORE / 100</text>
+        </svg>
+      </div>
+
+      <div class="head-cell params-cell" id="breakdown">
+        <p class="cell-legend">Parameters — score breakdown</p>
+        <div class="param">
+          <span class="p-label">Cost efficiency</span>
+          <span class="p-val">88</span>
+          <span class="p-bar"><i class="hi" style="width:88%"></i></span>
+        </div>
+        <div class="param">
+          <span class="p-label">Context hygiene</span>
+          <span class="p-val zero">0</span>
+          <span class="p-bar"><i class="lo" style="width:2%"></i></span>
+        </div>
+        <div class="param">
+          <span class="p-label">Redundant work</span>
+          <span class="p-val zero">0</span>
+          <span class="p-bar"><i class="lo" style="width:2%"></i></span>
+        </div>
+        <div class="param">
+          <span class="p-label">Missed capabilities</span>
+          <span class="p-val">33</span>
+          <span class="p-bar"><i style="width:33%"></i></span>
+        </div>
+        <div class="param">
+          <span class="p-label">Prompting &amp; recovery</span>
+          <span class="p-val">88</span>
+          <span class="p-bar"><i class="hi" style="width:88%"></i></span>
+        </div>
+        <p class="p-note">Amber value = parameter floored by findings below.</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ ZONE A — FIX SURFACE ============ -->
+    <section class="cluster" aria-labelledby="fix-h">
+      <p class="cluster-legend"><span class="lg-phos">FIX SURFACE</span> · MACHINE-APPLICABLE</p>
+      <p class="cluster-tag">applies as a batch</p>
+      <div class="cluster-pad">
+        <div class="fix-head">
+          <h2 class="fix-title" id="fix-h">damame can fix <span class="n">4</span> things</h2>
+          <p class="fix-sub">Armed items leave your attention — the agent writes the config, you review one diff.</p>
+        </div>
+        <ul class="fix-list">
+          <li class="fix-row">
+            <label class="sw"><input type="checkbox" class="fix-arm" checked aria-label="Arm fix: automate the day80 explore check"><span class="sw-track" aria-hidden="true"></span><span class="sw-state" aria-hidden="true"></span></label>
+            <span class="fix-what">Automate the day80 explore check that followed your edits 48 times</span>
+            <span class="fix-dest">PostToolUse hook · settings.json</span>
+          </li>
+          <li class="fix-row">
+            <label class="sw"><input type="checkbox" class="fix-arm" checked aria-label="Arm fix: automate the warden sim run"><span class="sw-track" aria-hidden="true"></span><span class="sw-state" aria-hidden="true"></span></label>
+            <span class="fix-what">Automate the warden sim run that followed edits 21 times</span>
+            <span class="fix-dest">PostToolUse hook · settings.json</span>
+          </li>
+          <li class="fix-row">
+            <label class="sw"><input type="checkbox" class="fix-arm" checked aria-label="Arm fix: automate the day72 verification ritual"><span class="sw-track" aria-hidden="true"></span><span class="sw-state" aria-hidden="true"></span></label>
+            <span class="fix-what">Automate the day72 verification ritual (13 times)</span>
+            <span class="fix-dest">PostToolUse hook · settings.json</span>
+          </li>
+          <li class="fix-row">
+            <label class="sw"><input type="checkbox" class="fix-arm" checked aria-label="Arm fix: include 8 more repeated rituals in the batch"><span class="sw-track" aria-hidden="true"></span><span class="sw-state" aria-hidden="true"></span></label>
+            <span class="fix-what">8 more repeated rituals detected — include them in the batch</span>
+            <span class="fix-dest">PostToolUse hooks</span>
+          </li>
+        </ul>
+        <div class="fix-actions">
+          <button class="btn-primary" id="review-diff">Review the diff · <span id="armN">4</span> armed</button>
+          <span class="mock-status" id="fix-status" aria-live="polite"></span>
+        </div>
+        <p class="ledger-note"><b>The fix ledger:</b> after you apply, damame measures your next sessions and shows what stopped happening — receipts, not promises.</p>
+      </div>
+    </section>
+
+    <!-- ============ ZONE B — WORTH ADOPTING ============ -->
+    <section class="cluster" aria-labelledby="coach-h" style="border:none; border-top:1px solid var(--line); background:none; margin-top:44px;">
+      <p class="cluster-legend"><b>WORTH ADOPTING</b> · 3 CARDS, GROUPED BY ROOT CAUSE</p>
+      <h2 class="sr-only" id="coach-h">Worth adopting</h2>
+      <div class="coach-grid" style="margin-top:14px;">
+
+        <!-- flagship: freeze your own pattern -->
+        <article class="coach-card flagship" aria-label="Coaching card: freeze your own pattern">
+          <div class="chip-row">
+            <span class="chip chip-flag">Flagship</span>
+            <span class="chip chip-quality"><i aria-hidden="true"></i>quality</span>
+            <span class="chip chip-prov verified"><i aria-hidden="true"></i>verified · curated from this transcript</span>
+          </div>
+          <h3 class="coach-hl">You re-improvised the same delegation 5 times — the skill you need already exists, written by you, in installments.</h3>
+          <p class="coach-body">Each retelling of the cold-opus probe drifted a little. Your 5 versions are the draft: merge them into a saved skill or workflow and <b>the best version becomes the only version</b>. (Your 89 slash-command uses prove the frozen form wins.)</p>
+          <p class="votes"><span class="vn">1 signal</span> → repeated-delegation · recipe: freeze your own pattern</p>
+          <p class="proof"><span class="pl">Proof</span>"cold-opus probe …" re-improvised ×5 · every instance linked below</p>
+          <div class="card-foot">
+            <button class="btn-adopt" data-mock="Mocked — opens your 5 versions side by side, ready to merge.">Show my 5 versions</button>
+            <button class="btn-quiet" data-dismiss>Not relevant</button>
+            <span class="card-status" aria-live="polite"></span>
+          </div>
+          <div class="dismiss-note">Dismissed — damame won't raise this pattern again. <button class="btn-quiet" data-undo>Undo</button></div>
+        </article>
+
+        <!-- card: session hygiene -->
+        <article class="coach-card" aria-label="Coaching card: session hygiene">
+          <div class="chip-row">
+            <span class="chip chip-quality"><i aria-hidden="true"></i>quality</span>
+            <span class="chip chip-prov verified"><i aria-hidden="true"></i>verified · measured in this session</span>
+          </div>
+          <h3 class="coach-hl">One chat became your permanent workspace — Claude's memory of this project is a 26th-generation summary.</h3>
+          <p class="coach-body">80 days, 26 resumes, 26 compactions: every morning re-bought the whole pile, and every compaction silently decided what your project's history was. Move memory to files (notes.md + CLAUDE.md); <b>make fresh sessions cheap</b>.</p>
+          <p class="votes"><span class="vn">3 signals</span> point here → eternal-session · cache-thrash · compaction-burn</p>
+          <p class="proof"><span class="pl">Proof</span>eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions</p>
+          <div class="card-foot">
+            <button class="btn-adopt" data-mock="Mocked — opens the ritual: end each task with a notes.md handoff, start the next fresh.">See the ritual</button>
+            <button class="btn-quiet" data-dismiss>Not relevant</button>
+            <span class="card-status" aria-live="polite"></span>
+          </div>
+          <div class="dismiss-note">Dismissed — damame won't raise this pattern again. <button class="btn-quiet" data-undo>Undo</button></div>
+        </article>
+
+        <!-- card: source access -->
+        <article class="coach-card" aria-label="Coaching card: source access">
+          <div class="chip-row">
+            <span class="chip chip-time"><i aria-hidden="true"></i>time</span>
+            <span class="chip chip-prov verified"><i aria-hidden="true"></i>verified · curated from a real transcript</span>
+          </div>
+          <h3 class="coach-hl">Claude couldn't check the grading site itself — so you hand-carried the results, 170 times.</h3>
+          <p class="coach-body">Every verification cycle stalled until you delivered the next block by hand. Give Claude direct access to the source and <b>the stall-fix-stall loop becomes one continuous run</b>.</p>
+          <p class="votes"><span class="vn">1 signal</span> → paste-relay ×8 · recipe: stop hand-carrying data into the chat</p>
+          <p class="proof"><span class="pl">Proof</span>170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates</p>
+          <div class="card-foot">
+            <button class="btn-adopt" data-mock="Mocked — opens the recipe for giving Claude direct source access.">See the recipe</button>
+            <button class="btn-quiet" data-dismiss>Not relevant</button>
+            <span class="card-status" aria-live="polite"></span>
+          </div>
+          <div class="dismiss-note">Dismissed — damame won't raise this pattern again. <button class="btn-quiet" data-undo>Undo</button></div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ============ ZONE C — RECEIPTS ============ -->
+    <details class="cluster ledger" open aria-labelledby="rcpt-h">
+      <summary>
+        <span class="caret" aria-hidden="true">▸</span>
+        <span class="sum-title" id="rcpt-h">RECEIPTS — the ledger · 8 findings</span>
+        <span class="sum-counts">
+          <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>5 MAJ</span>
+          <span class="sev sev-mod"><span class="mk" aria-hidden="true">◆</span>2 MOD</span>
+          <span class="sev sev-min"><span class="mk" aria-hidden="true">▪</span>1 MIN</span>
+        </span>
+      </summary>
+      <div class="receipts">
+        <div class="receipt">
+          <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
+          <span class="r-cur limits">limits</span>
+          <span class="r-main"><span class="r-hl">The whole conversation got re-billed from scratch, repeatedly</span><br><span class="r-proof">cache-thrash · 17.5M missed input tokens (messages_changed)</span></span>
+          <button class="evi" data-n="8" aria-expanded="false">show me where · 8</button>
+          <span class="evi-note" hidden></span>
+        </div>
+        <div class="receipt">
+          <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
+          <span class="r-cur limits">limits</span>
+          <span class="r-main"><span class="r-hl">Mid-session tool changes broke the cache 4 ways</span><br><span class="r-proof">cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)</span></span>
+          <button class="evi" data-n="8" aria-expanded="false">show me where · 8</button>
+          <span class="evi-note" hidden></span>
+        </div>
+        <div class="receipt">
+          <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
+          <span class="r-cur quality">quality</span>
+          <span class="r-main"><span class="r-hl">26 compactions — details were lost to summaries 26 times</span><br><span class="r-proof">compaction-burn · measured pauses recorded</span></span>
+          <button class="evi" data-n="26" aria-expanded="false">show me where · 26</button>
+          <span class="evi-note" hidden></span>
+        </div>
+        <div class="receipt">
+          <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
+          <span class="r-cur time">time</span>
+          <span class="r-main"><span class="r-hl">You worked as the data courier, 8 different templates' worth</span><br><span class="r-proof">paste-relay · 170 blocks · 1.64MB by hand</span></span>
+          <button class="evi" data-n="8" aria-expanded="false">show me where · 8</button>
+          <span class="evi-note" hidden></span>
+        </div>
+        <div class="receipt">
+          <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
+          <span class="r-cur quality">quality</span>
+          <span class="r-main"><span class="r-hl">One session spanned 80 days — a permanent workspace</span><br><span class="r-proof">eternal-session · 26 resumes · 26 compactions</span></span>
+          <button class="evi" data-n="1" aria-expanded="false">show me where · 1</button>
+          <span class="evi-note" hidden></span>
+        </div>
+        <div class="receipt">
+          <span class="sev sev-mod"><span class="mk" aria-hidden="true">◆</span>MOD</span>
+          <span class="r-cur limits">limits</span>
+          <span class="r-main"><span class="r-hl">A direction change discarded 949k tokens of built work</span><br><span class="r-proof">abandoned-work · measured, rewind branch</span></span>
+          <button class="evi" data-n="1" aria-expanded="false">show me where · 1</button>
+          <span class="evi-note" hidden></span>
+        </div>
+        <div class="receipt">
+          <span class="sev sev-mod"><span class="mk" aria-hidden="true">◆</span>MOD</span>
+          <span class="r-cur quality">quality</span>
+          <span class="r-main"><span class="r-hl">Same delegation re-improvised 5× — drift risk each time</span><br><span class="r-proof">repeated-delegation · no token claim (honest: the cost is drift)</span></span>
+          <button class="evi" data-n="5" aria-expanded="false">show me where · 5</button>
+          <span class="evi-note" hidden></span>
+        </div>
+        <div class="receipt">
+          <span class="sev sev-min"><span class="mk" aria-hidden="true">▪</span>MIN</span>
+          <span class="r-cur time">time</span>
+          <span class="r-main"><span class="r-hl">11 manual rituals followed your edits (10–48× each)</span><br><span class="r-proof">post-edit-ritual · all 11 automatable as hooks</span></span>
+          <button class="evi" data-n="11" aria-expanded="false">show me where · 11</button>
+          <span class="evi-note" hidden></span>
+        </div>
+      </div>
+      <div class="clean-box">
+        <p class="clean-title"><b>Clean</b> — nothing caught in 5 categories</p>
+        <ul class="clean-chips">
+          <li>edit-fail-loop</li>
+          <li>bash-error-loop</li>
+          <li>duplicate-tool-call</li>
+          <li>oversized-context-reads</li>
+          <li>missed-delegation</li>
+        </ul>
+        <p class="clean-note">233 tool errors occurred — none formed a loop. 87 delegations — none missed. Silence here is earned, not assumed (and not proof of perfection).</p>
+        <a class="score-link" href="#breakdown">See how these findings set the score ↑</a>
+      </div>
+    </details>
+
+    <!-- ============ ZONE D — NOT YOUR INEFFICIENCY ============ -->
+    <section class="cluster infra" aria-labelledby="infra-h">
+      <p class="cluster-legend"><span class="lg-cyan">NOT YOUR INEFFICIENCY</span> · INFRA ROOM</p>
+      <p class="cluster-tag">separate circuit</p>
+      <div class="cluster-pad">
+        <h2 class="sr-only" id="infra-h">Not your inefficiency</h2>
+        <p class="infra-copy">Provider weather and resume mechanics live in this room. <b>They never count against you or your score</b> — damame logs them so you know they happened, and so you know we know the difference.</p>
+        <ul class="infra-list">
+          <li class="infra-row">
+            <span class="infra-main"><span class="infra-hl">344 transient API errors + 22 terminal failures — the provider's weather</span><br><span class="infra-proof">retry-storm · always excluded from your score</span></span>
+            <span class="stamp">Excluded from score</span>
+          </li>
+          <li class="infra-row">
+            <span class="infra-main"><span class="infra-hl">3 branches orphaned by session resumes — nobody's fault, nothing to fix</span><br><span class="infra-proof">abandoned-work (infra) · 357k + 265k + 875k tokens</span></span>
+            <span class="stamp">Excluded from score</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="foot">
+      <p class="caps-legend">Capabilities exercised — <b>4 / 7</b> · recognition only, never graded</p>
+      <ul class="caps">
+        <li class="cap on"><span class="lamp" aria-hidden="true"></span>Subagents</li>
+        <li class="cap on"><span class="lamp" aria-hidden="true"></span>Workflows</li>
+        <li class="cap on"><span class="lamp" aria-hidden="true"></span>Skills</li>
+        <li class="cap on"><span class="lamp" aria-hidden="true"></span>Background tasks</li>
+        <li class="cap off"><span class="lamp" aria-hidden="true"></span>unlit</li>
+        <li class="cap off"><span class="lamp" aria-hidden="true"></span>unlit</li>
+        <li class="cap off"><span class="lamp" aria-hidden="true"></span>unlit</li>
+      </ul>
+      <p class="caps-hi">220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads</p>
+      <div class="foot-lines">
+        <span>damame 0.6.0 · score@1 · adapter claude-code 0.1.0</span>
+        <span class="privacy">Analyzed locally. Nothing left your machine.</span>
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+<!-- ============ SESSION DATA (embedded verbatim from data.json) ============ -->
+<script type="application/json" id="session-data">
+{
+  "comment": "Real analysis output from the terminus2 session (563ddaa0), reshaped into the new three-surface structure. All numbers are genuine damame findings.",
+  "session": {
+    "name": "terminus2",
+    "project": "~/terminus2",
+    "span": "Jun 9 → Aug 28, 2026 · 80 days",
+    "score": 42,
+    "parameters": [
+      { "id": "cost-efficiency", "label": "Cost efficiency", "score": 88 },
+      { "id": "context-hygiene", "label": "Context hygiene", "score": 0 },
+      { "id": "redundant-work", "label": "Redundant work", "score": 0 },
+      { "id": "missed-capabilities", "label": "Missed capabilities", "score": 33 },
+      { "id": "prompting-recovery", "label": "Prompting & recovery", "score": 88 }
+    ],
+    "story": "An 80-day task-production marathon run inside a single chat — heavy delegation and background automation done well, taxed hard by one eternal session and a lot of hand-carried data.",
+    "stats": { "turns": 962, "human_turns": 758, "tool_calls": 7719, "subagent_runs": 87, "compactions": 26, "tokens_total": "4.34B", "tokens_fresh": "190M" }
+  },
+  "fixes": {
+    "headline_count": 4,
+    "items": [
+      { "what": "Automate the day80 explore check that followed your edits 48 times", "destination": "PostToolUse hook → settings.json", "kind": "hook" },
+      { "what": "Automate the warden sim run that followed edits 21 times", "destination": "PostToolUse hook → settings.json", "kind": "hook" },
+      { "what": "Automate the day72 verification ritual (13 times)", "destination": "PostToolUse hook → settings.json", "kind": "hook" },
+      { "what": "8 more repeated rituals detected — include them in the batch", "destination": "PostToolUse hooks", "kind": "hook-more" }
+    ],
+    "ledger_note": "After you apply: damame measures your next sessions and shows what stopped happening — receipts, not promises."
+  },
+  "coach": [
+    {
+      "id": "source-access",
+      "impact": "time",
+      "headline": "Claude couldn't check the grading site itself — so you hand-carried the results, 170 times",
+      "body": "Every verification cycle stalled until you delivered the next block by hand. Give Claude direct access to the source and the stall-fix-stall loop becomes one continuous run.",
+      "proof": "170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates",
+      "detector_votes": ["paste-relay ×8"],
+      "recipe": "Stop hand-carrying data into the chat",
+      "provenance": { "status": "verified", "source": "curated from a real transcript" },
+      "actions": ["See the recipe", "Not relevant"]
+    },
+    {
+      "id": "session-hygiene",
+      "impact": "quality",
+      "headline": "One chat became your permanent workspace — Claude's memory of this project is a 26th-generation summary",
+      "body": "80 days, 26 resumes, 26 compactions: every morning re-bought the whole pile, and every compaction silently decided what your project's history was. Move memory to files (notes.md + CLAUDE.md); make fresh sessions cheap.",
+      "proof": "eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions",
+      "detector_votes": ["eternal-session", "cache-thrash", "compaction-burn"],
+      "recipe": "End each task with a notes.md handoff, start the next fresh",
+      "provenance": { "status": "verified", "source": "measured in this session" },
+      "actions": ["See the ritual", "Not relevant"]
+    },
+    {
+      "id": "freeze-pattern",
+      "impact": "quality",
+      "headline": "You re-improvised the same delegation 5 times — the skill you need already exists, written by you, in installments",
+      "body": "Each retelling of the cold-opus probe drifted a little. Your 5 versions are the draft: merge them into a saved skill/workflow and the best version becomes the only version. (Your 89 slash-command uses prove the frozen form wins.)",
+      "proof": "\"cold-opus probe …\" re-improvised ×5 · every instance linked below",
+      "detector_votes": ["repeated-delegation"],
+      "recipe": "Freeze your own pattern",
+      "provenance": { "status": "verified", "source": "curated from this transcript" },
+      "actions": ["Show my 5 versions", "Not relevant"],
+      "flagship": true
+    }
+  ],
+  "receipts": [
+    { "severity": "major", "currency": "limits", "headline": "The whole conversation got re-billed from scratch, repeatedly", "proof": "cache-thrash · 17.5M missed input tokens (messages_changed)", "evidence_n": 8 },
+    { "severity": "major", "currency": "limits", "headline": "Mid-session tool changes broke the cache 4 ways", "proof": "cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)", "evidence_n": 8 },
+    { "severity": "major", "currency": "quality", "headline": "26 compactions — details were lost to summaries 26 times", "proof": "compaction-burn · measured pauses recorded", "evidence_n": 26 },
+    { "severity": "major", "currency": "time", "headline": "You worked as the data courier, 8 different templates' worth", "proof": "paste-relay · 170 blocks · 1.64MB by hand", "evidence_n": 8 },
+    { "severity": "major", "currency": "quality", "headline": "One session spanned 80 days — a permanent workspace", "proof": "eternal-session · 26 resumes · 26 compactions", "evidence_n": 1 },
+    { "severity": "moderate", "currency": "limits", "headline": "A direction change discarded 949k tokens of built work", "proof": "abandoned-work · measured, rewind branch", "evidence_n": 1 },
+    { "severity": "moderate", "currency": "quality", "headline": "Same delegation re-improvised 5× — drift risk each time", "proof": "repeated-delegation · no token claim (honest: the cost is drift)", "evidence_n": 5 },
+    { "severity": "minor", "currency": "time", "headline": "11 manual rituals followed your edits (10–48× each)", "proof": "post-edit-ritual · all 11 automatable as hooks", "evidence_n": 11 }
+  ],
+  "clean": ["edit-fail-loop", "bash-error-loop", "duplicate-tool-call", "oversized-context-reads", "missed-delegation"],
+  "clean_note": "233 tool errors occurred — none formed a loop. 87 delegations — none missed. Silence here is earned, not assumed (and not proof of perfection).",
+  "not_yours": [
+    { "headline": "344 transient API errors + 22 terminal failures — the provider's weather", "proof": "retry-storm · always excluded from your score" },
+    { "headline": "3 branches orphaned by session resumes — nobody's fault, nothing to fix", "proof": "abandoned-work (infra) · 357k + 265k + 875k tokens" }
+  ],
+  "capabilities": { "exercised": ["subagents", "workflows", "skills", "background tasks"], "of": 7, "highlights": "220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads" },
+  "footer": { "versions": "damame 0.6.0 · score@1 · adapter claude-code 0.1.0", "privacy": "Analyzed locally. Nothing left your machine." }
+}
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---- Zone A: arm/disarm toggles drive the batch button ---- */
+  var arms = Array.prototype.slice.call(document.querySelectorAll(".fix-arm"));
+  var armN = document.getElementById("armN");
+  var reviewBtn = document.getElementById("review-diff");
+  var fixStatus = document.getElementById("fix-status");
+  function refreshArmed(){
+    var n = arms.filter(function(b){ return b.checked; }).length;
+    armN.textContent = n;
+    reviewBtn.disabled = (n === 0);
+    fixStatus.textContent = (n === 0) ? "Nothing armed — arm at least one fix to review a diff." : "";
+  }
+  arms.forEach(function(b){ b.addEventListener("change", refreshArmed); });
+  refreshArmed();
+  reviewBtn.addEventListener("click", function(){
+    var n = arms.filter(function(b){ return b.checked; }).length;
+    fixStatus.textContent = "Mocked in this prototype — opens one diff covering all " + n + " armed fixes. Nothing is applied until you accept.";
+  });
+
+  /* ---- Zone B: adopt actions (mock) + dismiss/undo ---- */
+  document.querySelectorAll("[data-mock]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var status = btn.closest(".card-foot").querySelector(".card-status");
+      status.textContent = btn.getAttribute("data-mock");
+    });
+  });
+  document.querySelectorAll("[data-dismiss]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      btn.closest(".coach-card").classList.add("dismissed");
+    });
+  });
+  document.querySelectorAll("[data-undo]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var card = btn.closest(".coach-card");
+      card.classList.remove("dismissed");
+      card.querySelector(".btn-adopt").focus();
+    });
+  });
+
+  /* ---- Zone C: evidence affordance (mock viewer) ---- */
+  document.querySelectorAll(".evi").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var note = btn.closest(".receipt").querySelector(".evi-note");
+      var open = note.hasAttribute("hidden");
+      if (open){
+        note.textContent = "Mocked — the evidence viewer opens the transcript at " +
+          btn.getAttribute("data-n") + " tagged location" + (btn.getAttribute("data-n") === "1" ? "" : "s") + ".";
+        note.removeAttribute("hidden");
+      } else {
+        note.setAttribute("hidden","");
+      }
+      btn.setAttribute("aria-expanded", String(open));
+    });
+  });
+})();
+</script>
+
+<style>
+  /* utility placed late so it wins over component rules */
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+</style>
+</body>
+</html>

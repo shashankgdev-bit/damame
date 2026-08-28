@@ -445,4 +445,140 @@ export const ENTRIES: RegistryEntry[] = [
     status: "verified",
     verified_by: "documented skills system",
   },
+  {
+    id: "frontend-design-skill",
+    kind: "skill",
+    title: "frontend-design — stop shipping generic-looking UIs",
+    what_it_is:
+      "An official plugin skill that loads a design-lead procedure when building web interfaces: " +
+      "deliberate palette/typography choices, a self-critique pass, and explicit guards against the " +
+      "templated look AI-generated pages tend to share.",
+    how_to: [
+      "Install from the official plugin catalog: /plugin, pick frontend-design (source: claude-plugins-official)",
+      "It auto-invokes on UI work; you can also ask: \"use the frontend design skill for this page\"",
+      "Strongest when your brief states the subject and audience — the skill turns that into specific visual choices",
+    ],
+    applies_to: [],
+    source: "official plugin — claude-plugins-official/frontend-design",
+    status: "verified",
+    verified_by: "dogfooded: auto-invoked during damame's own dashboard redesign; visible before/after difference",
+  },
+  {
+    id: "web-design-guidelines-skill",
+    kind: "skill",
+    title: "web-design-guidelines — an interface-quality checklist as a skill",
+    what_it_is:
+      "A community skill (Vercel Labs) that loads concrete web-interface guidelines — accessibility, " +
+      "focus states, touch targets, typography details — so reviews and builds check against a real " +
+      "standard instead of vibes.",
+    how_to: [
+      "Browse first: github.com/vercel-labs/agent-skills — read the skill before installing",
+      "Install per its README (marketplace path or copy into ~/.claude/skills)",
+      "Use it as an audit: \"review this page against the web design guidelines\" after building",
+    ],
+    applies_to: [],
+    source: "community — vercel-labs/agent-skills (indexed, not copied; lives in its author's repo)",
+    status: "verified",
+    verified_by: "dogfooded: audit pass run against damame's own dashboard; produced real accessibility fixes",
+  },
+  {
+    id: "dataviz-skill",
+    kind: "skill",
+    title: "dataviz — charts that are right by procedure, not taste",
+    what_it_is:
+      "A bundled skill for data visualization: pick the chart form from the data's job, validate the " +
+      "palette with a script (colorblind-safety is computed, not eyeballed), and follow mark/label rules. " +
+      "Useful whenever a session builds charts, dashboards, or reports.",
+    how_to: [
+      "It ships with Claude Code — no install; ask \"use the dataviz skill\" when building any chart",
+      "Let it choose the chart form before any styling — that ordering is most of its value",
+    ],
+    applies_to: [],
+    source: "bundled with Claude Code",
+    status: "verified",
+    verified_by: "bundled skill; documented behavior",
+  },
+  {
+    id: "claude-api-skill",
+    kind: "skill",
+    title: "claude-api — for sessions that BUILD LLM apps",
+    what_it_is:
+      "A bundled skill loading current Anthropic API knowledge — correct SDK usage, model IDs, streaming, " +
+      "tool use — so a session building an LLM-powered app writes against today's API instead of the " +
+      "model's possibly-stale memory of it.",
+    how_to: [
+      "Ships with Claude Code — auto-invokes when you work on code that calls Claude",
+      "Worth invoking explicitly when reviewing older LLM code: \"check this against the claude-api skill — anything deprecated?\"",
+    ],
+    applies_to: [],
+    source: "bundled with Claude Code",
+    status: "verified",
+    verified_by: "bundled skill; documented behavior",
+  },
+  {
+    id: "anthropic-document-skills",
+    kind: "skill",
+    title: "Anthropic document skills — real .docx/.pptx/.xlsx/.pdf output",
+    what_it_is:
+      "Anthropic's open-source skill collection includes document-creation skills that produce actual " +
+      "Office files (Word, PowerPoint, Excel, PDF) with proper structure — for sessions whose deliverable " +
+      "is a document rather than code.",
+    how_to: [
+      "Browse: github.com/anthropics/skills — each skill has its own folder and README",
+      "Install only the format(s) you actually produce (see the caution)",
+      "Then ask for the deliverable directly: \"produce this as a .docx\"",
+    ],
+    notes:
+      "Same caution as every pack: each installed skill adds its listing line to every session's context. " +
+      "Install the one format you use, not the collection.",
+    applies_to: [],
+    source: "community/official — anthropics/skills (indexed, not copied)",
+    status: "candidate",
+  },
+  {
+    id: "author-your-own-skill",
+    kind: "skill",
+    title: "Write your own skill — it's a folder with instructions",
+    what_it_is:
+      "A skill is just a folder containing SKILL.md: instructions for one kind of task, plus an " +
+      "advertisement line (name + description) that tells Claude when to load it. Anyone can write one — " +
+      "including Claude itself, on request.",
+    how_to: [
+      "Create ~/.claude/skills/<name>/SKILL.md (or .claude/skills/ in a project for team sharing)",
+      "Top of the file: a one-line description of WHEN to use it — this line is the advertisement that drives auto-invocation, so make it precise",
+      "Body: the procedure — steps, rules, pitfalls, examples",
+      "Shortcut: ask Claude to write it — \"turn the procedure we just followed into a skill called <name>\"",
+      "Test: next session, do a matching task and check the skill fires (or invoke via /<name>)",
+    ],
+    applies_to: [],
+    source: "Claude Code docs",
+    status: "verified",
+    verified_by: "documented skills format",
+  },
+
+  // ————— the freeze card —————
+  {
+    id: "freeze-your-own-pattern",
+    kind: "pattern",
+    title: "You keep re-writing the same instructions — freeze them",
+    what_it_is:
+      "When the same procedure gets re-explained to Claude again and again (the same delegation prompt, " +
+      "the same checklist), each retelling drifts a little and costs attention. The versions you already " +
+      "wrote ARE the draft of a reusable skill or workflow — freezing them makes the best version the " +
+      "only version.",
+    how_to: [
+      "Pick the rung that matches the repetition: same command after edits → hook · same request re-typed → slash command · same PROCEDURE re-explained → skill · same multi-step structure over changing inputs → workflow",
+      "Collect your own instances (damame's evidence list shows every occurrence with its transcript line)",
+      "Ask Claude: \"here are N versions of instructions I keep giving — merge them into a skill: write ~/.claude/skills/<name>/SKILL.md, include every rule from any version, and write a precise one-line description of when to use it\"",
+      "For a workflow: same prompt, but \"save it as a reusable workflow script / slash command\" instead",
+      "Next session, verify it fires — then stop re-typing forever",
+    ],
+    notes:
+      "This is the answer for niche work no marketplace covers: nobody will ever publish a skill for your " +
+      "exact use case — but you already wrote it, in installments, in your own transcript.",
+    applies_to: ["repeated-delegation", "post-edit-ritual"],
+    source: "curated from a real transcript (one task family re-improvised across 5 subagent spawns; 89 slash-command uses in the same session showing the frozen version wins)",
+    status: "verified",
+    verified_by: "pattern and cost observed in a real 80-day session damame analyzed",
+  },
 ];
