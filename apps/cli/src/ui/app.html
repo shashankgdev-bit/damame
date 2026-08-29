@@ -167,6 +167,29 @@ h1 { font: 600 26px/1.25 var(--serif); letter-spacing: -0.01em; margin: 6px 0 2p
 .gloss { color: var(--ink-2); font-size: 12px; max-width: 76ch; margin-bottom: 14px; }
 
 /* ————— session brief: a hero you want to read ————— */
+/* —— three surfaces (Sprint B: functional pass, clay styling) —— */
+.fixzone { margin-top: 26px; border: 1px solid var(--hair); border-radius: 12px; padding: 16px 18px; background: var(--card); }
+.fixzone h3 { margin: 0 0 4px; font: 600 14px var(--sans); }
+.fixzone .fx-sub { color: var(--ink-3); font-size: 12px; }
+.fixzone ul { margin: 10px 0 0; padding: 0; list-style: none; }
+.fixzone li { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; border-top: 1px dashed var(--hair); font-size: 13px; }
+.fixzone li .dest { margin-left: auto; font: 10px var(--mono); color: var(--pod-deep); background: var(--pod-tint); border-radius: 5px; padding: 2px 7px; white-space: nowrap; }
+.coachwrap { margin-top: 22px; display: grid; gap: 12px; }
+.coachcard { border: 1px solid var(--hair); border-radius: 12px; padding: 16px 18px; background: var(--card); }
+.coachcard.flagship { border-color: var(--pod-deep); }
+.coachcard .cc-head { font: 500 16px/1.4 var(--serif); max-width: 60ch; }
+.coachcard .cc-body { color: var(--ink-2); font-size: 12.5px; margin-top: 6px; max-width: 72ch; }
+.coachcard .cc-meta { margin-top: 8px; font: 11px var(--mono); color: var(--ink-3); }
+.impact { font: 600 10px var(--mono); border-radius: 5px; padding: 2px 7px; margin-right: 8px; text-transform: uppercase; letter-spacing: .04em; }
+.impact.quality { background: var(--pod-tint); color: var(--pod-deep); }
+.impact.time { background: var(--minor-tint); color: var(--minor); }
+.impact.limits { background: var(--moderate-tint); color: var(--moderate); }
+.notyours { margin-top: 22px; border: 1px dashed var(--hair); border-radius: 12px; padding: 12px 18px; color: var(--ink-3); font-size: 12.5px; }
+.notyours b { color: var(--ink-2); font-weight: 600; }
+.auditbar { margin-top: 22px; display: flex; gap: 12px; align-items: center; font-size: 12.5px; color: var(--ink-3); }
+.auditbar button { font: 600 12px var(--sans); border: 1px solid var(--pod-deep); color: var(--pod-deep); background: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+.auditbar button:hover { background: var(--pod-tint); }
+.auditbar button:disabled { opacity: .5; cursor: default; }
 .briefbox { margin-top: 30px; min-height: 112px; }
 .briefbox .big { font: 500 clamp(25px, 3.4vw, 32px)/1.42 var(--serif); letter-spacing: -0.005em; max-width: 42ch; }
 .briefbox .cite { background: none; border: 0; cursor: pointer; color: var(--pod-deep); font: 12px var(--mono); padding: 0 2px; vertical-align: 10px; }
@@ -762,6 +785,8 @@ function renderHome(d) {
 
     <div class="briefbox" id="briefbox"><span class="muted">✦ reading this session's story… first open takes a moment; cached after</span><div class="mini-progress"><i></i></div></div>
 
+    ${surfaceZones(d, sid)}
+
     <div class="seccards">
       ${SECTIONS.map(secFor).join("")}
       ${secCard("quality", "Better results possible", unusedSkills.length ? `${unusedSkills.length} helper${unusedSkills.length === 1 ? "" : "s"} sat unused this session — see what they do` : "every available helper that mattered was used", unusedSkills.length)}
@@ -772,6 +797,66 @@ function renderHome(d) {
 
   fetchBrief(d.meta.id);
   fetchRecs(d.meta.id, []);
+  const ab = $("auditbtn");
+  if (ab) ab.onclick = () => runAudit(sid);
+}
+
+/* —— the three surfaces (functional pass; visual identity comes with the Sprint C port) —— */
+function surfaceZones(d, sid) {
+  const s = d.surfaces;
+  if (!s) return "";
+  const fixzone = s.fixes.length ? `
+    <section class="fixzone" aria-label="what damame can fix">
+      <h3>damame can fix ${s.fixes.length} thing${s.fixes.length === 1 ? "" : "s"}</h3>
+      <div class="fx-sub">machine-applicable — hooks and settings; the fix agent will apply these as one reviewed diff, then measure what stopped happening</div>
+      <ul>${s.fixes.map((x) => `<li><span>${esc(x.what)}</span><span class="dest">${esc(x.destination)}</span></li>`).join("")}</ul>
+    </section>` : "";
+  const card = (c) => `
+    <article class="coachcard${c.flagship ? " flagship" : ""}">
+      <div><span class="impact ${esc(c.impact)}">${esc(c.impact)}</span>${c.recipe ? `<span class="tag" style="font:10px var(--mono)">${esc(c.recipe.status)} · ${esc(c.recipe.source.split("—")[0].trim().slice(0, 40))}</span>` : ""}</div>
+      <div class="cc-head" style="margin-top:8px">${esc(c.headline)}</div>
+      <div class="cc-body">${esc(c.body)}</div>
+      <div class="cc-meta">${c.votes.length > 1 ? `${c.votes.length} detectors agree: ` : ""}${esc(c.proof.slice(0, 120))} · <a href="#${sid}/recs">recipe →</a></div>
+    </article>`;
+  const coach = s.coach.length ? `
+    <div class="coachwrap" aria-label="worth adopting">${s.coach.map(card).join("")}
+    ${s.coach_more.length ? `<div class="muted" style="font-size:12px">+ ${s.coach_more.length} more on the recommendations page</div>` : ""}</div>` : "";
+  const notyours = s.not_yours.length ? `
+    <div class="notyours"><b>Not your inefficiency:</b> ${s.not_yours.map((n) => esc(n.headline)).join(" · ")} — provider-side, never counted against you.</div>` : "";
+  return fixzone + coach + notyours + `
+    <div class="auditbar" id="auditbar">
+      <button id="auditbtn">Get a second opinion</button>
+      <span>an LLM cross-examines each finding against its evidence — runs on your own claude account, verdicts stay local</span>
+    </div>`;
+}
+
+async function runAudit(sid) {
+  const btn = $("auditbtn");
+  try {
+    btn.disabled = true;
+    btn.textContent = "estimating…";
+    const est = await api(`/api/session/${sid}/audit/estimate`);
+    if (!est.cli_available) { alert("claude CLI not found — the audit runs through your own claude login."); return; }
+    if (est.running) { btn.textContent = "audit already running…"; return; }
+    const ok = confirm(
+      `Second opinion on ${est.findings} findings\n` +
+      `+ ${est.honeypots} hidden honeypots × ${est.runs} runs\n` +
+      `estimated ~${Math.round(est.est_tokens / 1000)}k input tokens on YOUR claude account.\n\nProceed?`);
+    if (!ok) return;
+    btn.textContent = "auditing… (a few minutes; safe to keep browsing)";
+    progressStart();
+    const r = await fetch(`/api/session/${sid}/audit`, { method: "POST" });
+    const out = await r.json();
+    if (!r.ok) throw new Error(out.error || "audit failed");
+    btn.textContent = `done — ${out.records} verdicts, honeypots ${out.honeypots_caught}/${out.honeypots_total}`;
+    setTimeout(() => location.reload(), 1200);
+  } catch (e) {
+    btn.textContent = "audit failed — see terminal";
+    alert(String(e.message || e));
+  } finally {
+    progressDone();
+    btn.disabled = false;
+  }
 }
 
 function obsBlock(d, it) {

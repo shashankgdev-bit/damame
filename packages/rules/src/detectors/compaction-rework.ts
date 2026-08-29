@@ -80,7 +80,7 @@ export const compactionRework: Detector = {
             },
           },
           savings: {
-            tokens: savedTokens,
+            tokens: { value: savedTokens },
             basis: "modeled",
             method:
               `${count} identical re-read result(s) totaling ${rework.reread_bytes} bytes / 4 bytes-per-token ` +

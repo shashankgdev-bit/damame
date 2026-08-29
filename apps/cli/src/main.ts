@@ -165,6 +165,15 @@ program
     await runExport(opts, DAMAME_VERSION);
   });
 
+program
+  .command("share")
+  .description("numbers-only calibration stats with a preview file + prefilled GitHub issue URL — nothing sent until you submit")
+  .option("--root <dir>", "projects root", defaultProjectsRoot())
+  .action(async (opts) => {
+    const { runShare } = await import("./share-cmd.js");
+    await runShare(opts, DAMAME_VERSION);
+  });
+
 const ANSWER_MAP: Record<string, { question: Question; answer: boolean }> = {
   accurate: { question: "accurate", answer: true },
   inaccurate: { question: "accurate", answer: false },

@@ -14,7 +14,8 @@ import { DETECTORS, gradingVersion, runRules } from "@damame/rules";
 import { buildProfile, probeEnvironment, sessionSkills, summarizeWithCache } from "@damame/profile";
 import { feedbackStats, indexFindings, lastAnswers, recordAnswer, QUESTIONS, type Question } from "../feedback.js";
 import { computeRecurrence } from "../recurrence.js";
-import { auditorHealth, ClaudeCliDriver, humanAgreement, lastAudits } from "@damame/judge";
+import { auditFindings, auditorHealth, buildExcerpts, ClaudeCliDriver, humanAgreement, lastAudits } from "@damame/judge";
+import { buildSurfaces } from "../surfaces.js";
 import { briefWithCache, cachedBrief, type GeneratedBrief } from "@damame/brief";
 import { matchPlaybooks } from "@damame/playbooks";
 import { NO_ACTION_REFS, REGISTRY } from "@damame/registry";
@@ -509,7 +510,10 @@ async function analyzeSession(path: string): Promise<unknown> {
   const metrics = computeMetrics(session);
   const findings = runRules(session, metrics);
   indexFindings(session, findings);
-  const payload = buildSessionPayload(session, metrics, findings, children);
+  const payload = {
+    ...(buildSessionPayload(session, metrics, findings, children) as Record<string, unknown>),
+    surfaces: buildSurfaces(session, findings),
+  };
   analysisCache.set(path, { mtimeMs, payload });
   return payload;
 }
@@ -520,6 +524,7 @@ async function analyzeSession(path: string): Promise<unknown> {
  * availability probed once.
  */
 const briefInFlight = new Map<string, Promise<GeneratedBrief>>();
+const auditInFlight = new Map<string, Promise<{ records: number; honeypots_caught: number; honeypots_total: number }>>();
 let cliAvailable: Promise<boolean> | undefined;
 
 async function sessionBrief(path: string): Promise<{ status: string; [k: string]: unknown }> {
@@ -599,6 +604,72 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
         const tags = (url.searchParams.get("tags") ?? "").split(",").filter(Boolean);
         const payload = (await analyzeSession(target.path)) as { findings: Parameters<typeof matchPlaybooks>[1] };
         json(res, 200, { matches: matchPlaybooks(tags, payload.findings) });
+        return;
+      }
+      const auditEstMatch = /^\/api\/session\/([\w-]+)\/audit\/estimate$/.exec(url.pathname);
+      if (req.method === "GET" && auditEstMatch) {
+        const sessions = await discoverSessions(root);
+        const target = sessions.find((s) => s.sessionId.startsWith(auditEstMatch[1]!));
+        if (!target) {
+          json(res, 404, { error: "session not found" });
+          return;
+        }
+        const { session } = await parseSessionWithChildren(target.path);
+        const metrics = computeMetrics(session);
+        const findings = runRules(session, metrics);
+        const runs = 3;
+        const honeypots = Math.max(2, Math.floor(findings.length / 5));
+        const promptBytes = findings.reduce((sum, f) => sum + buildExcerpts(session, f).length + 1500, 0);
+        const estTokens = findings.length
+          ? Math.round(((promptBytes / findings.length) * (findings.length + honeypots) * runs) / 4)
+          : 0;
+        json(res, 200, {
+          findings: findings.length,
+          honeypots,
+          runs,
+          est_tokens: estTokens,
+          cli_available: await ClaudeCliDriver.available(),
+          running: auditInFlight.has(target.path),
+        });
+        return;
+      }
+      const auditRunMatch = /^\/api\/session\/([\w-]+)\/audit$/.exec(url.pathname);
+      if (req.method === "POST" && auditRunMatch) {
+        const sessions = await discoverSessions(root);
+        const target = sessions.find((s) => s.sessionId.startsWith(auditRunMatch[1]!));
+        if (!target) {
+          json(res, 404, { error: "session not found" });
+          return;
+        }
+        if (!(await ClaudeCliDriver.available())) {
+          json(res, 503, { error: "claude CLI not found — the audit runs through your own claude login" });
+          return;
+        }
+        // Single-flighted per transcript: two tabs must not double-spend.
+        let run = auditInFlight.get(target.path);
+        if (!run) {
+          run = (async () => {
+            const { session } = await parseSessionWithChildren(target.path);
+            const metrics = computeMetrics(session);
+            const findings = runRules(session, metrics);
+            if (findings.length === 0) return { records: 0, honeypots_caught: 0, honeypots_total: 0 };
+            const result = await auditFindings(new ClaudeCliDriver("haiku"), session, findings, {
+              runs: 3,
+              escalateModel: "sonnet",
+            });
+            return {
+              records: result.records.filter((r) => !r.honeypot).length,
+              honeypots_caught: result.honeypots_caught,
+              honeypots_total: result.honeypots_total,
+            };
+          })().finally(() => auditInFlight.delete(target.path));
+          auditInFlight.set(target.path, run);
+        }
+        try {
+          json(res, 200, await run);
+        } catch (error) {
+          json(res, 500, { error: String(error instanceof Error ? error.message : error) });
+        }
         return;
       }
       const briefMatch = /^\/api\/session\/([\w-]+)\/brief$/.exec(url.pathname);
