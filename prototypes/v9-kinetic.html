@@ -207,6 +207,44 @@ h1{font-size:clamp(1.7rem,4.6vw,2.7rem);font-weight:900;letter-spacing:-.03em;li
 .where:hover{text-decoration:underline}
 .where-note{display:none;font-family:var(--mono);font-size:.7rem;color:var(--faint);margin-top:6px}
 .where-note.open{display:block}
+/* ============ AUDIT · the second-opinion sweep ============ */
+.auditbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:4px 0 18px}
+dialog.consent{margin:auto;background:var(--card2);color:var(--ink);border:1px solid var(--line2);
+  border-radius:var(--r);padding:24px 26px;max-width:460px;width:calc(100% - 32px)}
+dialog.consent::backdrop{background:rgba(10,8,20,.68)}
+.motion-ok dialog.consent[open]{animation:dlgIn .3s cubic-bezier(.2,.9,.3,1.12) both}
+@keyframes dlgIn{from{opacity:0;transform:translateY(14px) scale(.97)}}
+dialog.consent h2{font-size:1.15rem;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+dialog.consent .story{font-size:.85rem}
+.costline{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.78rem;color:var(--ink);
+  background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:10px 14px;margin:14px 0 0}
+dialog.consent .mock{display:block;margin-top:14px}
+.rlist{position:relative}
+.scanline{position:absolute;left:-6px;right:-6px;top:-2px;height:3px;border-radius:99px;z-index:2;
+  pointer-events:none;opacity:0;background:var(--grad);will-change:transform;
+  box-shadow:0 0 16px 3px rgba(77,224,210,.5),0 0 40px 8px rgba(143,121,255,.35)}
+.motion-ok .scanline.sweep{animation:sweep var(--scanDur,2.6s) cubic-bezier(.4,.1,.6,.9) forwards}
+@keyframes sweep{0%{opacity:0;transform:translateY(0)}5%{opacity:1}95%{opacity:1}
+  100%{opacity:0;transform:translateY(var(--scanH,420px))}}
+button.chip{background:none;cursor:pointer}
+.chip.audit-ok{border-color:#2c7a55;color:var(--grn)}
+.chip.audit-ok:hover{border-color:var(--grn)}
+.chip.audit-abs{border-color:var(--line2);color:var(--mut)}
+.chip.audit-abs:hover{border-color:var(--faint)}
+.motion-ok .chip.settle{opacity:0;animation:chipSettle .6s cubic-bezier(.2,.9,.3,1.3) forwards;
+  animation-delay:var(--cd,0ms);will-change:transform}
+@keyframes chipSettle{from{opacity:0;transform:translateY(9px) scale(.6)}
+  62%{opacity:1;transform:translateY(-2px) scale(1.07)}to{opacity:1;transform:none}}
+.audit-quote{display:none;font-family:var(--mono);font-size:.7rem;color:#6FE7D9;margin-top:6px;
+  border-left:2px solid var(--tea);padding-left:8px}
+.audit-quote.open{display:block}
+.motion-ok .audit-quote.open{animation:rise .3s ease both}
+.audit-after{margin:14px 0 2px;display:grid;gap:8px;justify-items:start}
+.trust{display:inline-flex;gap:12px;align-items:baseline;flex-wrap:wrap;
+  font-family:var(--mono);font-size:.78rem;color:var(--grn)}
+.motion-ok .trust.pulse{animation:trustIn .9s cubic-bezier(.2,.9,.3,1.15) both}
+@keyframes trustIn{0%{opacity:0;transform:translateY(7px) scale(.98)}
+  55%{opacity:1;transform:scale(1.03)}100%{opacity:1;transform:none}}
 .clean{background:var(--card);border:1px solid #2c4a3c;border-radius:var(--r);padding:18px 20px;margin:26px 0 10px}
 .clean h2{font-size:.85rem;margin-bottom:8px;color:var(--grn)}
 .cleanrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
@@ -379,7 +417,20 @@ footer .caps b{color:var(--ink);font-weight:600}
       a miss re-bills it at full price.</span></p>
     <p class="def" data-s style="margin-bottom:6px">Severity marks: <span class="sev major">▲ major</span> ·
       <span class="sev moderate">■ moderate</span> · <span class="sev minor">● minor</span> — never color alone.</p>
+    <div class="auditbar" data-s>
+      <button class="btn" id="auditbtn">⌁ Sweep the ledger — second opinion</button>
+      <span class="mock">an adversarial auditor re-checks each receipt · your own claude login · always asks first</span>
+    </div>
     <div class="rlist" id="rlist" data-s></div>
+    <div class="audit-after" id="auditafter" hidden>
+      <p class="trust" id="trustline">⛨ honeypots caught 2/2 — auditor healthy
+        <button class="where" id="hpbtn" aria-expanded="false" aria-controls="hpnote">what's a honeypot?</button>
+      </p>
+      <p class="where-note" id="hpnote">damame slips 2 corrupted decoy findings into the sweep. An auditor
+        that rubber-stamps a decoy is thrown out — this one caught both.</p>
+      <span class="mock">demo — illustrative verdicts</span>
+    </div>
+    <p class="vh" aria-live="polite" id="auditlive"></p>
     <div class="clean" data-s>
       <h2>Came back clean</h2>
       <div class="cleanrow" id="cleanrow"></div>
@@ -401,6 +452,19 @@ footer .caps b{color:var(--ink);font-weight:600}
       <div class="rlist" id="infralist" data-s></div>
     </div>
   </section>
+
+  <dialog class="consent" id="auditdlg" aria-labelledby="auditdlg-h">
+    <h2 id="auditdlg-h">Arm the scanner?</h2>
+    <p class="story">An adversarial auditor re-reads every finding against its cited evidence,
+      hunting for a reason to reject it. It confirms, abstains, or flags — and it never runs
+      without your say-so.</p>
+    <p class="costline">31 findings · estimated ~120k tokens · runs on your own claude account</p>
+    <div class="acts">
+      <button class="btn" id="auditgo">Run the sweep</button>
+      <button class="btn ghost" id="auditcancel">Cancel</button>
+    </div>
+    <span class="mock">nothing spends until you confirm · Esc cancels · mock — zero network in this prototype</span>
+  </dialog>
 
 </main>
 
@@ -771,6 +835,63 @@ $("#diffbtn").addEventListener("click",()=>{
   $("#diffbtn").setAttribute("aria-expanded",open);
   $("#diffbtn").textContent=open? "Hide the diff":"Review the diff";
 });
+
+/* ============ the audit: second-opinion sweep (all mock, zero network) ============ */
+const AUDIT_MARKS=[
+  {i:0,v:"ok",quote:"17.5M missed input tokens (messages_changed)"},
+  {i:2,v:"ok",quote:"measured pauses recorded"},
+  {i:3,v:"ok",quote:"170 blocks · 1.64MB by hand"},
+  {i:5,v:"abs",note:"two independent runs, both valid — verdicts split, so the auditor won't force a call"}
+];
+let auditRan=false;
+const auditDlg=$("#auditdlg"), auditBtn=$("#auditbtn");
+function attachChips(dur,instant){
+  const list=$("#rlist"), rows=$$(".rrow",list), listH=Math.max(1,list.offsetHeight);
+  AUDIT_MARKS.forEach((m,k)=>{
+    const row=rows[m.i]; if(!row) return;
+    const chip=document.createElement("button");
+    chip.className="chip "+(m.v==="ok"?"audit-ok":"audit-abs");
+    chip.textContent=m.v==="ok"? "⌁ confirmed 3/3" : "◌ abstained — 2 valid runs";
+    const q=document.createElement("span");
+    q.className="audit-quote"; q.id="aq-"+k;
+    q.textContent=m.v==="ok"? "auditor cites, verbatim: “"+m.quote+"”" : "auditor's note: "+m.note;
+    chip.setAttribute("aria-expanded","false"); chip.setAttribute("aria-controls",q.id);
+    if(m.v==="ok") chip.title="cites: “"+m.quote+"”";
+    chip.addEventListener("click",()=>{ const open=q.classList.toggle("open");
+      chip.setAttribute("aria-expanded",open); });
+    $(".rtop",row).appendChild(chip); row.appendChild(q);
+    if(!instant&&motionOK){ chip.classList.add("settle");
+      chip.style.setProperty("--cd",Math.round(row.offsetTop/listH*dur)+"ms"); }
+  });
+}
+function finishAudit(){
+  const after=$("#auditafter"); after.hidden=false;
+  if(motionOK) $("#trustline").classList.add("pulse");
+  auditBtn.textContent="⌁ swept — verdicts pinned below";
+  auditBtn.setAttribute("aria-disabled","true");
+  $("#auditlive").textContent="Audit complete. Second opinions pinned: 3 findings confirmed "+
+    "3 of 3 with verbatim citations, 1 abstained after 2 valid runs. Honeypots caught 2 of 2 — auditor healthy.";
+}
+function startAudit(){
+  if(!motionOK){ attachChips(0,true); finishAudit(); return; }   /* reduced motion: straight to results */
+  auditBtn.textContent="⌁ sweeping…"; auditBtn.setAttribute("aria-disabled","true");
+  const list=$("#rlist"); list.setAttribute("aria-busy","true");
+  const scan=document.createElement("span");
+  scan.className="scanline"; scan.setAttribute("aria-hidden","true");
+  list.appendChild(scan);
+  const dur=2600;
+  scan.style.setProperty("--scanH",list.offsetHeight+"px");
+  scan.style.setProperty("--scanDur",dur+"ms");
+  requestAnimationFrame(()=>scan.classList.add("sweep"));
+  attachChips(dur,false);                                        /* chips settle as the line passes them */
+  setTimeout(()=>{ scan.remove(); list.removeAttribute("aria-busy"); finishAudit(); },dur+180);
+}
+auditBtn.addEventListener("click",()=>{ if(!auditRan) auditDlg.showModal(); });
+$("#auditcancel").addEventListener("click",()=>auditDlg.close("cancel"));
+$("#auditgo").addEventListener("click",()=>{ auditRan=true; auditDlg.close("confirm"); startAudit(); });
+auditDlg.addEventListener("close",()=>auditBtn.focus());        /* Esc fires cancel→close natively */
+$("#hpbtn").addEventListener("click",()=>{ const n=$("#hpnote"), b=$("#hpbtn");
+  const open=n.classList.toggle("open"); b.setAttribute("aria-expanded",open); });
 
 /* ============ boot ============ */
 buildHome(); buildScorePage(); buildFixes(); buildCoach(); buildReceipts(); buildInfra();

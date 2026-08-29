@@ -236,6 +236,37 @@ h1.pg{font-family:var(--serif);font-weight:600;font-size:clamp(26px,4.5vw,34px);
 .caps span.on{border-color:rgba(11,91,82,.35);background:var(--accent-soft);color:var(--accent-deep);font-weight:650}
 .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
 .vgrid .panel{font-size:13px}
+/* ============ audit ============ */
+.tile.wide{grid-column:span 6}
+.consent-line{font-weight:750;font-size:15px;margin-bottom:8px}
+.vchip{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:11.5px;font-weight:700;
+  border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--panel-2);color:var(--muted)}
+a.vchip{text-decoration:none}
+button.vchip{cursor:pointer}
+button.vchip:hover,a.vchip:hover{box-shadow:var(--sh)}
+.vchip.ok{color:var(--accent-deep);border-color:rgba(11,91,82,.35);background:var(--accent-soft)}
+.vchip.abst{color:var(--moderate);border-color:rgba(138,90,28,.35);background:#F2E9DA}
+.vchip.wait{font-weight:650;color:var(--faint);background:transparent}
+.vchip .tw{display:inline-block;transition:transform .2s var(--ease)}
+.vchip[aria-expanded="true"] .tw{transform:rotate(90deg)}
+.qpanel{border-top:1px dashed var(--line);padding:12px 16px;background:var(--panel-2);font-size:12.5px;color:var(--muted)}
+.qpanel[hidden]{display:none}
+.qpanel:not([hidden]){animation:rise .35s var(--ease) both}
+.qpanel blockquote{font-family:var(--mono);font-size:12px;color:var(--ink);border-left:3px solid var(--accent);
+  padding:6px 12px;margin:6px 0 0;background:var(--accent-soft);border-radius:0 8px 8px 0}
+.auditbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;border:1px solid rgba(11,91,82,.3);
+  background:var(--accent-soft);border-radius:11px;padding:10px 16px;margin-bottom:8px;
+  font-size:13px;color:var(--accent-deep);font-weight:650}
+.hp-info{background:none;border:none;font:inherit;font-size:12px;font-weight:650;color:var(--accent);
+  cursor:pointer;text-decoration:underline;padding:2px 4px}
+.hp-note{font-size:12.5px;color:var(--muted);border:1px dashed var(--line);border-radius:10px;
+  padding:10px 14px;background:var(--panel-2);margin-bottom:8px;max-width:70ch}
+.hp-note[hidden]{display:none}
+.demo-mark{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--faint);font-weight:600;border:1px dashed var(--line);border-radius:6px;padding:2px 8px;background:var(--panel)}
+.audit-sum{width:100%;font-size:11.5px;color:var(--accent-deep);font-weight:600}
+@keyframes scanp{0%,100%{opacity:.4}50%{opacity:1}}
+.scanrow{animation:scanp 1.15s var(--ease) infinite;animation-delay:calc(var(--i,0)*.12s)}
 /* ============ site footer / toast ============ */
 .sitefoot{border-top:1px solid var(--line);background:var(--panel);padding:12px 22px;
   display:flex;flex-wrap:wrap;gap:6px 24px;justify-content:space-between;
@@ -388,6 +419,16 @@ const D = {
     "redundant-work": "How much was paid for twice. Zeroed by re-billed history and hand-carried data.",
     "missed-capabilities": "Features that would have helped but went unused — 4 of 7 exercised.",
     "prompting-recovery": "How clearly work was directed and how errors were recovered. Strong: 233 tool errors, zero loops."
+  },
+  audit: {
+    scope: "31 findings · estimated ~120k tokens · runs on your own claude account",
+    verdicts: {
+      0: { v:"ok", label:"confirmed 3/3", quote:"17.5M missed input tokens (messages_changed)" },
+      3: { v:"ok", label:"confirmed 3/3", quote:"170 blocks · 1.64MB by hand" },
+      4: { v:"ok", label:"confirmed 3/3", quote:"26 resumes · 26 compactions" },
+      6: { v:"abst", label:"abstained — 2 valid runs",
+           note:"Two of three runs returned usable output; the third failed validation and was discarded. This finding makes no token claim — its honest cost is drift — so the auditor declined to rule rather than guess. Abstaining here is the healthy behavior." }
+    }
   }
 };
 
@@ -396,6 +437,7 @@ const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const main = document.getElementById("main-content");
 const crumbsEl = document.getElementById("crumbs");
 const dismissed = new Set();
+let auditState = "idle"; /* idle → running → done */
 const fmt = n => n.toLocaleString("en-US");
 const sev = s => `<span class="sev sev-${s}"><span class="g" aria-hidden="true">${s==="major"?"▲":s==="moderate"?"◆":"●"}</span>${s}</span>`;
 const cur = c => `<span class="chip cur-${c}"><span class="dot" aria-hidden="true"></span>${c}</span>`;
@@ -470,6 +512,14 @@ function vHome(){
       <h3>How it was graded</h3>
       <span class="tz">Five parameters, versions, privacy.</span>
       ${spark()}
+    </a>
+    <a class="tile wide" href="#audit" style="--i:5">
+      <span class="go" aria-hidden="true">→</span>
+      <h3>The audit</h3>
+      <span class="tz">A second opinion for the skeptical — an adversarial auditor re-checks each finding against its cited evidence, on your own claude account. It asks before it spends.</span>
+      <span class="stat-line num">${auditState==="done"
+        ? `<span class="chip">3 confirmed 3/3</span><span class="chip">1 abstained</span><span class="chip prov">honeypots 2/2 — auditor healthy</span>`
+        : `<span class="chip">31 findings · ~120k tokens · runs only with your consent</span>`}</span>
     </a>
   </nav>
 </div>`;
@@ -580,11 +630,11 @@ function vReceipts(){
       <p class="lede">Every finding, with its numbers as the proof line — not the headline. <a href="#grading">See how these grade into the score →</a></p>
     </div>
     ${groups.map(([g,label],gi)=>{
-      const rows = D.receipts.filter(r=>r.sev===g);
+      const rows = D.receipts.map((r,gx)=>[r,gx]).filter(([r])=>r.sev===g);
       return `<section class="grp" style="--i:${gi+1}">
       <div class="grp-h">${sev(g)}<span class="eyebrow">${rows.length} finding${rows.length>1?"s":""}</span></div>
-      ${rows.map((r,ri)=>{const rid=`ev-${g}-${ri}`;return `<div class="rrow">
-        <div class="rrow-top">${sev(r.sev)}<span class="hl">${r.hl}</span>${cur(r.cur)}</div>
+      ${rows.map(([r,gx],ri)=>{const rid=`ev-${g}-${ri}`;const av=auditState==="done"?D.audit.verdicts[gx]:null;return `<div class="rrow">
+        <div class="rrow-top">${sev(r.sev)}<span class="hl">${r.hl}</span>${cur(r.cur)}${av?`<a class="vchip ${av.v==="ok"?"ok":"abst"} num" href="#audit" title="second opinion (demo — illustrative) — details on the audit page">${av.v==="ok"?"✓":"◌"} ${av.label}</a>`:""}</div>
         <div class="proofline"><span class="proof num">${r.proof}</span>
           <button class="evtoggle num" data-act="toggle-ev" aria-expanded="false" aria-controls="${rid}">
             <span class="tw" aria-hidden="true">›</span>show me where (${r.n} evidence)</button></div>
@@ -662,6 +712,66 @@ function vGrading(){
 </div>`;
 }
 
+function vAudit(){
+  const A = D.audit;
+  const head = `<div style="--i:0"><span class="eyebrow">A second opinion</span>
+      <h1 class="pg">The audit</h1>
+      <p class="lede">damame can hire an adversarial auditor — through your own claude login — to re-check each finding against its cited evidence. It tries to break every claim; only what survives keeps its verdict. It never spends silently.</p></div>`;
+  let body;
+  if(auditState==="idle"){
+    body = `<section class="panel" style="--i:1" aria-labelledby="consent-h">
+      <h2 class="sec-h" id="consent-h" style="margin-top:0">Before anything runs</h2>
+      <p class="consent-line num">${A.scope}</p>
+      <p class="gl" style="font-size:12.5px;max-width:58ch;margin-bottom:14px">Nothing runs and nothing is spent until you confirm. Esc cancels, too.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" data-act="audit-run">Run the audit</button>
+        <button class="btn quiet" data-act="audit-cancel">Not now</button>
+      </div>
+    </section>`;
+  } else if(auditState==="running"){
+    body = `<section style="--i:1" aria-label="Audit in progress">
+      <p class="proof num" style="margin-bottom:10px">auditing on your claude account · 31 findings · mocked in this prototype — a few seconds</p>
+      ${D.receipts.map((r,i)=>`<div class="rrow scanrow" style="--i:${i}">
+        <div class="rrow-top">${sev(r.sev)}<span class="hl">${r.hl}</span>
+          <span class="vchip wait">⟳ re-checking evidence…</span></div>
+      </div>`).join("")}
+    </section>`;
+  } else {
+    body = `<div style="--i:1">
+      <div class="auditbar" role="status">
+        <span>honeypots caught 2/2 — auditor healthy</span>
+        <button class="hp-info" data-act="toggle-ev" aria-expanded="false" aria-controls="hp-note">what’s a honeypot?</button>
+        <span class="demo-mark">demo — illustrative verdicts</span>
+        <span class="audit-sum num">4 findings re-checked in this pass · 3 confirmed · 1 abstained · 0 refuted</span>
+      </div>
+      <div class="hp-note" id="hp-note" hidden>Honeypots are corrupted decoy findings — real receipts with the numbers deliberately broken — slipped into the audit batch. A healthy auditor must flag every one. Catch 2 of 2 and its verdicts are worth trusting; miss one and the whole pass is thrown away.</div>
+      ${D.receipts.map((r,i)=>{
+        const v = A.verdicts[i], qid = `aq-${i}`;
+        let chip, panel = "";
+        if(!v) chip = `<span class="vchip wait">not audited in this demo</span>`;
+        else if(v.v==="ok"){
+          chip = `<button class="vchip ok num" data-act="toggle-ev" aria-expanded="false" aria-controls="${qid}" title="auditor’s citation: ${v.quote}"><span class="tw" aria-hidden="true">›</span>✓ ${v.label}</button>`;
+          panel = `<div class="qpanel" id="${qid}" hidden>All 3 independent runs re-read the cited evidence and upheld the claim. The auditor’s citation, verbatim from this finding’s own proof line:
+            <blockquote class="num">“${v.quote}”</blockquote></div>`;
+        } else {
+          chip = `<button class="vchip abst num" data-act="toggle-ev" aria-expanded="false" aria-controls="${qid}"><span class="tw" aria-hidden="true">›</span>◌ ${v.label}</button>`;
+          panel = `<div class="qpanel" id="${qid}" hidden>${v.note}</div>`;
+        }
+        return `<div class="rrow">
+          <div class="rrow-top">${sev(r.sev)}<span class="hl">${r.hl}</span>${chip}</div>
+          <div class="proofline"><span class="proof num">${r.proof}</span></div>
+          ${panel}
+        </div>`;
+      }).join("")}
+      <p class="mock-note" style="margin-top:10px">demo — illustrative verdicts · in the real app each verdict links to the auditor’s full transcript.</p>
+    </div>`;
+  }
+  return `<div class="view" data-route="audit">
+  <a class="up" href="#home"><span class="arr" aria-hidden="true">←</span> Overview</a>
+  <div data-st>${head}${body}</div>
+</div>`;
+}
+
 /* ================= router ================= */
 const ROUTES = {
   home:    { depth:0, crumbs:[], render:vHome },
@@ -669,7 +779,8 @@ const ROUTES = {
   coach:   { depth:1, crumbs:["Worth adopting"], render:vCoach },
   receipts:{ depth:1, crumbs:["Receipts"], render:vReceipts },
   infra:   { depth:1, crumbs:["Not your inefficiency"], render:vInfra },
-  grading: { depth:1, crumbs:["How it was graded"], render:vGrading }
+  grading: { depth:1, crumbs:["How it was graded"], render:vGrading },
+  audit:   { depth:1, crumbs:["The audit"], render:vAudit }
 };
 let lastDepth = 0, firstRender = true;
 
@@ -775,6 +886,19 @@ document.addEventListener("click", e=>{
     const open = b.getAttribute("aria-expanded")==="true";
     b.setAttribute("aria-expanded", String(!open));
     panel.hidden = open;
+  }
+  else if(act==="audit-run"){
+    const finish = ()=>{
+      auditState = "done";
+      if((parseHash()||{}).key==="audit") render();
+      toast("Audit complete — 3 findings confirmed 3/3, 1 abstained. Honeypots caught 2/2 — auditor healthy.");
+    };
+    if(RM){ finish(); }             /* reduced motion: straight to results */
+    else { auditState = "running"; render(); setTimeout(finish, 2600); }
+  }
+  else if(act==="audit-cancel"){
+    toast("Audit cancelled — nothing ran, nothing was spent.");
+    location.hash = "#home";
   }
 });
 

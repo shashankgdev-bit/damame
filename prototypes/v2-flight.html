@@ -281,6 +281,79 @@
   .score-link{ display:inline-block; margin-top:12px; font-size:11px; letter-spacing:.08em; color:var(--phos); text-decoration:none; border-bottom:1px dotted var(--phos); }
   .score-link:hover{ border-bottom-style:solid; }
 
+  /* ---------- audit: the second opinion (guarded switch, consent, lamps) ---------- */
+  .audit-console{ border-top:1px solid var(--line-soft); background:var(--panel-in); }
+  .audit-strip{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:12px 20px; }
+  .audit-legend{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+  .audit-legend b{ color:var(--text); }
+  .guard{
+    display:inline-flex; align-items:center; padding:6px 10px; flex:none;
+    border:1px solid rgba(230,180,92,.55);
+    background:repeating-linear-gradient(-45deg, var(--amber-soft) 0 5px, transparent 5px 11px);
+  }
+  .guard .sw-label{ font-size:10px; letter-spacing:.18em; color:var(--amber); font-weight:600; }
+  #audit .sw-state{ width:52px; }
+  #audit[data-state="scanning"] .sw-state::after{ content:"SWEEP"; color:var(--amber); }
+  #audit[data-state="complete"] .sw-state::after{ content:"DONE"; color:var(--phos); }
+  .sweep{ position:relative; width:130px; height:6px; border:1px solid var(--line); background:var(--panel); overflow:hidden; display:none; flex:none; }
+  .sweep i{ position:absolute; top:0; bottom:0; left:0; width:36px; background:var(--phos); opacity:.85; animation:sweepx 1.05s linear infinite alternate; }
+  #audit[data-state="scanning"] .sweep{ display:block; }
+  @keyframes sweepx{ from{ transform:translateX(-8px); } to{ transform:translateX(102px); } }
+  .audit-status{ flex:1 1 240px; font-size:10.5px; color:var(--muted); letter-spacing:.04em; min-height:1em; }
+  .audit-results{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:0 20px 12px; }
+  .selftest{
+    font-size:10px; letter-spacing:.14em; color:var(--phos); text-transform:uppercase;
+    border:1px solid rgba(143,227,164,.4); padding:2px 9px;
+    display:inline-flex; gap:7px; align-items:center;
+  }
+  .selftest::before{ content:""; width:6px; height:6px; background:var(--phos); box-shadow:0 0 6px rgba(143,227,164,.6); }
+  .hp-line{ font-size:10.5px; color:var(--muted); letter-spacing:.04em; }
+  .hp-btn{ color:var(--dim); font-size:10.5px; text-decoration:underline dotted; text-underline-offset:3px; margin-left:8px; }
+  .hp-btn:hover{ color:var(--muted); }
+  .hp-note{ flex-basis:100%; font:italic 12px/1.55 var(--serif); color:var(--muted); max-width:70ch; }
+  .demo-mark{ margin-left:auto; font-size:9.5px; letter-spacing:.1em; color:var(--dim); border:1px dashed var(--line); padding:2px 8px; }
+  .verdict{
+    display:inline-flex; align-items:center; gap:7px; margin-top:6px;
+    border:1px solid; padding:2px 9px; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  }
+  .verdict .vl{ width:7px; height:7px; border-radius:50%; flex:none; }
+  .verdict-green{ color:var(--phos); border-color:rgba(143,227,164,.4); }
+  .verdict-green .vl{ background:var(--phos); box-shadow:0 0 6px rgba(143,227,164,.55); }
+  .verdict-amber{ color:var(--amber); border-color:rgba(230,180,92,.4); }
+  .verdict-amber .vl{ background:var(--amber); box-shadow:0 0 6px rgba(230,180,92,.5); }
+  .verdict:hover{ background:var(--panel); }
+  @keyframes vfade{ from{ opacity:0; transform:translateY(3px); } }
+  .verdict.reveal{ animation:vfade .35s ease-out both; }
+  .verdict-tape{
+    grid-column:3 / -1; margin-top:4px; padding:5px 10px;
+    border:1px dashed var(--line); background:var(--panel);
+    font-size:10.5px; color:var(--muted);
+  }
+  .verdict-tape .tape-label{ color:var(--dim); letter-spacing:.12em; font-size:9px; text-transform:uppercase; margin-right:8px; }
+  .verdict-tape q{ color:var(--phos); quotes:"\201C" "\201D"; }
+  .verdict-tape.tape-amber q{ color:var(--amber); }
+  .audit-consent{
+    background:var(--panel); color:var(--text); border:1px solid var(--phos); padding:0;
+    width:min(440px, calc(100vw - 40px)); font:13px/1.55 var(--mono);
+  }
+  .audit-consent::backdrop{ background:rgba(8,10,13,.74); }
+  .consent-head{
+    padding:12px 18px; border-bottom:1px solid var(--line); background:var(--panel-in);
+    font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber);
+  }
+  .consent-body{ padding:16px 18px 18px; }
+  .consent-row{ display:flex; justify-content:space-between; gap:12px; padding:7px 2px; border-bottom:1px dashed var(--line-soft); }
+  .consent-row .cl{ font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
+  .consent-row .cv{ color:var(--text); font-size:13px; text-align:right; }
+  .consent-plain{ font:italic 12.5px/1.55 var(--serif); color:var(--muted); margin-top:12px; max-width:44ch; }
+  .consent-actions{ display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
+  .btn-cancel{ border:1px solid var(--line); color:var(--muted); padding:9px 18px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; }
+  .btn-cancel:hover{ border-color:var(--text); color:var(--text); }
+  @media (max-width:680px){
+    .verdict-tape{ grid-column:1 / -1; }
+    .demo-mark{ margin-left:0; }
+  }
+
   /* ---------- zone D: infra room ---------- */
   .infra{
     border:1px dashed rgba(124,196,220,.45); background:var(--cyan-soft);
@@ -566,13 +639,38 @@
           <span class="sev sev-min"><span class="mk" aria-hidden="true">▪</span>1 MIN</span>
         </span>
       </summary>
+
+      <!-- audit console: guarded AUDIT switch → consent → sweep → verdict lamps -->
+      <div class="audit-console" id="audit" data-state="idle">
+        <div class="audit-strip">
+          <span class="audit-legend"><b>Second opinion</b> · adversarial re-check</span>
+          <span class="guard">
+            <label class="sw">
+              <span class="sw-label" aria-hidden="true">AUDIT&nbsp;</span>
+              <input type="checkbox" id="audit-arm" aria-label="AUDIT — flip to hire a second examiner that re-checks each finding against its cited evidence. A consent readout opens before anything runs.">
+              <span class="sw-track" aria-hidden="true"></span>
+              <span class="sw-state" aria-hidden="true"></span>
+            </label>
+          </span>
+          <span class="sweep" aria-hidden="true"><i></i></span>
+          <span class="audit-status" id="audit-status" aria-live="polite">Guarded switch — flip AUDIT and a pre-flight consent readout opens. Nothing runs, nothing is spent, until you confirm.</span>
+        </div>
+        <div class="audit-results" id="audit-results" hidden>
+          <span class="selftest">Self-test 2/2 pass</span>
+          <span class="hp-line">honeypots caught 2/2 — auditor healthy<button class="hp-btn" id="hp-info" aria-expanded="false" aria-controls="hp-note" title="Honeypots: corrupted decoy findings the auditor must catch.">what's a honeypot?</button></span>
+          <span class="demo-mark">demo — illustrative verdicts</span>
+          <p class="hp-note" id="hp-note" hidden>Before the sweep, damame slips 2 corrupted decoy findings into the batch — their numbers deliberately don't match their cited evidence. An auditor that rubber-stamps a decoy can't be trusted; this one caught both, so its lamps on the real findings carry weight.</p>
+        </div>
+      </div>
+
       <div class="receipts">
         <div class="receipt">
           <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
           <span class="r-cur limits">limits</span>
-          <span class="r-main"><span class="r-hl">The whole conversation got re-billed from scratch, repeatedly</span><br><span class="r-proof">cache-thrash · 17.5M missed input tokens (messages_changed)</span></span>
+          <span class="r-main"><span class="r-hl">The whole conversation got re-billed from scratch, repeatedly</span><br><span class="r-proof">cache-thrash · 17.5M missed input tokens (messages_changed)</span><br><button class="verdict verdict-green" hidden aria-expanded="false" title="&quot;17.5M missed input tokens (messages_changed)&quot;"><span class="vl" aria-hidden="true"></span>Confirmed 3/3 · tape</button></span>
           <button class="evi" data-n="8" aria-expanded="false">show me where · 8</button>
           <span class="evi-note" hidden></span>
+          <span class="verdict-tape" hidden><span class="tape-label">Data tape ▸ 3/3 runs cite</span><q>17.5M missed input tokens (messages_changed)</q></span>
         </div>
         <div class="receipt">
           <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
@@ -591,16 +689,18 @@
         <div class="receipt">
           <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
           <span class="r-cur time">time</span>
-          <span class="r-main"><span class="r-hl">You worked as the data courier, 8 different templates' worth</span><br><span class="r-proof">paste-relay · 170 blocks · 1.64MB by hand</span></span>
+          <span class="r-main"><span class="r-hl">You worked as the data courier, 8 different templates' worth</span><br><span class="r-proof">paste-relay · 170 blocks · 1.64MB by hand</span><br><button class="verdict verdict-green" hidden aria-expanded="false" title="&quot;170 blocks · 1.64MB by hand&quot;"><span class="vl" aria-hidden="true"></span>Confirmed 3/3 · tape</button></span>
           <button class="evi" data-n="8" aria-expanded="false">show me where · 8</button>
           <span class="evi-note" hidden></span>
+          <span class="verdict-tape" hidden><span class="tape-label">Data tape ▸ 3/3 runs cite</span><q>170 blocks · 1.64MB by hand</q></span>
         </div>
         <div class="receipt">
           <span class="sev sev-maj"><span class="mk" aria-hidden="true">▲</span>MAJ</span>
           <span class="r-cur quality">quality</span>
-          <span class="r-main"><span class="r-hl">One session spanned 80 days — a permanent workspace</span><br><span class="r-proof">eternal-session · 26 resumes · 26 compactions</span></span>
+          <span class="r-main"><span class="r-hl">One session spanned 80 days — a permanent workspace</span><br><span class="r-proof">eternal-session · 26 resumes · 26 compactions</span><br><button class="verdict verdict-green" hidden aria-expanded="false" title="&quot;26 resumes · 26 compactions&quot;"><span class="vl" aria-hidden="true"></span>Confirmed 3/3 · tape</button></span>
           <button class="evi" data-n="1" aria-expanded="false">show me where · 1</button>
           <span class="evi-note" hidden></span>
+          <span class="verdict-tape" hidden><span class="tape-label">Data tape ▸ 3/3 runs cite</span><q>26 resumes · 26 compactions</q></span>
         </div>
         <div class="receipt">
           <span class="sev sev-mod"><span class="mk" aria-hidden="true">◆</span>MOD</span>
@@ -612,9 +712,10 @@
         <div class="receipt">
           <span class="sev sev-mod"><span class="mk" aria-hidden="true">◆</span>MOD</span>
           <span class="r-cur quality">quality</span>
-          <span class="r-main"><span class="r-hl">Same delegation re-improvised 5× — drift risk each time</span><br><span class="r-proof">repeated-delegation · no token claim (honest: the cost is drift)</span></span>
+          <span class="r-main"><span class="r-hl">Same delegation re-improvised 5× — drift risk each time</span><br><span class="r-proof">repeated-delegation · no token claim (honest: the cost is drift)</span><br><button class="verdict verdict-amber" hidden aria-expanded="false" title="2 valid runs of 3 — quorum not reached, no verdict issued."><span class="vl" aria-hidden="true"></span>Abstained — 2 valid runs</button></span>
           <button class="evi" data-n="5" aria-expanded="false">show me where · 5</button>
           <span class="evi-note" hidden></span>
+          <span class="verdict-tape tape-amber" hidden><span class="tape-label">No verdict ▸ 2 valid runs</span><q>quorum of 3 not reached — the auditor holds its tongue rather than guess</q></span>
         </div>
         <div class="receipt">
           <span class="sev sev-min"><span class="mk" aria-hidden="true">▪</span>MIN</span>
@@ -637,6 +738,23 @@
         <a class="score-link" href="#breakdown">See how these findings set the score ↑</a>
       </div>
     </details>
+
+    <!-- audit consent readout (never silent spending) -->
+    <dialog class="audit-consent" id="audit-consent" aria-labelledby="consent-h">
+      <form method="dialog">
+        <p class="consent-head" id="consent-h">Audit pre-flight · confirm before burn</p>
+        <div class="consent-body">
+          <div class="consent-row"><span class="cl">Findings queued</span><span class="cv">31</span></div>
+          <div class="consent-row"><span class="cl">Est. fuel</span><span class="cv">~120K TOK</span></div>
+          <div class="consent-row"><span class="cl">Power source</span><span class="cv">YOUR OWN CLAUDE ACCOUNT</span></div>
+          <p class="consent-plain">31 findings · estimated ~120k tokens · runs on your own claude account. Nothing runs and nothing is spent until you confirm. Escape or Cancel stands the auditor down.</p>
+          <div class="consent-actions">
+            <button class="btn-primary" value="confirm" autofocus>Confirm — run audit</button>
+            <button class="btn-cancel" value="cancel">Cancel — stand down</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
 
     <!-- ============ ZONE D — NOT YOUR INEFFICIENCY ============ -->
     <section class="cluster infra" aria-labelledby="infra-h">
@@ -823,6 +941,86 @@
       btn.setAttribute("aria-expanded", String(open));
     });
   });
+
+  /* ---- Audit: the second opinion (mocked, all client-side, zero network) ---- */
+  var auditRoot = document.getElementById("audit");
+  if (auditRoot){
+    var auditArm = document.getElementById("audit-arm");
+    var auditConsent = document.getElementById("audit-consent");
+    var auditStatus = document.getElementById("audit-status");
+    var auditResults = document.getElementById("audit-results");
+    var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var auditDone = false;
+
+    var finishAudit = function(){
+      auditDone = true;
+      auditRoot.setAttribute("data-state", "complete");
+      auditArm.checked = true;
+      auditArm.disabled = true;
+      document.querySelectorAll(".verdict").forEach(function(v){
+        v.hidden = false;
+        v.classList.add("reveal");
+      });
+      auditResults.hidden = false;
+      auditStatus.textContent = "Audit complete — verdict lamps lit on 4 findings: 3 confirmed 3/3, 1 abstained (2 valid runs). Self-test 2/2 pass. Demo — illustrative verdicts.";
+    };
+    var runAudit = function(){
+      /* Reduced-motion users skip the sweep entirely — straight to results. */
+      if (reduceMotion){ finishAudit(); return; }
+      auditRoot.setAttribute("data-state", "scanning");
+      auditStatus.textContent = "Sweep in progress — adversarial re-check of each finding against its cited evidence…";
+      window.setTimeout(finishAudit, 2600);
+    };
+
+    auditArm.addEventListener("change", function(){
+      if (auditDone){ auditArm.checked = true; return; }
+      if (!auditArm.checked) return;
+      if (auditConsent && typeof auditConsent.showModal === "function"){
+        auditConsent.returnValue = "";
+        auditConsent.showModal();
+      } else {
+        /* no <dialog> support: consent still gates the run */
+        var ok = window.confirm("AUDIT PRE-FLIGHT\n31 findings · estimated ~120k tokens · runs on your own claude account.\nRun the audit?");
+        if (ok){ runAudit(); } else { auditArm.checked = false; }
+      }
+    });
+
+    if (auditConsent){
+      /* Escape fires cancel → close with an empty returnValue: treated as stand-down. */
+      auditConsent.addEventListener("close", function(){
+        if (auditDone) return;
+        if (auditConsent.returnValue === "confirm"){
+          runAudit();
+        } else {
+          auditArm.checked = false;
+          auditRoot.setAttribute("data-state", "idle");
+          auditStatus.textContent = "Stood down — nothing ran, nothing spent.";
+        }
+      });
+    }
+
+    /* verdict lamps: click (or hover the title) for the data-tape readout */
+    document.querySelectorAll(".verdict").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var tape = btn.closest(".receipt").querySelector(".verdict-tape");
+        if (!tape) return;
+        var open = tape.hasAttribute("hidden");
+        if (open){ tape.removeAttribute("hidden"); } else { tape.setAttribute("hidden",""); }
+        btn.setAttribute("aria-expanded", String(open));
+      });
+    });
+
+    /* honeypot legend note */
+    var hpBtn = document.getElementById("hp-info");
+    var hpNote = document.getElementById("hp-note");
+    if (hpBtn && hpNote){
+      hpBtn.addEventListener("click", function(){
+        var open = hpNote.hasAttribute("hidden");
+        if (open){ hpNote.removeAttribute("hidden"); } else { hpNote.setAttribute("hidden",""); }
+        hpBtn.setAttribute("aria-expanded", String(open));
+      });
+    }
+  }
 })();
 </script>
 

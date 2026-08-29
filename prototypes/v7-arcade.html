@@ -221,6 +221,41 @@ footer .vers{font-family:var(--mono)}
 footer .priv{margin-top:4px;font-weight:700}
 #toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,80px);background:var(--ink);color:#fff;font-weight:700;font-size:14px;border-radius:12px;padding:11px 18px;opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.2),opacity .3s;z-index:99;max-width:90vw}
 #toast.show{transform:translate(-50%,0);opacity:1}
+/* ---------- re-grade (the audit) ---------- */
+.regraderow{margin-top:18px;padding-top:16px;border-top:1.5px dashed var(--line);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.stampbtn{font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.04em;text-transform:uppercase;text-align:left;color:var(--red);background:rgba(255,255,255,.6);border:3px solid var(--red);border-radius:12px;box-shadow:inset 0 0 0 2px rgba(216,67,47,.25);padding:9px 16px 10px;cursor:pointer;transform:rotate(-2deg);transition:transform .15s}
+.stampbtn:hover{transform:rotate(-2deg) scale(1.05)}
+.stampbtn:active{transform:rotate(-2deg) scale(.96)}
+.stampbtn .stampsub2{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;font-weight:700;color:inherit;opacity:.85;margin-top:2px;text-transform:none}
+.stampbtn.used{color:var(--bean-dark);border-color:var(--bean-dark);box-shadow:inset 0 0 0 2px rgba(44,122,60,.25)}
+.regradehint{font-size:13px;color:var(--soft);max-width:46ch}
+dialog.slip{border:none;border-radius:18px;padding:0;width:min(500px,92vw);background:var(--sheet);color:var(--ink);box-shadow:0 24px 60px rgba(29,51,38,.4)}
+dialog.slip::backdrop{background:rgba(29,51,38,.45)}
+.slip-in{position:relative;padding:26px 28px 22px 44px;background:repeating-linear-gradient(180deg,var(--sheet) 0 29px,var(--line) 29px 30px)}
+.slip-in::before{content:"";position:absolute;top:0;bottom:0;left:30px;width:2px;background:rgba(216,67,47,.35)}
+.slipbody{margin-top:10px;font-size:14.5px;max-width:52ch}
+.slipfacts{font-family:var(--mono);font-size:13px;font-weight:700;background:var(--paper);border:1.5px dashed var(--line);border-radius:10px;padding:10px 14px;margin-top:14px}
+.sigline{display:flex;align-items:flex-end;gap:10px;margin:18px 0 14px;color:var(--soft);font-size:12.5px}
+.sigline .rule{flex:1;border-bottom:2px solid var(--ink);height:16px}
+.slipactions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.slipnote{margin-top:10px;font-size:11.5px;color:var(--soft);font-family:var(--mono)}
+.auditstrip{max-width:820px;margin-bottom:18px;background:var(--sheet);border:2px solid var(--red-pale);border-radius:var(--r);padding:14px 18px}
+.runline{display:flex;gap:12px;align-items:center;color:var(--red);font-weight:700;font-size:14.5px}
+.redpen{display:inline-block;font-size:22px;line-height:1}
+.redpen.checking{animation:pencheck .8s ease-in-out infinite}
+@keyframes pencheck{0%,100%{transform:rotate(-12deg)}45%{transform:rotate(14deg) translateX(5px)}}
+.trustline{display:flex;gap:8px 12px;align-items:baseline;flex-wrap:wrap;font-size:13.5px;font-weight:700}
+.trustline .tl-ticks{color:var(--red);font-weight:900}
+.whatbtn{font:inherit;font-size:12px;font-weight:800;color:var(--bean-dark);background:none;border:none;cursor:pointer;text-decoration:underline;padding:2px}
+.decoynote{margin-top:8px;font-size:12.5px;color:var(--soft);max-width:64ch}
+.demomark{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--soft);border:1.5px dashed var(--soft);border-radius:999px;padding:2px 9px;margin-left:auto}
+.tickchip{font:inherit;font-size:12px;font-weight:800;color:var(--red);background:var(--red-pale);border:none;border-radius:999px;padding:3px 11px;cursor:pointer}
+.tickchip:hover{background:#F6D3CB}
+.abstainchip{font:inherit;font-size:12px;font-style:italic;font-weight:700;color:var(--soft);background:var(--paper);border:1.5px dashed var(--soft);border-radius:999px;padding:2px 11px;cursor:pointer}
+.audit-in{animation:rise .45s cubic-bezier(.2,.7,.3,1) both}
+.auditquote{font-family:var(--mono);font-size:12.5px;color:var(--red);background:var(--red-pale);border-left:3px solid var(--red);border-radius:0 10px 10px 0;padding:8px 12px;max-width:64ch}
+.auditquote.pencil{color:var(--soft);background:var(--paper);border-left-color:var(--soft);font-style:italic}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 /* ---------- responsive ---------- */
 @media (max-width:760px){
   .tilegrid,.coachgrid{grid-template-columns:1fr}
@@ -288,6 +323,10 @@ footer .priv{margin-top:4px;font-weight:700}
       <p class="note"><strong>Teacher's note:</strong> <span id="home-story"></span></p>
       <ul class="stats num" id="home-stats"></ul>
       <p class="tokensline" id="home-tokens"></p>
+      <div class="regraderow">
+        <button class="stampbtn" id="regradeBtn" type="button">Request a re-grade<span class="stampsub2">a second marker re-checks every answer</span></button>
+        <p class="regradehint">damame can hire a second marker — an LLM, through your own claude login — to adversarially re-check each finding against its cited evidence. It always asks before spending.</p>
+      </div>
     </div>
 
     <div class="tilegrid">
@@ -380,6 +419,19 @@ footer .priv{margin-top:4px;font-weight:700}
     <h1 id="h-receipts" tabindex="-1" class="rise" style="--i:0">Receipts</h1>
     <p class="lede rise" style="--i:1">Every finding, with its proof line. Proof is counted in <strong>tokens — the unit AI work is billed in</strong>. Severity is always marked by shape and word, never color alone. <a href="#score">See how these become the grade →</a></p>
     <div class="legend rise" style="--i:1" aria-hidden="true"><span class="s-major">▲ major</span><span class="s-moderate">◆ moderate</span><span class="s-minor">○ minor</span></div>
+    <div class="auditstrip" id="auditStrip" hidden>
+      <div class="runline" id="auditRunning" hidden>
+        <span class="redpen checking" aria-hidden="true">✎</span>
+        <span>Red pen out — the second marker is re-checking each answer against its cited evidence…</span>
+      </div>
+      <div id="auditDone" hidden>
+        <p class="trustline"><span class="tl-ticks" aria-hidden="true">✓✓</span> Decoy answers caught 2/2 — the marker is healthy.
+          <button class="whatbtn" data-decoy="1" aria-expanded="false">what are decoys?</button>
+          <span class="demomark">demo — illustrative verdicts</span></p>
+        <p class="decoynote" id="decoyNote" hidden>Before grading, damame slips two deliberately corrupted findings — honeypots — into the marker's stack. A healthy marker must flag both; miss either and its verdicts would be withheld, not shown.</p>
+      </div>
+    </div>
+    <p id="auditLive" class="vh" aria-live="polite"></p>
     <ul class="rlist rise" style="--i:2" id="receiptList"></ul>
     <div class="cleanbox rise" style="--i:3">
       <h2>Nothing caught — earned silence</h2>
@@ -410,6 +462,21 @@ footer .priv{margin-top:4px;font-weight:700}
     </div>
   </section>
 </main>
+
+<dialog class="slip" id="slip" aria-labelledby="slip-h">
+  <div class="slip-in">
+    <p class="eyebrow">Permission slip</p>
+    <h2 id="slip-h">Request a re-grade</h2>
+    <p class="slipbody">A second marker — an LLM hired through your own claude login — will adversarially re-check each finding against its cited evidence. Nothing runs and nothing is spent until you sign.</p>
+    <p class="slipfacts num">31 findings · estimated ~120k tokens · runs on your own claude account</p>
+    <div class="sigline"><span>signed,</span><span class="rule" aria-hidden="true"></span><span>(you)</span></div>
+    <div class="slipactions">
+      <button class="btn btn-primary" id="slipConfirm" type="button">Sign &amp; send for re-grade</button>
+      <button class="btn btn-quiet" id="slipCancel" type="button">Cancel — spend nothing</button>
+    </div>
+    <p class="slipnote">Esc also cancels · prototype, nothing actually runs</p>
+  </div>
+</dialog>
 
 <footer>
   <p class="vers num" id="foot-vers"></p>
@@ -524,7 +591,7 @@ const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const grade = n => n >= 85 ? "A" : n >= 70 ? "B" : n >= 55 ? "C" : n >= 40 ? "D" : "F";
 const chip = c => `<span class="chip c-${c}">${c}</span>`;
 const sevMark = { major: "▲", moderate: "◆", minor: "○" };
-const state = { dismissed: {}, homeIntroDone: false };
+const state = { dismissed: {}, homeIntroDone: false, audit: "idle" };
 let toastTimer;
 function toast(msg) {
   const t = $("#toast"); t.textContent = msg; t.classList.add("show");
@@ -733,6 +800,59 @@ function wireFixes() {
   });
 }
 
+/* ============ the re-grade (mocked second-opinion audit) ============ */
+/* Verdicts are mocked; quotes are verbatim lines from each receipt's own proof text. */
+const AUDIT = [
+  { row: 0, quote: "17.5M missed input tokens (messages_changed)" },
+  { row: 3, quote: "170 blocks · 1.64MB by hand" },
+  { row: 4, quote: "26 resumes · 26 compactions" },
+  { row: 6, abstain: true }
+];
+function wireAudit() {
+  const btn = $("#regradeBtn"), slip = $("#slip");
+  btn.addEventListener("click", () => {
+    if (state.audit !== "idle") { location.hash = "#receipts"; return; }
+    slip.showModal();
+  });
+  $("#slipCancel").addEventListener("click", () => slip.close());
+  $("#slipConfirm").addEventListener("click", () => { slip.close(); startAudit(); });
+  /* Esc closes via the dialog's native cancel; return focus to the stamp if nothing ran */
+  slip.addEventListener("close", () => { if (state.audit === "idle") btn.focus(); });
+}
+function startAudit() {
+  state.audit = "running";
+  location.hash = "#receipts";
+  $("#auditStrip").hidden = false;
+  if (reduced) { finishAudit(); return; } /* reduced motion: straight to results */
+  $("#auditRunning").hidden = false;
+  setTimeout(finishAudit, 2600);
+}
+function finishAudit() {
+  state.audit = "done";
+  $("#auditRunning").hidden = true;
+  $("#auditDone").hidden = false;
+  const rows = document.querySelectorAll("#receiptList .rrow");
+  AUDIT.forEach((v, i) => {
+    const row = rows[v.row]; if (!row) return;
+    const pr = row.querySelector(".proofrow");
+    if (v.abstain) {
+      pr.insertAdjacentHTML("beforeend",
+        `<button class="abstainchip audit-in" data-aq="${i}" aria-expanded="false">✎ couldn't verify — abstained · 2 valid runs</button>`);
+      row.insertAdjacentHTML("beforeend",
+        `<p class="auditquote pencil" id="aq-${i}" hidden>Pencilled in the margin: both valid runs came back unsure — this finding makes no token claim to check, so the marker declined to grade it rather than guess.</p>`);
+    } else {
+      pr.insertAdjacentHTML("beforeend",
+        `<button class="tickchip audit-in" data-aq="${i}" aria-expanded="false">✓✓✓ confirmed 3/3 — checked against the evidence</button>`);
+      row.insertAdjacentHTML("beforeend",
+        `<p class="auditquote" id="aq-${i}" hidden>All 3 runs cited the same line of this receipt's own proof: “${v.quote}”</p>`);
+    }
+  });
+  const btn = $("#regradeBtn");
+  btn.classList.add("used");
+  btn.innerHTML = `Re-graded ✓<span class="stampsub2">see the marker's ticks in receipts →</span>`;
+  $("#auditLive").textContent = "Re-grade complete. 3 findings confirmed 3 out of 3. One couldn't be verified — the marker abstained after 2 valid runs. Decoy answers caught 2 of 2. Illustrative demo verdicts.";
+}
+
 /* ============ delegated clicks: flip / dismiss / adopt / where ============ */
 document.addEventListener("click", e => {
   const t = e.target.closest("button"); if (!t) return;
@@ -753,6 +873,14 @@ document.addEventListener("click", e => {
     const p = $("#where-" + t.dataset.where);
     p.hidden = !p.hidden;
     t.setAttribute("aria-expanded", String(!p.hidden));
+  } else if (t.dataset.aq !== undefined) {
+    const q = $("#aq-" + t.dataset.aq);
+    q.hidden = !q.hidden;
+    t.setAttribute("aria-expanded", String(!q.hidden));
+  } else if (t.dataset.decoy) {
+    const n = $("#decoyNote");
+    n.hidden = !n.hidden;
+    t.setAttribute("aria-expanded", String(!n.hidden));
   }
 });
 
@@ -779,6 +907,7 @@ function route() {
 }
 renderStatic();
 wireFixes();
+wireAudit();
 window.addEventListener("hashchange", route);
 route();
 </script>

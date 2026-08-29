@@ -366,6 +366,98 @@
   .privacy{margin-top:.3rem}
   .privacy b{color:var(--ink);font-weight:600}
 
+  /* ============ the fact-check desk (audit) ============ */
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+  /* house ad */
+  .house-ad{
+    max-width:640px;margin:2.6rem auto 0;text-align:center;background:var(--paper);
+    border:1px solid var(--rule-dark);outline:1px solid var(--rule-dark);outline-offset:3px;
+    padding:1.7rem 1.8rem 1.5rem;
+  }
+  @media (max-width:520px){ .house-ad{padding:1.3rem 1rem} }
+  .ad-orn{color:var(--red);letter-spacing:.7em;font-size:.8rem;margin-bottom:.6rem}
+  .ad-eyebrow{font-family:var(--sans);font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:.5rem}
+  .ad-head{font-size:clamp(1.5rem,3.2vw,2rem);font-weight:400;line-height:1.12;margin-bottom:.6rem}
+  .ad-copy{font-size:.95rem;max-width:46ch;margin:0 auto .9rem;color:#332D24}
+  .ad-fine{display:block;margin-top:.8rem}
+  .audit-running{margin-top:1rem;font-style:italic;color:var(--ink-soft);font-size:.95rem}
+  .audit-running .quill{display:inline-block;color:var(--red);animation:deskPulse 1.1s ease-in-out infinite}
+  @keyframes deskPulse{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
+
+  /* consent slip */
+  dialog.slip{
+    margin:auto;border:1px solid var(--rule-dark);background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:1rem;line-height:1.55;
+    padding:1.5rem 1.7rem 1.4rem;max-width:26rem;width:calc(100vw - 3rem);
+    box-shadow:8px 8px 0 rgba(32,27,20,.16);
+  }
+  dialog.slip::backdrop{background:rgba(32,27,20,.45)}
+  .slip-eyebrow{font-family:var(--sans);font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:.5rem}
+  .slip-head{font-size:1.35rem;font-weight:400;line-height:1.2;margin-bottom:.8rem}
+  .slip-terms{list-style:none;border-top:1px solid var(--rule-dark);margin-bottom:.9rem}
+  .slip-terms li{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px solid var(--rule);font-size:.92rem}
+  .slip-terms li span{color:var(--ink-soft)}
+  .slip-terms li b{font-weight:600;text-align:right}
+  .slip-fine{font-style:italic;font-size:.85rem;color:var(--ink-soft);margin-bottom:1.1rem}
+  .slip-actions{display:flex;justify-content:flex-end;align-items:center;gap:1.1rem;flex-wrap:wrap}
+
+  /* verdict stamps in the ledger */
+  .audit-chip{
+    font-family:var(--sans);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+    background:var(--paper);border:1px solid var(--red);color:var(--red);
+    padding:.16rem .5rem;margin-left:.55rem;cursor:pointer;white-space:nowrap;
+    font-variant-numeric:tabular-nums;transition:background .15s ease,color .15s ease;
+  }
+  .audit-chip:hover{background:var(--red);color:var(--paper)}
+  .audit-chip .stamp{
+    display:inline-block;border:1px solid currentColor;border-radius:50%;
+    width:1.15em;height:1.15em;line-height:1.1em;text-align:center;margin-right:.3em;
+    transform:rotate(-8deg);
+  }
+  .audit-chip.audit-abstained{border-style:dashed;border-color:var(--ink-soft);color:var(--ink-soft)}
+  .audit-chip.audit-abstained:hover{background:var(--paper-deep);color:var(--ink)}
+  .audit-quote{
+    display:block;font-style:italic;font-size:.84rem;color:var(--ink-soft);
+    border-left:2px solid var(--red);padding:.35rem .8rem;margin:.45rem 0 .1rem;max-width:56ch;
+    white-space:normal;
+  }
+  .audit-quote b{color:var(--ink);font-weight:600;font-style:normal}
+  .audit-quote.audit-abstain-note{border-left-color:var(--rule-dark)}
+
+  /* corrections & verifications notice */
+  .verifications{
+    position:relative;max-width:640px;margin:2.6rem auto 0;background:var(--paper);
+    border:1px solid var(--rule-dark);border-top:3px double var(--rule-dark);
+    padding:1.5rem 1.8rem 1.2rem;
+  }
+  @media (max-width:520px){ .verifications{padding:1.2rem 1rem} }
+  .verif-slug{
+    font-family:var(--sans);font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;
+    font-weight:700;text-align:center;margin-bottom:.25rem;
+  }
+  .verif-slug em{color:var(--red);font-style:normal}
+  .verif-slug:focus{outline:none}
+  .verif-sub{text-align:center;font-style:italic;color:var(--ink-soft);font-size:.9rem;margin-bottom:.9rem}
+  .verif-list{list-style:none;border-top:1px solid var(--rule)}
+  .verif-list li{padding:.55rem 0;border-bottom:1px solid var(--rule);font-size:.93rem}
+  .verif-list b{font-weight:600}
+  .verif-colophon{text-align:center;margin-top:.9rem}
+  .hp-note{margin:.4rem auto 0;max-width:46ch;text-align:center}
+  .hp-note summary{
+    list-style:none;display:inline-block;cursor:pointer;
+    font-family:var(--sans);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-soft);border-bottom:1px solid var(--rule);padding-bottom:.1rem;
+  }
+  .hp-note summary::-webkit-details-marker{display:none}
+  .hp-note summary:hover{color:var(--red);border-color:var(--red)}
+  .hp-note p{font-size:.84rem;font-style:italic;color:var(--ink-soft);padding-top:.45rem}
+  .demo-mark{
+    position:absolute;top:.55rem;right:.75rem;
+    font-family:var(--sans);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);opacity:.75;
+  }
+
   @media print{
     .btn,.btn-ghost,.skip{display:none}
     body{background:#fff}
@@ -571,7 +663,10 @@
             <tr>
               <td class="sev sev-major">▲ Major</td>
               <td class="cur">Limits</td>
-              <td class="find">The whole conversation got re-billed from scratch, repeatedly<a class="fnmark" href="#fn1" aria-label="Evidence note 1">1</a></td>
+              <td class="find">The whole conversation got re-billed from scratch, repeatedly<a class="fnmark" href="#fn1" aria-label="Evidence note 1">1</a>
+                <button type="button" class="audit-chip" aria-controls="aq1" aria-expanded="false" hidden
+                  title="Quoted verbatim from the receipt: “17.5M missed input tokens (messages_changed)”"><span class="stamp" aria-hidden="true">✓</span>Confirmed 3/3</button>
+                <span class="audit-quote" id="aq1" hidden>Auditor’s footnote — quoted verbatim from the receipt on file: <b>“17.5M missed input tokens (messages_changed)”</b>. Three runs of three agree.</span></td>
               <td class="proofcell num">cache-thrash · 17.5M missed input tokens (messages_changed)</td>
             </tr>
             <tr>
@@ -589,13 +684,19 @@
             <tr>
               <td class="sev sev-major">▲ Major</td>
               <td class="cur">Time</td>
-              <td class="find">You worked as the data courier, 8 different templates’ worth<a class="fnmark" href="#fn4" aria-label="Evidence note 4">4</a></td>
+              <td class="find">You worked as the data courier, 8 different templates’ worth<a class="fnmark" href="#fn4" aria-label="Evidence note 4">4</a>
+                <button type="button" class="audit-chip" aria-controls="aq4" aria-expanded="false" hidden
+                  title="Quoted verbatim from the receipt: “170 blocks · 1.64MB by hand”"><span class="stamp" aria-hidden="true">✓</span>Confirmed 3/3</button>
+                <span class="audit-quote" id="aq4" hidden>Auditor’s footnote — quoted verbatim from the receipt on file: <b>“170 blocks · 1.64MB by hand”</b>. Three runs of three agree.</span></td>
               <td class="proofcell num">paste-relay · 170 blocks · 1.64MB by hand</td>
             </tr>
             <tr>
               <td class="sev sev-major">▲ Major</td>
               <td class="cur">Quality</td>
-              <td class="find">One session spanned 80 days — a permanent workspace<a class="fnmark" href="#fn5" aria-label="Evidence note 5">5</a></td>
+              <td class="find">One session spanned 80 days — a permanent workspace<a class="fnmark" href="#fn5" aria-label="Evidence note 5">5</a>
+                <button type="button" class="audit-chip" aria-controls="aq5" aria-expanded="false" hidden
+                  title="Quoted verbatim from the receipt: “eternal-session · 26 resumes · 26 compactions”"><span class="stamp" aria-hidden="true">✓</span>Confirmed 3/3</button>
+                <span class="audit-quote" id="aq5" hidden>Auditor’s footnote — quoted verbatim from the receipt on file: <b>“eternal-session · 26 resumes · 26 compactions”</b>. Three runs of three agree.</span></td>
               <td class="proofcell num">eternal-session · 26 resumes · 26 compactions</td>
             </tr>
             <tr>
@@ -607,7 +708,10 @@
             <tr>
               <td class="sev sev-moderate">◆ Moderate</td>
               <td class="cur">Quality</td>
-              <td class="find">Same delegation re-improvised 5× — drift risk each time<a class="fnmark" href="#fn7" aria-label="Evidence note 7">7</a></td>
+              <td class="find">Same delegation re-improvised 5× — drift risk each time<a class="fnmark" href="#fn7" aria-label="Evidence note 7">7</a>
+                <button type="button" class="audit-chip audit-abstained" aria-controls="aq7" aria-expanded="false" hidden
+                  title="The desk could not verify — two valid runs, short of quorum">Abstained — 2 valid runs</button>
+                <span class="audit-quote audit-abstain-note" id="aq7" hidden>The desk could not verify: two valid runs returned, short of quorum. An abstention is recorded — not a judgment.</span></td>
               <td class="proofcell num">repeated-delegation · no token claim (honest: the cost is drift)</td>
             </tr>
             <tr>
@@ -652,6 +756,49 @@
       </div>
       <p class="clean-note">233 tool errors occurred — none formed a loop. 87 delegations — none missed. Silence here is earned, not assumed (and not proof of perfection).</p>
     </div>
+
+    <!-- the fact-check desk: house ad → consent slip → corrections & verifications -->
+    <div class="house-ad" id="audit-ad" aria-labelledby="audit-ad-head">
+      <p class="ad-orn" aria-hidden="true">✦ ✦ ✦</p>
+      <p class="ad-eyebrow">An editor’s note — a house advertisement</p>
+      <h3 class="ad-head" id="audit-ad-head">Commission a fact-check</h3>
+      <p class="ad-copy">Engage a second reporter — a language model on your own claude login — to adversarially re-check every finding in the ledger against its cited evidence. It confirms, abstains, or objects; it never takes our word for it.</p>
+      <button type="button" class="btn" id="audit-open">Commission the fact-check</button>
+      <span class="ad-fine agate">Never runs without your signed slip</span>
+      <p class="audit-running" id="audit-running" hidden><span class="quill" aria-hidden="true">✎</span> The second reporter is reading the receipts…</p>
+    </div>
+
+    <dialog class="slip" id="audit-slip" aria-labelledby="slip-head">
+      <p class="slip-eyebrow">Commission slip · requires your approval</p>
+      <h3 class="slip-head" id="slip-head">Terms of the fact-check</h3>
+      <ul class="slip-terms">
+        <li><span>Findings to re-check</span><b class="num">31</b></li>
+        <li><span>Estimated spend</span><b class="num">~120k tokens</b></li>
+        <li><span>Runs on</span><b>your own claude account</b></li>
+      </ul>
+      <p class="slip-fine">Nothing runs until you approve. Cancelling costs nothing.</p>
+      <div class="slip-actions">
+        <button type="button" class="btn-ghost" id="audit-cancel">Cancel — spike it</button>
+        <button type="button" class="btn btn-red" id="audit-approve" autofocus>Approve the commission</button>
+      </div>
+    </dialog>
+
+    <section class="verifications" id="audit-results" hidden aria-labelledby="verif-head">
+      <p class="demo-mark">demo — illustrative verdicts</p>
+      <h3 class="verif-slug" id="verif-head" tabindex="-1">Corrections &amp; <em>Verifications</em></h3>
+      <p class="verif-sub">A second opinion, filed by the auditor against the evidence on file.</p>
+      <ul class="verif-list">
+        <li><b>Entries 1, 4 and 5 stand as printed</b> — confirmed, three runs of three. Each now carries the desk’s stamp in the ledger above; its footnote quotes the receipt verbatim.</li>
+        <li><b>Entry 7 — the desk could not verify.</b> Two valid runs, short of quorum. An abstention is recorded, not a judgment.</li>
+        <li>No entry was refuted.</li>
+      </ul>
+      <p class="verif-colophon agate">— honeypots caught 2/2 · auditor healthy —</p>
+      <details class="hp-note">
+        <summary>What is a honeypot?</summary>
+        <p>Two deliberately corrupted decoy findings were slipped into the auditor’s stack. A healthy auditor must catch both — an auditor that certifies bad evidence certifies nothing.</p>
+      </details>
+    </section>
+    <p class="sr-only" id="audit-status" role="status" aria-live="polite"></p>
   </section>
 
   <!-- ============ ZONE D — the provider's weather ============ -->
@@ -740,6 +887,75 @@
         }, 1600);
       });
     }
+  })();
+
+  // Mock: the fact-check desk — house ad → consent slip → brief run → verifications.
+  (function () {
+    var openBtn = document.getElementById('audit-open');
+    var slip = document.getElementById('audit-slip');
+    var approveBtn = document.getElementById('audit-approve');
+    var cancelBtn = document.getElementById('audit-cancel');
+    var ad = document.getElementById('audit-ad');
+    var running = document.getElementById('audit-running');
+    var results = document.getElementById('audit-results');
+    var statusLine = document.getElementById('audit-status');
+    var verifHead = document.getElementById('verif-head');
+    var native = typeof slip.showModal === 'function';
+
+    function reducedMotion() {
+      return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    // Escape closes the slip (native <dialog> handles this itself via its cancel behavior).
+    function escClose(e) {
+      if (e.key === 'Escape' || e.key === 'Esc') closeSlip(true);
+    }
+    function openSlip() {
+      if (native) {
+        slip.showModal();
+      } else {
+        slip.setAttribute('open', '');
+        document.addEventListener('keydown', escClose);
+        approveBtn.focus();
+      }
+    }
+    function closeSlip(refocus) {
+      if (native) { if (slip.open) slip.close(); }
+      else {
+        slip.removeAttribute('open');
+        document.removeEventListener('keydown', escClose);
+      }
+      if (refocus && !openBtn.disabled) openBtn.focus();
+    }
+    openBtn.addEventListener('click', openSlip);
+    cancelBtn.addEventListener('click', function () { closeSlip(true); });
+    approveBtn.addEventListener('click', function () {
+      closeSlip(false);
+      openBtn.disabled = true;
+      if (reducedMotion()) { finish(); return; } // reduced-motion: straight to results
+      statusLine.textContent = 'Fact-check commissioned. The second reporter is reading the receipts.';
+      running.hidden = false;
+      setTimeout(finish, 2600);
+    });
+    function finish() {
+      running.hidden = true;
+      ad.hidden = true;
+      results.hidden = false;
+      var chips = document.querySelectorAll('.audit-chip');
+      for (var i = 0; i < chips.length; i++) chips[i].hidden = false;
+      statusLine.textContent = 'Second opinion filed: ledger entries 1, 4 and 5 confirmed, three runs of three; entry 7 abstained, two valid runs. Honeypots caught 2 of 2 — auditor healthy. Demo: illustrative verdicts.';
+      verifHead.focus();
+    }
+    // A stamp toggles its footnote, which quotes the receipt verbatim.
+    document.addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el !== document && !(el.classList && el.classList.contains('audit-chip'))) el = el.parentNode;
+      if (!el || el === document) return;
+      var q = document.getElementById(el.getAttribute('aria-controls'));
+      if (!q) return;
+      var show = q.hidden;
+      q.hidden = !show;
+      el.setAttribute('aria-expanded', String(show));
+    });
   })();
 </script>
 </body>

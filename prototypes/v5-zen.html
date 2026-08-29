@@ -349,6 +349,54 @@
     color: var(--quiet);
   }
 
+  /* ═══════════════ the audit · a second opinion ═══════════════ */
+  .audit { margin-top: clamp(2.5rem, 7vh, 4rem); max-width: 34rem; }
+  .audit .invite { max-width: 33rem; }
+
+  .act:disabled { color: var(--quiet); text-decoration: none; cursor: default; }
+
+  .audit-consent {
+    margin-top: 1.5rem;
+    padding-left: 1.125rem;
+    border-left: 2px solid var(--whisper);
+    max-width: 31rem;
+  }
+  .audit-consent .plain { font-size: 0.9375rem; }
+  .audit-consent .terms { margin-block: 0.625rem; color: var(--body); }
+  .audit-consent .choices { margin-top: 1rem; display: flex; gap: 1.75rem; align-items: baseline; flex-wrap: wrap; }
+
+  .audit-running { margin-top: 1.5rem; font-size: 0.9375rem; color: var(--quiet); }
+  .audit-running .dot { color: var(--moss); }
+  @media (prefers-reduced-motion: no-preference) {
+    .audit-running .dot { display: inline-block; animation: audit-breathe 1.4s ease-in-out infinite; }
+    .audit-running .dot:nth-of-type(2) { animation-delay: 0.22s; }
+    .audit-running .dot:nth-of-type(3) { animation-delay: 0.44s; }
+    @keyframes audit-breathe { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+  }
+
+  .audit-postscript { margin-top: 1.5rem; }
+  .audit-postscript .plain { font-size: 0.9375rem; max-width: 33rem; }
+  .audit-trust { margin-top: 0.625rem; color: var(--body); }
+  .audit-honeypot { margin-top: 0.125rem; }
+  .audit-honeypot > summary { font-size: 0.8125rem; font-family: var(--mono); }
+  .audit-honeypot p { margin-top: 0.375rem; max-width: 30rem; }
+  .demo-note { margin-top: 1.125rem; letter-spacing: 0.08em; }
+
+  /* second-opinion chips beside receipts — present only after the audit runs */
+  .second-op { display: none; margin-top: 0.375rem; max-width: 33rem; }
+  .audited .second-op { display: block; }
+  .second-op > summary { font-family: var(--mono); font-size: 0.8125rem; color: var(--moss); }
+  .second-op > summary::before,
+  .second-op[open] > summary::before { content: "·"; color: inherit; margin-right: 0.5em; font-size: 1em; }
+  .second-op.abstain > summary { color: var(--quiet); }
+  .second-op p { margin-top: 0.375rem; }
+  .second-op q { quotes: "“" "”"; color: var(--body); }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+
   @media (max-width: 480px) {
     .coach-actions { gap: 1.25rem; }
     .score-moment { gap: 0.875rem; }
@@ -551,7 +599,7 @@
       <p class="lead">The score is built from these and from nothing else.
       Open them when you want the accounting.</p>
 
-      <details>
+      <details id="ledger">
         <summary>All 8 findings — <span class="num">5</span> major · <span class="num">2</span> moderate · <span class="num">1</span> minor</summary>
         <div class="receipt-rows">
 
@@ -561,6 +609,12 @@
             <p class="proof num">cache-thrash · 17.5M missed input tokens (messages_changed)</p>
             <details class="where"><summary>show me where · 8 excerpts</summary>
               <p class="micro">Opens 8 transcript excerpts pinned to the exact turns, in the app.</p></details>
+            <details class="second-op">
+              <summary>confirmed 3/3</summary>
+              <p class="micro">Three independent passes re-read the cited excerpts.
+              Each came back holding the same line: <q>17.5M missed input tokens
+              (messages_changed)</q>.</p>
+            </details>
           </div>
 
           <div class="receipt major">
@@ -585,6 +639,11 @@
             <p class="proof num">paste-relay · 170 blocks · 1.64MB by hand</p>
             <details class="where"><summary>show me where · 8 excerpts</summary>
               <p class="micro">Opens 8 transcript excerpts pinned to the exact turns, in the app.</p></details>
+            <details class="second-op">
+              <summary>confirmed 3/3</summary>
+              <p class="micro">All three passes traced the courier work back to the
+              same receipt: <q>170 blocks · 1.64MB by hand</q>.</p>
+            </details>
           </div>
 
           <div class="receipt major">
@@ -593,6 +652,11 @@
             <p class="proof num">eternal-session · 26 resumes · 26 compactions</p>
             <details class="where"><summary>show me where · 1 excerpt</summary>
               <p class="micro">Opens the session timeline pinned to each resume, in the app.</p></details>
+            <details class="second-op">
+              <summary>confirmed 3/3</summary>
+              <p class="micro">Each pass walked the timeline independently and
+              returned the same count: <q>26 resumes · 26 compactions</q>.</p>
+            </details>
           </div>
 
           <div class="receipt moderate">
@@ -609,6 +673,12 @@
             <p class="proof num">repeated-delegation · no token claim (honest: the cost is drift)</p>
             <details class="where"><summary>show me where · 5 excerpts</summary>
               <p class="micro">Opens 5 transcript excerpts pinned to the exact turns, in the app.</p></details>
+            <details class="second-op abstain">
+              <summary>abstained — 2 valid runs</summary>
+              <p class="micro">Only two of three passes returned a usable judgment —
+              short of quorum, so the auditor says nothing rather than something.
+              The finding rests on damame's own evidence, unchanged.</p>
+            </details>
           </div>
 
           <div class="receipt minor">
@@ -621,6 +691,43 @@
 
         </div>
       </details>
+
+      <!-- ——— the audit · a second opinion (mock) ——— -->
+      <div class="audit" id="audit">
+        <p class="invite">You don't have to take damame's word for any of this.
+        <button type="button" class="act" id="audit-open" aria-expanded="false"
+        aria-controls="audit-consent">Ask for a second opinion</button> — a separate
+        model re-reads each finding against the evidence it cites, adversarially.</p>
+
+        <div class="audit-consent" id="audit-consent" hidden tabindex="-1"
+             role="group" aria-labelledby="audit-consent-line">
+          <p class="plain" id="audit-consent-line">Before anything runs, the terms, plainly:</p>
+          <p class="terms proof num">31 findings · estimated ~120k tokens · runs on your own claude account</p>
+          <p class="plain">Nothing is spent until you say so.</p>
+          <div class="choices">
+            <button type="button" class="act" id="audit-confirm">Go ahead</button>
+            <button type="button" class="act-quiet" id="audit-cancel">Never mind</button>
+          </div>
+        </div>
+
+        <p class="audit-running" id="audit-running" hidden>Re-reading the evidence
+        <span class="dot" aria-hidden="true">·</span><span class="dot" aria-hidden="true">·</span><span class="dot" aria-hidden="true">·</span></p>
+
+        <div class="audit-postscript" id="audit-postscript" hidden>
+          <p class="plain">The second opinion is in — it sits beside each finding
+          above, in small print.</p>
+          <p class="audit-trust proof num">honeypots caught 2/2 — auditor healthy</p>
+          <details class="audit-honeypot">
+            <summary>what a honeypot is</summary>
+            <p class="micro">Two deliberately corrupted decoy findings were slipped
+            into the auditor's batch — claims their evidence no longer supports.
+            A healthy auditor must catch both. This one did.</p>
+          </details>
+          <p class="micro demo-note">demo — illustrative verdicts</p>
+        </div>
+
+        <p id="audit-announce" class="visually-hidden" role="status" aria-live="polite"></p>
+      </div>
 
       <p class="score-link"><a href="#parameters" id="to-score">How these become the score →</a></p>
 
@@ -761,6 +868,17 @@
     { "headline": "3 branches orphaned by session resumes — nobody's fault, nothing to fix", "proof": "abandoned-work (infra) · 357k + 265k + 875k tokens" }
   ],
   "capabilities": { "exercised": ["subagents", "workflows", "skills", "background tasks"], "of": 7, "highlights": "220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads" },
+  "audit": {
+    "comment": "Mocked second-opinion pass — demo, illustrative verdicts; no model was run and nothing left the machine.",
+    "consent": "31 findings · estimated ~120k tokens · runs on your own claude account",
+    "verdicts": [
+      { "finding": "cache-thrash (messages_changed)", "verdict": "confirmed", "runs": "3/3", "quote": "17.5M missed input tokens (messages_changed)" },
+      { "finding": "paste-relay", "verdict": "confirmed", "runs": "3/3", "quote": "170 blocks · 1.64MB by hand" },
+      { "finding": "eternal-session", "verdict": "confirmed", "runs": "3/3", "quote": "26 resumes · 26 compactions" },
+      { "finding": "repeated-delegation", "verdict": "abstained", "runs": "2 valid runs" }
+    ],
+    "honeypots": { "caught": 2, "of": 2, "note": "corrupted decoy findings the auditor must catch — both caught, auditor healthy" }
+  },
   "footer": { "versions": "damame 0.6.0 · score@1 · adapter claude-code 0.1.0", "privacy": "Analyzed locally. Nothing left your machine." }
 }
 </script>
@@ -832,6 +950,65 @@
   var params = document.getElementById("parameters");
   toScore.addEventListener("click", function () {
     params.open = true;
+  });
+
+  /* ——— zone C: the audit — a second opinion (mock, spends nothing) ——— */
+  var auditOpen = document.getElementById("audit-open");
+  var auditConsent = document.getElementById("audit-consent");
+  var auditConfirm = document.getElementById("audit-confirm");
+  var auditCancel = document.getElementById("audit-cancel");
+  var auditRunning = document.getElementById("audit-running");
+  var auditPost = document.getElementById("audit-postscript");
+  var auditAnnounce = document.getElementById("audit-announce");
+  var ledger = document.getElementById("ledger");
+  var auditSection = auditOpen.closest("section");
+
+  function closeConsent(refocus) {
+    auditConsent.hidden = true;
+    auditOpen.setAttribute("aria-expanded", "false");
+    if (refocus) auditOpen.focus();
+  }
+
+  auditOpen.addEventListener("click", function () {
+    if (!auditConsent.hidden) { closeConsent(false); return; }
+    auditConsent.hidden = false;
+    auditOpen.setAttribute("aria-expanded", "true");
+    auditConsent.focus();
+  });
+
+  auditCancel.addEventListener("click", function () { closeConsent(true); });
+
+  auditConsent.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeConsent(true);
+  });
+
+  auditConfirm.addEventListener("click", function () {
+    auditConsent.hidden = true;
+    auditOpen.setAttribute("aria-expanded", "false");
+    auditOpen.disabled = true;
+
+    var reveal = function () {
+      auditRunning.hidden = true;
+      auditSection.classList.add("audited");
+      if (ledger) ledger.open = true;
+      auditPost.hidden = false;
+      if (!calm) {
+        auditPost.classList.add("will-reveal");
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () { auditPost.classList.add("revealed"); });
+        });
+      }
+      auditAnnounce.textContent = "Second opinion complete. 3 findings confirmed, " +
+        "1 abstained. Honeypots caught 2 of 2 — auditor healthy. " +
+        "Verdicts sit beside each finding in the ledger.";
+    };
+
+    if (calm) {
+      reveal();                       // reduced motion: straight to results
+    } else {
+      auditRunning.hidden = false;    // breathing dots — opacity only
+      window.setTimeout(reveal, 2600);
+    }
   });
 })();
 </script>
