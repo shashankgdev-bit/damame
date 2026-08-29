@@ -36,6 +36,12 @@ export function formatTokens(n: number): string {
   return String(n);
 }
 
+export function formatBytes(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}MB`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}KB`;
+  return `${n}B`;
+}
+
 export function formatDuration(ms: number): string {
   if (ms >= 3_600_000) return `${(ms / 3_600_000).toFixed(1)}h`;
   if (ms >= 60_000) return `${(ms / 60_000).toFixed(1)}m`;

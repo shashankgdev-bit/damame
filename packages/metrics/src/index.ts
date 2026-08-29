@@ -33,6 +33,7 @@ export interface MetricsBundle {
   >;
   /** input_hash → occurrences (in event order) for calls appearing more than once. */
   duplicate_tool_calls: DuplicateGroup[];
+  compaction_rework: CompactionRework[];
   /** Consecutive same-signature failures against the same target. */
   error_runs: ErrorRun[];
   /** Consecutive api_error system events. */
@@ -87,6 +88,19 @@ export interface DuplicateGroup {
   /** True if a state-changing call succeeded between first and last occurrence. */
   state_change_between: boolean;
   repeated_output_bytes: number;
+}
+
+/** Re-reads of already-loaded content forced by a compaction: the measured
+ * price of the summary losing file contents. One entry per compaction that
+ * caused any. Ownership note: these pairs are excluded from
+ * duplicate_tool_calls — the cause is the compaction, so this analysis owns
+ * them (one crime, one bill). */
+export interface CompactionRework {
+  compaction_event_id: string;
+  reread_call_event_ids: string[];
+  reread_bytes: number;
+  /** Distinct read targets (file paths), first few. */
+  files: string[];
 }
 
 export interface ErrorRun {
@@ -214,6 +228,7 @@ export function computeMetrics(session: Session): MetricsBundle {
     per_model: perModel,
     per_tool: perTool,
     duplicate_tool_calls: findDuplicates(events, callById),
+    compaction_rework: findCompactionRework(events, callById),
     error_runs: findErrorRuns(events, callById),
     api_error_runs: findApiErrorRuns(events),
     compactions,
@@ -245,19 +260,38 @@ function findDuplicates(events: Event[], callById: Map<string, ToolCallEvent>): 
     }
   });
 
+  // Compaction "eras": a repeat on the far side of a compaction is not
+  // redundant work — the summary erased the content, so re-fetching it is
+  // compaction rework, and that analysis owns it (one crime, one bill).
+  // Duplicates are therefore grouped per (input_hash, era).
+  const compactionOrders: number[] = [];
+  events.forEach((event, order) => {
+    if (event.kind === "compaction" && !event.on_abandoned_branch) compactionOrders.push(order);
+  });
+  const eraOf = (order: number) => {
+    let era = 0;
+    for (const c of compactionOrders) {
+      if (c < order) era++;
+      else break;
+    }
+    return era;
+  };
+
   events.forEach((event, order) => {
     if (event.kind !== "tool_call" || event.on_abandoned_branch) return;
     const result = resultByCallEventId.get(event.event_id);
     // Repeating a FAILING call is an error-loop pattern, not redundant work —
     // the error-run analysis owns it. Only successful repeats count here.
     if (result?.is_error) return;
-    const list = byHash.get(event.input_hash) ?? [];
+    const key = `${event.input_hash}#${eraOf(order)}`;
+    const list = byHash.get(key) ?? [];
     list.push({ call: event, result, order });
-    byHash.set(event.input_hash, list);
+    byHash.set(key, list);
   });
 
   const groups: DuplicateGroup[] = [];
-  for (const [hash, occurrences] of byHash) {
+  for (const [key, occurrences] of byHash) {
+    const hash = key.slice(0, key.lastIndexOf("#"));
     if (occurrences.length < 2) continue;
     const first = occurrences[0]!;
     const last = occurrences[occurrences.length - 1]!;
@@ -276,6 +310,67 @@ function findDuplicates(events: Event[], callById: Map<string, ToolCallEvent>): 
     });
   }
   return groups.sort((a, b) => b.call_event_ids.length - a.call_event_ids.length);
+}
+
+/**
+ * Re-reads forced by compactions. A read AFTER a compaction whose input_hash
+ * matches a successful read BEFORE it, and whose result came back with an
+ * IDENTICAL output_hash, re-purchased content the pile already held until
+ * the summary dropped it. Output identity is the whole guard: if anything
+ * (an edit, a Bash side effect, the user) had changed the content, the
+ * hashes would differ and the pair is excluded automatically — so the claim
+ * "this re-read added nothing new" is proven, not inferred. Each re-read is
+ * attributed to the latest compaction before it (the proximate cause).
+ */
+function findCompactionRework(events: Event[], callById: Map<string, ToolCallEvent>): CompactionRework[] {
+  const resultByCallEventId = new Map<string, ToolResultEvent>();
+  events.forEach((event) => {
+    if (event.kind === "tool_result" && event.call_event_id) {
+      resultByCallEventId.set(event.call_event_id, event);
+    }
+  });
+
+  const compactions: { id: string; order: number }[] = [];
+  events.forEach((event, order) => {
+    if (event.kind === "compaction" && !event.on_abandoned_branch) {
+      compactions.push({ id: event.event_id, order });
+    }
+  });
+  if (compactions.length === 0) return [];
+
+  const byCompaction = new Map<string, CompactionRework>();
+  // input_hash -> latest successful read (order + output_hash)
+  const lastReadByHash = new Map<string, { order: number; outputHash?: string }>();
+  events.forEach((event, order) => {
+    if (event.kind !== "tool_call" || event.on_abandoned_branch) return;
+    if (!READ_ONLY_TOOLS.has(event.name)) return;
+    const result = resultByCallEventId.get(event.event_id);
+    if (!result || result.is_error) return;
+    const prev = lastReadByHash.get(event.input_hash);
+    lastReadByHash.set(event.input_hash, { order, outputHash: result.output_hash });
+    if (!prev) return;
+    // Output identity is required in both directions: without both hashes,
+    // "nothing changed" cannot be proven, so the pair is skipped.
+    if (!prev.outputHash || !result.output_hash || prev.outputHash !== result.output_hash) return;
+    // latest compaction strictly between the pair = the proximate cause
+    let cause: { id: string; order: number } | undefined;
+    for (const c of compactions) {
+      if (c.order > prev.order && c.order < order) cause = c;
+      if (c.order >= order) break;
+    }
+    if (!cause) return;
+    let entry = byCompaction.get(cause.id);
+    if (!entry) {
+      entry = { compaction_event_id: cause.id, reread_call_event_ids: [], reread_bytes: 0, files: [] };
+      byCompaction.set(cause.id, entry);
+    }
+    entry.reread_call_event_ids.push(event.event_id);
+    entry.reread_bytes += result.output_bytes ?? 0;
+    const file = typeof event.input.file_path === "string" ? (event.input.file_path as string) : event.name;
+    if (!entry.files.includes(file) && entry.files.length < 6) entry.files.push(file);
+  });
+
+  return [...byCompaction.values()];
 }
 
 /** Target for an error run: file path when present, else normalized command/input. */

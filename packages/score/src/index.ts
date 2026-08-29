@@ -12,7 +12,7 @@ export const SCORE_VERSION = "score@1";
 
 /** Explicit, versioned bucket membership — never inferred. */
 const BUCKET_RULES: Record<string, string[]> = {
-  "context-hygiene": ["cache-thrash", "compaction-burn", "eternal-session", "oversized-context-reads"],
+  "context-hygiene": ["cache-thrash", "compaction-burn", "compaction-rework", "eternal-session", "oversized-context-reads"],
   "redundant-work": ["duplicate-tool-call", "paste-relay"],
   "missed-capabilities": ["missed-delegation", "repeated-delegation", "idle-gap-notifications", "post-edit-ritual"],
   "prompting-recovery": ["abandoned-work", "edit-fail-loop", "bash-error-loop", "permission-churn"],

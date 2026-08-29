@@ -149,7 +149,7 @@ export const ENTRIES: RegistryEntry[] = [
       "Open it with: \"read CLAUDE.md and LEDGER.md, then continue with <today's goal>\" — full orientation in one cheap step",
       "Resume an old chat only mid-wrestling-match, when its working context is still hot and relevant",
     ],
-    applies_to: ["eternal-session"],
+    applies_to: ["eternal-session", "compaction-rework"],
     source: "curated from a real transcript (208MB single chat, 23 compactions, ~3.4k resumes)",
     status: "verified",
     verified_by: "costs measured in a real session; state-file bootstrap proven there too",

@@ -6,6 +6,7 @@ import { editFailLoop } from "./detectors/edit-fail-loop.js";
 import { cacheThrash } from "./detectors/cache-thrash.js";
 import { duplicateToolCall } from "./detectors/duplicate-tool-call.js";
 import { compactionBurn } from "./detectors/compaction-burn.js";
+import { compactionRework } from "./detectors/compaction-rework.js";
 import { permissionChurn } from "./detectors/permission-churn.js";
 import { bashErrorLoop } from "./detectors/bash-error-loop.js";
 import { abandonedWork } from "./detectors/abandoned-work.js";
@@ -31,6 +32,7 @@ export const DETECTORS: Detector[] = [
   cacheThrash,
   duplicateToolCall,
   compactionBurn,
+  compactionRework,
   permissionChurn,
   bashErrorLoop,
   abandonedWork,

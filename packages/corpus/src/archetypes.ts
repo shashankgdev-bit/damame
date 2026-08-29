@@ -51,6 +51,7 @@ const ALL_RULES = [
   "eternal-session",
   "idle-gap-notifications",
   "post-edit-ritual",
+  "compaction-rework",
 ];
 
 /** forbidden = everything except the expected rules and rules the noise may legitimately brush. */
@@ -570,6 +571,60 @@ export const ARCHETYPES: Record<string, (seed: number) => GeneratedSession> = {
     return {
       jsonl: b.build(),
       manifest: { archetype: "overnight-resume-gaps", seed, expected: [], forbidden: ALL_RULES },
+    };
+  },
+
+  "compaction-rework"(seed) {
+    // The measured price of a summary: three files loaded before a
+    // compaction get re-read byte-identically after it — nothing changed
+    // except the pile forgetting them. Expect compaction-rework; forbid
+    // everything else — especially duplicate-tool-call, which must respect
+    // the era split (cross-compaction repeats are rework's crime, not
+    // redundant work). Sizes stay under oversized-context-reads' 80KB
+    // floor; one compaction stays under compaction-burn's 2-count gate.
+    const r = rng(seed);
+    const b = base(seed, "cmprework");
+    const sizes = [int(r, 28_000, 40_000), int(r, 22_000, 34_000), int(r, 25_000, 38_000)];
+    b.human("load the modules we're refactoring");
+    for (let i = 0; i < 3; i++) b.readOk(`/proj/src/module_${i}.ts`, sizes[i]!);
+    b.assistantText("Modules loaded; starting the refactor plan.");
+    b.compactBoundary();
+    b.human("continue the refactor");
+    for (let i = 0; i < 3; i++) b.readOk(`/proj/src/module_${i}.ts`, sizes[i]!);
+    b.assistantText("Re-oriented; continuing.");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: {
+        archetype: "compaction-rework",
+        seed,
+        expected: ["compaction-rework"],
+        forbidden: forbid(["compaction-rework"]),
+      },
+    };
+  },
+
+  "compaction-refresh-changed"(seed) {
+    // The innocent twin: files are re-read after a compaction, but their
+    // content CHANGED in the meantime (different sizes → different output
+    // hashes). Re-reading changed content is correct behavior, not waste —
+    // the output-identity guard must keep compaction-rework silent, with
+    // no timing heuristics involved.
+    const r = rng(seed);
+    const b = base(seed, "cmprefresh");
+    b.human("load the modules");
+    for (let i = 0; i < 3; i++) b.readOk(`/proj/src/module_${i}.ts`, int(r, 24_000, 36_000));
+    b.assistantText("Loaded; editing externally now per your note.");
+    b.compactBoundary();
+    b.human("the files changed outside the session — reload and continue");
+    for (let i = 0; i < 3; i++) b.readOk(`/proj/src/module_${i}.ts`, int(r, 40_000, 52_000));
+    b.assistantText("Reloaded the changed files; continuing.");
+    noise(b, r, 1);
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: { archetype: "compaction-refresh-changed", seed, expected: [], forbidden: ALL_RULES },
     };
   },
 
