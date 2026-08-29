@@ -541,6 +541,38 @@ export const ARCHETYPES: Record<string, (seed: number) => GeneratedSession> = {
     return { jsonl: b.build(), manifest: { archetype: "post-edit-varied", seed, expected: [], forbidden: ALL_RULES } };
   },
 
+  "overnight-resume-gaps"(seed) {
+    // A feature worked on across several days of overnight gaps. Both real
+    // resume encodings are planted: three nights end in an explicit resume
+    // boundary (new chain root — older CLI format; suppressed structurally
+    // in the metric), and three nights are plain 9-13h gaps on an unbroken
+    // chain (newer CLI format; excluded by the detector's walk-away
+    // ceiling). Neither is "finished work waiting unnoticed" — idle-gap
+    // must stay silent. This is idle-gap v0.3.0's vaccine: on a real
+    // 16-day session, 260 reported idle hours were mostly the user's
+    // nights. Kept safely under eternal-session's gates (3 resumes < 15,
+    // 0 compactions) and under idle-gap's own count gate for in-day gaps.
+    const r = rng(seed);
+    const b = base(seed, "overnight");
+    b.human("start the export feature");
+    b.assistantText("First increment done; ready when you are.");
+    for (let i = 0; i < 6; i++) {
+      b.tick(int(r, 9, 13) * 3_600_000); // the night: app closed
+      if (i % 2 === 0) {
+        b.resume(`morning ${i + 1}: continue the feature`); // old format: chain root
+      } else {
+        b.human(`morning ${i + 1}: continue the feature`); // new format: chained
+      }
+      b.assistantText(`Day ${i + 1} increment complete; ready for review.`);
+    }
+    noise(b, r, 1);
+    b.lastPrompt();
+    return {
+      jsonl: b.build(),
+      manifest: { archetype: "overnight-resume-gaps", seed, expected: [], forbidden: ALL_RULES },
+    };
+  },
+
   "brief-think-pauses"(seed) {
     // Frequent short pauses between turns — normal human think time, each
     // under the 5-minute minimum gap → must NOT fire.

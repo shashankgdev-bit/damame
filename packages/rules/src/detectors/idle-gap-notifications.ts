@@ -26,16 +26,24 @@ const SCHEDULING_TOOLS = new Set(["ScheduleWakeup", "CronCreate"]);
 
 export const idleGapNotifications: Detector = {
   id: "idle-gap-notifications",
-  version: "0.2.0", // 0.2.0: silent on scheduling-driven sessions (ScheduleWakeup/cron) — deliberate overnight running is not "waiting unnoticed"
+  version: "0.3.0", // 0.3.0: gaps containing a resume boundary excluded at the metric level — closed-app nights are not unnoticed waiting (second real-data applicability fix: 260 "idle" hours on a 16-day session were the user's nights). 0.2.0: silent on scheduling-driven sessions (ScheduleWakeup/cron) — deliberate overnight running is not "waiting unnoticed"
   category: "missed-resource",
   summary: "Finished work repeatedly waited unnoticed between turns — no notification signal was in place",
   defaults: {
     min_gap_ms: 300_000,
+    /** Gaps at or above this are walk-aways (nights, weekends, deliberate
+     * leaves) — a notification would not have brought the user back sooner.
+     * Calibrated on the one real attended multi-day session available:
+     * gap distribution showed 103 gaps under 2h, a valley of 11 in 2–8h,
+     * then 15 overnight gaps at 8h+. The ceiling sits at the valley's
+     * left edge. */
+    max_gap_ms: 7_200_000,
     min_gaps: 5,
     min_total_ms: 1_800_000,
   },
   detect(ctx): Finding[] {
     const minGapMs = ctx.config.min_gap_ms as number;
+    const maxGapMs = ctx.config.max_gap_ms as number;
     const minGaps = ctx.config.min_gaps as number;
     const minTotalMs = ctx.config.min_total_ms as number;
 
@@ -48,7 +56,7 @@ export const idleGapNotifications: Detector = {
     );
     if (isSchedulingDriven) return [];
 
-    const qualifying = ctx.metrics.idle_gaps_ms.filter((gap) => gap >= minGapMs);
+    const qualifying = ctx.metrics.idle_gaps_ms.filter((gap) => gap >= minGapMs && gap < maxGapMs);
     if (qualifying.length < minGaps) return [];
     const totalIdleMs = qualifying.reduce((sum, gap) => sum + gap, 0);
     if (totalIdleMs < minTotalMs) return [];
@@ -69,9 +77,10 @@ export const idleGapNotifications: Detector = {
         description:
           `${qualifying.length} times in this session, Claude finished a turn and the next human prompt ` +
           `arrived ${formatDuration(minGapMs)} or more later — ${formatDuration(totalIdleMs)} of completed ` +
-          `work sitting ready in total (largest single wait ${formatDuration(largestGapMs)}). Being away is ` +
-          `fine and normal; the inefficiency is that no notification signal announced the work was done, so ` +
-          `it aged silently instead of interrupting you when ready.`,
+          `work sitting ready in total (largest single wait ${formatDuration(largestGapMs)}). Gaps longer ` +
+          `than ${formatDuration(maxGapMs)} are treated as deliberate walk-aways (nights, weekends) and not ` +
+          `counted. Being away is fine and normal; the inefficiency is that no notification signal announced ` +
+          `the work was done, so it aged silently instead of interrupting you when ready.`,
         evidence: {
           events: eventRefs(ctx.session, [firstEvent.event_id]),
           metrics: {

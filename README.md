@@ -156,8 +156,8 @@ corpus**: generated sessions with inefficiencies *planted by construction*
 positive). Because detectors are deterministic, the CI gate demands perfection
 — one missed plant or one false positive fails the build.
 
-Current result over 480 generated sessions (20 per each of 24 archetypes — 15 planting
-one waste pattern each, 9 innocent near-misses built one unit under a threshold — seeded):
+Current result over 500 generated sessions (20 per each of 25 archetypes — 15 planting
+one waste pattern each, 10 innocent near-misses built one unit under a threshold — seeded):
 
 | rule | recall | precision |
 |---|---|---|

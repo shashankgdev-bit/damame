@@ -314,6 +314,20 @@ export class TranscriptBuilder {
     return this;
   }
 
+  /** Reopen the file: a human prompt written as a new chain root (parentUuid
+   * null) — exactly what the CLI writes on a session resume. The adapter
+   * records these as resume boundaries (chain_root_event_ids). */
+  resume(text: string): this {
+    return this.push(
+      this.envelope({
+        parentUuid: null,
+        type: "user",
+        message: { role: "user", content: [{ type: "text", text }] },
+        origin: { kind: "human" },
+      }),
+    );
+  }
+
   /** Rewind the parent pointer to a given uuid to create a fork. */
   rewindTo(uuid: string): this {
     this.lastUuid = uuid;

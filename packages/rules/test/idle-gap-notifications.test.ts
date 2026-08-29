@@ -38,7 +38,7 @@ describe("idle-gap-notifications", () => {
     expect(findings).toHaveLength(1);
     const f = findings[0]!;
     expect(f.rule.id).toBe("idle-gap-notifications");
-    expect(f.rule.version).toBe("0.2.0");
+    expect(f.rule.version).toBe("0.3.0");
     expect(f.category).toBe("missed-resource");
     expect(f.severity).toBe("minor");
     expect(f.confidence.source).toBe("deterministic");
@@ -70,6 +70,12 @@ describe("idle-gap-notifications", () => {
     // 5 gaps of ~5.2 minutes each qualify individually (>= 300_000ms) but sum
     // to ~26 minutes, under the 30-minute total threshold.
     expect(await run(turnsWithGaps(5, 310_000).writeTemp())).toHaveLength(0);
+  });
+
+  it("does NOT count walk-away gaps (hours-scale: nights and weekends are not unnoticed waiting)", async () => {
+    // 6 gaps of ~10 hours each — the v0.3.0 walk-away ceiling (2h default)
+    // excludes them all; a notification would not have brought anyone back.
+    expect(await run(turnsWithGaps(6, 36_000_000).writeTemp())).toHaveLength(0);
   });
 
   it("does NOT count many short pauses toward the total (look-alike: busy back-and-forth)", async () => {

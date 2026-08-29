@@ -31,3 +31,11 @@ Enable a notification channel so waiting work interrupts you instead of silently
 - 6 gaps of 2 minutes — every gap is under `min_gap_ms`; brief pauses are normal think time.
 - 5 gaps of ~5 minutes summing to under 30 minutes — count met, but total idle time under `min_total_ms`.
 - Many short pauses summing past 30 minutes — sub-threshold pauses never count toward the total; an actively responding human is not a missed notification.
+- Hours-scale gaps (nights, weekends) — excluded by the walk-away ceiling (`max_gap_ms`, default 2h); see the changelog below.
+- Overnight gaps that end in a session resume (a new chain root) — excluded at the metric level; a reopened file means the app was closed, not that work waited unnoticed.
+- Sessions that schedule their own wake-ups (ScheduleWakeup/CronCreate) — deliberate autonomy is not unnoticed waiting.
+
+## Changelog
+
+- **0.3.0** — second real-data applicability fix: a 16-day session reported 260 "idle" hours that were mostly the user's nights. Two exclusions added: gaps containing a resume boundary (structural, metric-level — reliable on older-format transcripts where resumes write new chain roots) and a walk-away ceiling (`max_gap_ms`, default 2h — calibrated on the real attended multi-day session available: 103 gaps under 2h, a valley of 11 in 2–8h, 15 overnight gaps at 8h+; the ceiling sits at the valley's left edge). Newer CLI transcripts chain resume prompts without a root, so the ceiling carries the fix there. Precision series reset.
+- **0.2.0** — first real-data applicability fix: silent on scheduling-driven sessions; deliberate overnight running is not "waiting unnoticed."

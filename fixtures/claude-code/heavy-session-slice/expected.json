@@ -132,7 +132,7 @@
           "kind": "prompting_pattern",
           "ref": "stable-prompt-prefix"
         },
-        "rationale": "The prompt cache keys on an exact prefix match. Keep earlier context byte-stable across requests — avoid rewriting the system prompt, reordering messages, or mutating prior content mid-session."
+        "rationale": "The prompt cache keys on an exact prefix match. Keep earlier context byte-stable across requests \u2014 avoid rewriting the system prompt, reordering messages, or mutating prior content mid-session."
       },
       "dedupe_key": "124524409332a5b2"
     },
@@ -173,7 +173,7 @@
           "kind": "prompting_pattern",
           "ref": "plan-mode-first"
         },
-        "rationale": "Stating the intended scope up front — or starting in plan mode so the approach is agreed before execution — surfaces a direction change before tokens are spent on a path that gets discarded."
+        "rationale": "Stating the intended scope up front \u2014 or starting in plan mode so the approach is agreed before execution \u2014 surfaces a direction change before tokens are spent on a path that gets discarded."
       },
       "dedupe_key": "9167a68877bd67b0"
     },
@@ -259,7 +259,7 @@
           "kind": "prompting_pattern",
           "ref": "stable-prompt-prefix"
         },
-        "rationale": "The prompt cache keys on an exact prefix match. Keep earlier context byte-stable across requests — avoid rewriting the system prompt, reordering messages, or mutating prior content mid-session."
+        "rationale": "The prompt cache keys on an exact prefix match. Keep earlier context byte-stable across requests \u2014 avoid rewriting the system prompt, reordering messages, or mutating prior content mid-session."
       },
       "dedupe_key": "0c80f578c1c018cb"
     },
@@ -304,22 +304,22 @@
           "ref": "Explore",
           "available_in_session": true
         },
-        "rationale": "Delegating bulk file reading and searching to the Explore subagent keeps that output out of the main context window — only the subagent's summary returns — delaying or avoiding compaction."
+        "rationale": "Delegating bulk file reading and searching to the Explore subagent keeps that output out of the main context window \u2014 only the subagent's summary returns \u2014 delaying or avoiding compaction."
       },
       "dedupe_key": "ad2fdad2d8056a2c"
     },
     {
       "rule": {
         "id": "idle-gap-notifications",
-        "version": "0.2.0"
+        "version": "0.3.0"
       },
       "category": "missed-resource",
       "severity": "minor",
       "confidence": {
         "source": "deterministic"
       },
-      "title": "Finished work waited unnoticed 36 times (189.0h total)",
-      "description": "36 times in this session, Claude finished a turn and the next human prompt arrived 5.0m or more later — 189.0h of completed work sitting ready in total (largest single wait 42.7h). Being away is fine and normal; the inefficiency is that no notification signal announced the work was done, so it aged silently instead of interrupting you when ready.",
+      "title": "Finished work waited unnoticed 24 times (10.2h total)",
+      "description": "24 times in this session, Claude finished a turn and the next human prompt arrived 5.0m or more later \u2014 10.2h of completed work sitting ready in total (largest single wait 1.6h). Gaps longer than 2.0h are treated as deliberate walk-aways (nights, weekends) and not counted. Being away is fine and normal; the inefficiency is that no notification signal announced the work was done, so it aged silently instead of interrupting you when ready.",
       "evidence": {
         "events": [
           {
@@ -328,9 +328,9 @@
           }
         ],
         "metrics": {
-          "gap_count": 36,
-          "total_idle_ms": 680380828,
-          "largest_gap_ms": 153750157
+          "gap_count": 24,
+          "total_idle_ms": 36864289,
+          "largest_gap_ms": 5605827
         }
       },
       "recommendation": {
@@ -338,7 +338,7 @@
           "kind": "config",
           "ref": "enable-notifications"
         },
-        "rationale": "Claude Code can notify you when a turn finishes or needs input — terminal bell or system notification via /config, and mobile push when available — so waiting work interrupts you instead of silently aging until you happen to check back."
+        "rationale": "Claude Code can notify you when a turn finishes or needs input \u2014 terminal bell or system notification via /config, and mobile push when available \u2014 so waiting work interrupts you instead of silently aging until you happen to check back."
       },
       "dedupe_key": "e72d67340af15c09"
     },
@@ -352,8 +352,8 @@
       "confidence": {
         "source": "deterministic"
       },
-      "title": "The same check followed file edits 12 times (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xx xx xxx xxxxxx…\")",
-      "description": "After editing files, the same command family ran 12 times in this session (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xx xx xxx xxxxxxx xxxxxxxxxxxxxxxxxxx xxxx x xxxx xxx\"). A reaction this regular is a reflex living as manual labor: wired as a PostToolUse hook it runs automatically after every edit — guaranteed, unforgettable under context pressure, and with no ask-and-run turns. Running it by hand was never wrong; this is an automation opportunity, not waste.",
+      "title": "The same check followed file edits 12 times (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xx xx xxx xxxxxx\u2026\")",
+      "description": "After editing files, the same command family ran 12 times in this session (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xx xx xxx xxxxxxx xxxxxxxxxxxxxxxxxxx xxxx x xxxx xxx\"). A reaction this regular is a reflex living as manual labor: wired as a PostToolUse hook it runs automatically after every edit \u2014 guaranteed, unforgettable under context pressure, and with no ask-and-run turns. Running it by hand was never wrong; this is an automation opportunity, not waste.",
       "evidence": {
         "events": [
           {
@@ -400,7 +400,7 @@
           "kind": "config",
           "ref": "hooks-post-edit"
         },
-        "rationale": "A PostToolUse hook on Write|Edit runs this check automatically after every edit — the recipe includes the exact settings snippet to adapt."
+        "rationale": "A PostToolUse hook on Write|Edit runs this check automatically after every edit \u2014 the recipe includes the exact settings snippet to adapt."
       },
       "dedupe_key": "26ef7a4fba19db68"
     },
@@ -414,8 +414,8 @@
       "confidence": {
         "source": "deterministic"
       },
-      "title": "The same check followed file edits 14 times (\"xx xxx xxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxx …\")",
-      "description": "After editing files, the same command family ran 14 times in this session (\"xx xxx xxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxx x xxxx xx xx xxxxxxxx xxxxxxxxx xxxxxxxxxxx xxxxxxxx\"). A reaction this regular is a reflex living as manual labor: wired as a PostToolUse hook it runs automatically after every edit — guaranteed, unforgettable under context pressure, and with no ask-and-run turns. Running it by hand was never wrong; this is an automation opportunity, not waste.",
+      "title": "The same check followed file edits 14 times (\"xx xxx xxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxx \u2026\")",
+      "description": "After editing files, the same command family ran 14 times in this session (\"xx xxx xxxxxx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxx x xxxx xx xx xxxxxxxx xxxxxxxxx xxxxxxxxxxx xxxxxxxx\"). A reaction this regular is a reflex living as manual labor: wired as a PostToolUse hook it runs automatically after every edit \u2014 guaranteed, unforgettable under context pressure, and with no ask-and-run turns. Running it by hand was never wrong; this is an automation opportunity, not waste.",
       "evidence": {
         "events": [
           {
@@ -462,7 +462,7 @@
           "kind": "config",
           "ref": "hooks-post-edit"
         },
-        "rationale": "A PostToolUse hook on Write|Edit runs this check automatically after every edit — the recipe includes the exact settings snippet to adapt."
+        "rationale": "A PostToolUse hook on Write|Edit runs this check automatically after every edit \u2014 the recipe includes the exact settings snippet to adapt."
       },
       "dedupe_key": "9701ceb00eb67739"
     },
@@ -476,8 +476,8 @@
       "confidence": {
         "source": "deterministic"
       },
-      "title": "The same check followed file edits 18 times (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxx xxxx xxxxx …\")",
-      "description": "After editing files, the same command family ran 18 times in this session (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxx xxxx xxxxx xxxx xx xxxxxx xxxxxxx xx xxxxx xxxx xxxx xxx xxxxxx\"). A reaction this regular is a reflex living as manual labor: wired as a PostToolUse hook it runs automatically after every edit — guaranteed, unforgettable under context pressure, and with no ask-and-run turns. Running it by hand was never wrong; this is an automation opportunity, not waste.",
+      "title": "The same check followed file edits 18 times (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxx xxxx xxxxx \u2026\")",
+      "description": "After editing files, the same command family ran 18 times in this session (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxx xxxx xxxxx xxxx xx xxxxxx xxxxxxx xx xxxxx xxxx xxxx xxx xxxxxx\"). A reaction this regular is a reflex living as manual labor: wired as a PostToolUse hook it runs automatically after every edit \u2014 guaranteed, unforgettable under context pressure, and with no ask-and-run turns. Running it by hand was never wrong; this is an automation opportunity, not waste.",
       "evidence": {
         "events": [
           {
@@ -524,7 +524,7 @@
           "kind": "config",
           "ref": "hooks-post-edit"
         },
-        "rationale": "A PostToolUse hook on Write|Edit runs this check automatically after every edit — the recipe includes the exact settings snippet to adapt."
+        "rationale": "A PostToolUse hook on Write|Edit runs this check automatically after every edit \u2014 the recipe includes the exact settings snippet to adapt."
       },
       "dedupe_key": "58e8055955388e95"
     },
@@ -538,8 +538,8 @@
       "confidence": {
         "source": "deterministic"
       },
-      "title": "The same check followed file edits 22 times (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxxxxx x xxxxxx…\")",
-      "description": "After editing files, the same command family ran 22 times in this session (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxxxxx x xxxxxx xxxxxx xxxx xxxx xxxxxxxxxxxxxxxxxx xxxxxxxxxxx xxx\"). A reaction this regular is a reflex living as manual labor: wired as a PostToolUse hook it runs automatically after every edit — guaranteed, unforgettable under context pressure, and with no ask-and-run turns. Running it by hand was never wrong; this is an automation opportunity, not waste.",
+      "title": "The same check followed file edits 22 times (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxxxxx x xxxxxx\u2026\")",
+      "description": "After editing files, the same command family ran 22 times in this session (\"xx xxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxxxxx x xxxxxx xxxxxx xxxx xxxx xxxxxxxxxxxxxxxxxx xxxxxxxxxxx xxx\"). A reaction this regular is a reflex living as manual labor: wired as a PostToolUse hook it runs automatically after every edit \u2014 guaranteed, unforgettable under context pressure, and with no ask-and-run turns. Running it by hand was never wrong; this is an automation opportunity, not waste.",
       "evidence": {
         "events": [
           {
@@ -586,7 +586,7 @@
           "kind": "config",
           "ref": "hooks-post-edit"
         },
-        "rationale": "A PostToolUse hook on Write|Edit runs this check automatically after every edit — the recipe includes the exact settings snippet to adapt."
+        "rationale": "A PostToolUse hook on Write|Edit runs this check automatically after every edit \u2014 the recipe includes the exact settings snippet to adapt."
       },
       "dedupe_key": "99e810f41eb9e303"
     },
@@ -600,7 +600,7 @@
       "confidence": {
         "source": "deterministic"
       },
-      "title": "16 transient API errors and 1 terminal API failure — infrastructure delay, not session behavior",
+      "title": "16 transient API errors and 1 terminal API failure \u2014 infrastructure delay, not session behavior",
       "description": "The API returned transient errors during this session; the client automatically retried, waiting a recorded total of 1.4m in backoff. 1 request failed terminally and was replaced by a synthetic error placeholder. This delay originated from provider-side availability, not from anything the user or the agent did, and must not count against the session. This finding contextualizes wall-clock numbers in other findings rather than flagging a problem to fix.",
       "evidence": {
         "events": [

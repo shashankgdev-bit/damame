@@ -422,12 +422,23 @@ function findLargeFullReads(
 
 function findIdleGaps(session: Session): number[] {
   const gaps: number[] = [];
+  // A gap that contains a resume boundary (a chain-root event — the file was
+  // reopened there) is closed-app time: a night, a weekend, a deliberate
+  // walk-away. Counting it as "finished work waiting unnoticed" was this
+  // metric's measured applicability failure on real data — a 16-day session
+  // reported 260 idle hours that were mostly the user's nights.
+  const rootIds = new Set(session.chain_root_event_ids ?? []);
+  const rootIndices = session.events.filter((e) => rootIds.has(e.event_id)).map((e) => e.index);
   for (let i = 1; i < session.turns.length; i++) {
     const prev = session.turns[i - 1]!;
     const next = session.turns[i]!;
     if (next.origin !== "human") continue;
     const prevLast = session.events[prev.last_event_index];
     const nextFirst = session.events[next.first_event_index];
+    // The resume prompt itself is a chain root, so the boundary check is
+    // inclusive of the gap's closing event.
+    const crossesResume = rootIndices.some((r) => r > prev.last_event_index && r <= next.first_event_index);
+    if (crossesResume) continue;
     if (prevLast?.timestamp && nextFirst?.timestamp) {
       const gap = Date.parse(nextFirst.timestamp) - Date.parse(prevLast.timestamp);
       if (gap >= 0) gaps.push(gap);
