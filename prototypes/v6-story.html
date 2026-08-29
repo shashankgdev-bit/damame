@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>damame — Story</title>
+<style>
+  :root{
+    --paper:#f7f1e4; --paper-2:#efe5d0; --card:#fffaf0; --room:#eef0e6;
+    --ink:#2b2116; --ink-2:#6d5d47; --ink-3:#95866f;
+    --accent:#b8471b; --accent-deep:#8c320e; --gold:#a37c25; --green:#4e7a52;
+    --line:#ddd0b8; --line-2:#cbbc9e;
+    --serif: Charter, "Iowan Old Style", Georgia, Cambria, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box; margin:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--serif);
+    font-size:1.075rem; line-height:1.62;
+    background-image:radial-gradient(1200px 500px at 50% -200px, #fff8ea 0%, transparent 70%);
+  }
+  ::selection{background:#f3c9a6}
+  .num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
+  a{color:var(--accent-deep)}
+  :focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:3px}
+  button{font:inherit; cursor:pointer}
+  .skip{position:absolute; left:1rem; top:-4rem; z-index:60; background:var(--ink); color:var(--paper);
+    padding:.6rem 1rem; border-radius:0 0 8px 8px; font-family:var(--sans); transition:top .2s}
+  .skip:focus{top:0}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:1rem;
+    padding:.55rem clamp(.9rem,3vw,2rem); background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line); font-family:var(--sans)}
+  .wordmark{font-family:var(--serif); font-weight:700; font-size:1.2rem; text-decoration:none; color:var(--ink); letter-spacing:.02em}
+  .wordmark b{color:var(--accent)}
+  .topnav{margin-left:auto; display:flex; gap:.15rem; flex-wrap:wrap}
+  .topnav a{text-decoration:none; color:var(--ink-2); font-size:.85rem; padding:.35rem .6rem; border-radius:99px}
+  .topnav a[aria-current="page"]{background:var(--ink); color:var(--paper)}
+  .topnav a:hover{color:var(--ink); background:var(--paper-2)}
+
+  /* ---------- chapter dots ---------- */
+  .dots{position:fixed; right:1.1rem; top:50%; translate:0 -50%; z-index:30; display:flex; flex-direction:column; gap:.9rem}
+  .dots button{width:.85rem; height:.85rem; border-radius:50%; border:2px solid var(--ink-3); background:transparent; padding:0;
+    transition:transform .25s, background .25s, border-color .25s}
+  .dots button:hover{transform:scale(1.35)}
+  .dots button[aria-current="true"]{background:var(--accent); border-color:var(--accent); transform:scale(1.35)}
+  @media (max-width:900px){.dots{display:none}}
+
+  /* ---------- the 80-day strip (signature) ---------- */
+  .dayline{position:fixed; left:0; right:0; bottom:0; z-index:35; font-family:var(--sans);
+    background:color-mix(in srgb, var(--paper) 92%, transparent); backdrop-filter:blur(6px); border-top:1px solid var(--line)}
+  .dl-label{display:flex; justify-content:space-between; gap:1rem; font-size:.72rem; color:var(--ink-2); padding:.3rem .9rem 0}
+  .dl-track{position:relative; height:12px; margin:.3rem .9rem .55rem; background:var(--paper-2); border-radius:6px; overflow:hidden}
+  .dl-fill{position:absolute; inset:0; background:linear-gradient(90deg, var(--gold), var(--accent));
+    transform-origin:left; transform:scaleX(0); transition:transform .18s linear; border-radius:6px}
+  .dl-ticks{position:absolute; inset:0;
+    background:repeating-linear-gradient(90deg, transparent 0, transparent calc(1.25% - 1px), var(--paper) calc(1.25% - 1px), var(--paper) 1.25%)}
+  .dl-notch{position:absolute; top:-1px; bottom:-1px; width:2px; background:var(--ink); opacity:.55}
+  body:not(.route-home) .dayline, body:not(.route-home) .dots{display:none}
+  body.route-home{padding-bottom:64px}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:46rem; margin-inline:auto; padding-inline:clamp(1rem,4vw,2rem)}
+  .wide{max-width:58rem}
+  .chapter{padding:clamp(3.5rem,9vh,6.5rem) 0}
+  .kicker{font-family:var(--sans); font-size:.78rem; letter-spacing:.18em; text-transform:uppercase; color:var(--accent-deep); font-weight:700}
+  h1,h2,h3{font-weight:700; line-height:1.12; letter-spacing:-.01em}
+  h1{font-size:clamp(2.1rem,6vw,3.4rem); margin:.4rem 0 1rem}
+  h2{font-size:clamp(1.7rem,4.5vw,2.5rem); margin:.4rem 0 1rem}
+  h3{font-size:clamp(1.25rem,3vw,1.6rem)}
+  .lede{font-size:clamp(1.12rem,2.6vw,1.3rem); color:var(--ink); max-width:38rem}
+  .muted{color:var(--ink-2)}
+  .small{font-size:.86rem}
+  .term{border-bottom:2px dotted var(--gold); font-style:italic}
+  hr.thread{border:0; height:2.6rem; width:2px; margin:0 auto;
+    background:linear-gradient(var(--line-2), transparent)}
+
+  /* chips */
+  .chip{display:inline-flex; align-items:center; gap:.35em; font-family:var(--sans); font-size:.74rem; font-weight:600;
+    padding:.22rem .6rem; border-radius:99px; border:1.5px solid var(--line-2); background:var(--card); color:var(--ink-2)}
+  .chip.time{border-color:#a97614; color:#7c5406}
+  .chip.quality{border-color:#9a3b12; color:#8c320e}
+  .chip.limits{border-color:#4a6b8a; color:#33506e}
+  .chip.verified{border-color:var(--green); color:#3c6140}
+  .chip.flag{background:var(--accent); border-color:var(--accent); color:#fff}
+
+  /* buttons */
+  .btn{font-family:var(--sans); font-weight:600; font-size:.92rem; border-radius:10px; padding:.6rem 1.1rem;
+    border:1.5px solid var(--ink); background:var(--ink); color:var(--paper); transition:transform .18s, box-shadow .18s}
+  .btn:hover{transform:translateY(-2px); box-shadow:0 6px 16px rgba(43,33,22,.22)}
+  .btn.primary{background:var(--accent); border-color:var(--accent)}
+  .btn.ghost{background:transparent; color:var(--ink-2); border-color:var(--line-2)}
+  .btn.ghost:hover{color:var(--ink); box-shadow:none}
+  .go{font-family:var(--sans); font-weight:600; text-decoration:none; color:var(--accent-deep); display:inline-block}
+  .go .arr{display:inline-block; transition:transform .2s}
+  .go:hover .arr{transform:translateX(5px)}
+  .back{font-family:var(--sans); font-size:.88rem; text-decoration:none; color:var(--ink-2); display:inline-block; margin-bottom:1.4rem}
+  .back:hover{color:var(--ink)}
+
+  /* reveal-on-scroll */
+  .reveal{opacity:0; transform:translateY(26px); transition:opacity .7s cubic-bezier(.2,.65,.25,1), transform .7s cubic-bezier(.2,.65,.25,1)}
+  .reveal.in{opacity:1; transform:none}
+  .reveal.d1{transition-delay:.1s}.reveal.d2{transition-delay:.22s}.reveal.d3{transition-delay:.34s}
+
+  /* views */
+  .view[hidden]{display:none}
+  .view.enter{animation:viewIn .5s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes viewIn{from{opacity:0; transform:translateY(16px)}}
+
+  /* ---------- chapter 1 ---------- */
+  .hero{min-height:calc(100svh - 8rem); display:flex; flex-direction:column; justify-content:center}
+  .statgrid{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:.7rem; margin-top:2rem; font-family:var(--sans)}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:.8rem .9rem}
+  .stat b{display:block; font-size:1.45rem; font-family:var(--serif)}
+  .stat span{font-size:.78rem; color:var(--ink-2); display:block; line-height:1.45}
+  .scoreboard{display:grid; grid-template-columns:auto 1fr; gap:clamp(1.5rem,5vw,3.5rem); align-items:center; margin-top:1.5rem}
+  @media (max-width:700px){.scoreboard{grid-template-columns:1fr}}
+  .dial{position:relative; width:min(15rem,64vw); aspect-ratio:1}
+  .dial svg{width:100%; height:100%; transform:rotate(-90deg)}
+  .dial .track{fill:none; stroke:var(--paper-2); stroke-width:9}
+  .dial .prog{fill:none; stroke:var(--accent); stroke-width:9; stroke-linecap:round;
+    stroke-dasharray:339.3; stroke-dashoffset:339.3; transition:stroke-dashoffset 1.6s cubic-bezier(.25,.7,.25,1)}
+  .dial.in .prog{stroke-dashoffset:196.8} /* 42/100 of 339.3 */
+  .dial .mid{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
+  .dial .mid b{font-size:clamp(3.4rem,10vw,4.6rem); line-height:1}
+  .dial .mid span{font-family:var(--sans); font-size:.8rem; color:var(--ink-2)}
+  .params{display:flex; flex-direction:column; gap:.85rem}
+  .param{font-family:var(--sans)}
+  .param .row{display:flex; justify-content:space-between; gap:1rem; font-size:.88rem; font-weight:600}
+  .param .why{font-size:.78rem; color:var(--ink-2)}
+  .bar{height:7px; background:var(--paper-2); border-radius:4px; margin:.3rem 0 .15rem; overflow:hidden}
+  .bar i{display:block; height:100%; background:var(--gold); border-radius:4px;
+    transform-origin:left; transform:scaleX(0); transition:transform 1.1s cubic-bezier(.25,.7,.25,1) .3s}
+  .in .bar i{transform:scaleX(var(--p))}
+
+  /* ---------- chapter 2: fixes ---------- */
+  .fixlist{list-style:none; padding:0; margin:1.4rem 0; display:flex; flex-direction:column; gap:.6rem}
+  .fixlist li{display:flex; gap:.9rem; align-items:baseline; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:.85rem 1rem; transition:transform .2s, box-shadow .2s}
+  .fixlist li:hover{transform:translateX(6px); box-shadow:0 4px 14px rgba(43,33,22,.1)}
+  .fixlist .tick{font-family:var(--sans); font-weight:700; color:var(--green)}
+  .fixlist .dest{font-family:var(--mono); font-size:.72rem; color:var(--ink-2); display:block; margin-top:.15rem}
+  .actions{display:flex; gap:.8rem; flex-wrap:wrap; align-items:center; margin-top:1.2rem}
+
+  /* ---------- chapter 3: coach panels ---------- */
+  .panel{min-height:92svh; display:flex; align-items:center; border-top:1px dashed var(--line-2)}
+  .panel-card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:clamp(1.4rem,4vw,2.6rem);
+    box-shadow:0 10px 34px rgba(43,33,22,.08); width:100%}
+  .panel-card.flagship{border:2px solid var(--accent); box-shadow:0 14px 44px rgba(140,50,14,.16)}
+  .chiprow{display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.9rem}
+  .proof{font-family:var(--sans); font-size:.8rem; color:var(--ink-2); margin-top:.9rem}
+  .proof b{font-weight:700; color:var(--ink-2)}
+  .votes{font-family:var(--sans); font-size:.8rem; color:var(--ink-2); margin-top:.35rem}
+
+  /* ---------- receipts ---------- */
+  .receipt{display:grid; grid-template-columns:auto 1fr; gap:.4rem 1rem; padding:.95rem .35rem; border-bottom:1px solid var(--line);
+    align-items:baseline}
+  .sev{font-family:var(--sans); font-size:.72rem; font-weight:700; white-space:nowrap}
+  .sev.major{color:var(--accent-deep)} .sev.moderate{color:#8a6410} .sev.minor{color:var(--ink-2)}
+  .receipt h4{font-size:1.02rem; font-weight:600}
+  .receipt .proofline{grid-column:2; font-family:var(--sans); font-size:.78rem; color:var(--ink-3)}
+  .receipt .where{grid-column:2; margin-top:.25rem}
+  .where button{font-family:var(--sans); font-size:.76rem; background:none; border:none; color:var(--accent-deep);
+    text-decoration:underline; padding:0}
+  .cleanroom{background:var(--room); border:1px solid #cdd2bd; border-radius:14px; padding:1.2rem 1.3rem; margin-top:2rem}
+  .cleanroom ul{list-style:none; padding:0; display:flex; flex-wrap:wrap; gap:.5rem; margin:.7rem 0}
+  .cleanroom li{font-family:var(--mono); font-size:.74rem; background:#fff; border:1px solid #cdd2bd; border-radius:99px; padding:.25rem .65rem; color:#3c6140}
+
+  /* ---------- not your fault ---------- */
+  .otherroom{background:#e8ebf0; border:1.5px dashed #9fb0c4; border-radius:18px; padding:clamp(1.2rem,3.5vw,2rem)}
+  .otherroom .item{padding:.8rem 0; border-bottom:1px solid #c9d3df}
+  .otherroom .item:last-child{border-bottom:none}
+
+  /* ---------- footer / credits ---------- */
+  .credits{border-top:1px solid var(--line); text-align:center; padding:3.5rem 0 3rem; font-family:var(--sans)}
+  .caps{display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; margin:.9rem 0 1.2rem}
+  .footlines{font-size:.78rem; color:var(--ink-2); line-height:2}
+
+  /* ---------- detail pages ---------- */
+  .detail{padding:2.5rem 0 5rem}
+  pre.code{font-family:var(--mono); font-size:.78rem; line-height:1.6; background:#2b2116; color:#f2e7cf;
+    border-radius:12px; padding:1rem 1.2rem; overflow-x:auto; margin:1rem 0}
+  pre.code .add{color:#a6d49a}
+  .evrow{display:flex; gap:.9rem; align-items:baseline; padding:.75rem .2rem; border-bottom:1px solid var(--line); font-family:var(--sans); font-size:.9rem}
+  .evrow .n{font-weight:700; color:var(--accent-deep); font-variant-numeric:tabular-nums}
+  .steps{counter-reset:st; list-style:none; padding:0; margin:1rem 0}
+  .steps li{counter-increment:st; padding:.55rem 0 .55rem 2.4rem; position:relative}
+  .steps li::before{content:counter(st); position:absolute; left:0; top:.55rem; width:1.65rem; height:1.65rem;
+    border-radius:50%; background:var(--paper-2); font-family:var(--sans); font-weight:700; font-size:.85rem;
+    display:flex; align-items:center; justify-content:center; color:var(--accent-deep)}
+  .coachlinks{display:grid; gap:.8rem; margin-top:1.5rem}
+  .coachlinks a{display:block; text-decoration:none; color:inherit; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:1.1rem 1.2rem; transition:transform .2s, box-shadow .2s}
+  .coachlinks a:hover{transform:translateY(-3px); box-shadow:0 8px 22px rgba(43,33,22,.12)}
+  .dismissed{opacity:.55}
+  .dismissed::after{content:" · dismissed"; font-family:var(--sans); font-size:.8rem; color:var(--ink-2)}
+
+  /* toast */
+  .toast{position:fixed; left:50%; bottom:4.6rem; z-index:70; translate:-50% 0; background:var(--ink); color:var(--paper);
+    font-family:var(--sans); font-size:.85rem; padding:.65rem 1.1rem; border-radius:99px; opacity:0;
+    transform:translateY(12px); transition:opacity .3s, transform .3s; pointer-events:none; max-width:92vw; text-align:center}
+  .toast.on{opacity:1; transform:none}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .reveal{opacity:1 !important; transform:none !important}
+    .dl-fill{transform:scaleX(1) !important}
+    .dial .prog{stroke-dashoffset:196.8 !important}
+    .in .bar i, .bar i{transform:scaleX(var(--p)) !important}
+  }
+</style>
+</head>
+<body class="route-home">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="wordmark" href="#home">dama<b>me</b></a>
+  <nav class="topnav" aria-label="Sections" id="topnav">
+    <a href="#home" data-route="home">Story</a>
+    <a href="#fixes" data-route="fixes">Fixes</a>
+    <a href="#coach" data-route="coach">Coach</a>
+    <a href="#receipts" data-route="receipts">Receipts</a>
+  </nav>
+</header>
+
+<nav class="dots" aria-label="Chapters" id="dots"></nav>
+
+<div class="dayline" aria-hidden="true">
+  <div class="dl-label"><span>Jun 9 → Aug 28 · the strip fills as you read</span><span class="num" id="dlDay">Day 1 of 80 · dark marks: 26 compactions (schematic)</span></div>
+  <div class="dl-track"><div class="dl-fill" id="dlFill"></div><div class="dl-ticks"></div><span id="dlNotches"></span></div>
+</div>
+
+<main id="main" tabindex="-1">
+
+<!-- ============================ HOME: THE STORY ============================ -->
+<section class="view" id="view-home">
+
+  <!-- Chapter 1 -->
+  <section class="chapter wrap" id="ch1">
+    <div class="hero">
+      <p class="kicker reveal">Chapter one</p>
+      <h1 class="reveal d1" tabindex="-1">What happened this summer</h1>
+      <p class="lede reveal d2">For <strong>80 days</strong> — June 9 to August 28 — you and an AI assistant built
+        <strong>terminus2</strong> together, all of it inside <em>one single chat window</em>.
+        damame read the whole transcript, on your machine, and this is the story it found.</p>
+      <p class="reveal d3 muted" style="margin-top:1rem">A marathon of good delegation and background automation,
+        taxed hard by one eternal session and a lot of hand-carried data.</p>
+      <div class="statgrid reveal d3" id="statgrid"></div>
+    </div>
+
+    <hr class="thread">
+
+    <div class="reveal">
+      <p class="kicker">The score</p>
+      <h2>damame gives this session <span class="num">42</span> out of 100</h2>
+      <p class="lede">Not a grade on you — a measure of <em>friction</em>: how much effort went into the work,
+        versus around it. Here is where the points went.</p>
+      <div class="scoreboard">
+        <div class="dial reveal" id="dial">
+          <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54"/><circle class="prog" cx="60" cy="60" r="54"/></svg>
+          <div class="mid"><b class="num" data-count="42">0</b><span>out of 100</span></div>
+        </div>
+        <div class="params reveal d1" id="params" role="list" aria-label="Score parameters"></div>
+      </div>
+      <p class="small muted" style="margin-top:1rem">A zero is not shaming — it is the size of the opportunity.
+        Full working-out lives in <a href="#receipts">the receipts</a>.</p>
+    </div>
+  </section>
+
+  <!-- Chapter 2 -->
+  <section class="chapter wrap" id="ch2">
+    <p class="kicker reveal">Chapter two</p>
+    <h2 class="reveal d1">What damame will fix <em>for</em> you</h2>
+    <p class="lede reveal d2"><strong>4 things</strong> need no habit change at all. Each is a chore you repeated by hand
+      that can become a <span class="term">hook</span> — a small rule that runs automatically after certain actions,
+      so nobody has to remember it again.</p>
+    <ul class="fixlist reveal d2" id="fixlist"></ul>
+    <div class="actions reveal d3">
+      <button class="btn primary" data-mock="In the real app this opens the exact settings.json diff for review.">Review the diff</button>
+      <a class="go" href="#fixes">Open the full fix plan <span class="arr">→</span></a>
+    </div>
+    <p class="small muted reveal d3" style="margin-top:1rem" id="ledgernote"></p>
+  </section>
+
+  <!-- Chapter 3 -->
+  <section id="ch3">
+    <div class="chapter wrap" style="padding-bottom:1rem">
+      <p class="kicker reveal">Chapter three</p>
+      <h2 class="reveal d1">Three things worth changing</h2>
+      <p class="lede reveal d2">These <em>do</em> ask something of you — so there are only three, and each pays out in a
+        currency you actually feel: your <strong>time</strong>, your output <strong>quality</strong>, or your usage
+        <strong>limits</strong> (the allowance your AI plan gives you).</p>
+    </div>
+    <div id="coachpanels"></div>
+  </section>
+
+  <!-- Chapter 4 -->
+  <section class="chapter wrap" id="ch4">
+    <p class="kicker reveal">Chapter four</p>
+    <h2 class="reveal d1">The receipts</h2>
+    <p class="lede reveal d2">Every claim above has evidence behind it. Here are the three biggest lines of the ledger —
+      the token counts (<span class="term">tokens</span> — the currency AI work is billed in) stay down in the fine print,
+      where proof belongs.</p>
+    <div class="reveal d2" id="receiptteaser"></div>
+    <p class="reveal d3" style="margin-top:1.2rem"><a class="go" href="#receipts">See all 8 receipts, the clean checks, and the score breakdown <span class="arr">→</span></a></p>
+  </section>
+
+  <!-- Chapter 5 -->
+  <section class="chapter wrap" id="ch5">
+    <p class="kicker reveal">Chapter five</p>
+    <h2 class="reveal d1">Not your fault</h2>
+    <p class="lede reveal d2">Some of what damame found was just weather — the provider's infrastructure hiccuping,
+      not you working badly. It lives in its own room, and it <strong>never counts against your score</strong>.</p>
+    <div class="otherroom reveal d2" id="notyours"></div>
+  </section>
+
+  <!-- Chapter 6 / credits -->
+  <section class="chapter credits" id="ch6">
+    <div class="wrap">
+      <p class="kicker reveal">Credits</p>
+      <h2 class="reveal d1" style="font-size:1.5rem">What you already do well</h2>
+      <p class="reveal d2 muted small" id="capnote"></p>
+      <div class="caps reveal d2" id="caps"></div>
+      <p class="footlines reveal d3 num" id="footlines"></p>
+    </div>
+  </section>
+</section>
+
+<!-- ============================ FIXES PAGE ============================ -->
+<section class="view" id="view-fixes" hidden>
+  <div class="wrap detail">
+    <a class="back" href="#home">← Back to the story</a>
+    <p class="kicker">The fix plan</p>
+    <h1 id="fixes-title" tabindex="-1">4 chores, leaving your list</h1>
+    <p class="lede">During this session, certain checks followed your edits again and again — run by hand, every time.
+      Each becomes a <span class="term">PostToolUse hook</span>: a rule in your settings file that fires automatically
+      after the AI edits a file. You approve the change once; the chore is gone.</p>
+    <ul class="fixlist" id="fixlist-full"></ul>
+    <h3 style="margin-top:2rem">Preview of the batch <span class="muted small">(mock)</span></h3>
+    <p class="small muted">The real app shows the exact lines it wants to add to <code>settings.json</code> — you review, then apply.</p>
+    <pre class="code num" aria-label="Mock settings diff"><span class="add">+ "hooks": {
++   "PostToolUse": [{
++     "matcher": "Edit|Write",
++     "hooks": [
++       { "type": "command", "command": "./scripts/day80-explore-check.sh" },
++       { "type": "command", "command": "./scripts/warden-sim.sh" },
++       { "type": "command", "command": "./scripts/day72-verify.sh" }
++     ]
++   }]
++ }</span></pre>
+    <div class="actions">
+      <button class="btn primary" data-mock="In the real app this opens the reviewable diff.">Review the diff</button>
+      <button class="btn ghost" data-mock="Prototype — batch editing is mocked here.">Pick items individually</button>
+    </div>
+    <p class="small muted" style="margin-top:1.2rem" id="ledgernote2"></p>
+  </div>
+</section>
+
+<!-- ============================ COACH INDEX ============================ -->
+<section class="view" id="view-coach" hidden>
+  <div class="wrap detail">
+    <a class="back" href="#home">← Back to the story</a>
+    <p class="kicker">The coaching</p>
+    <h1 id="coach-title" tabindex="-1">Three stories, in full</h1>
+    <p class="lede">Each opens as its own page, with the evidence laid out and a recipe you can actually follow.</p>
+    <div class="coachlinks" id="coachlinks"></div>
+  </div>
+</section>
+
+<!-- ============================ COACH DETAIL ============================ -->
+<section class="view" id="view-coach-detail" hidden>
+  <div class="wrap detail" id="coach-detail-body"></div>
+</section>
+
+<!-- ============================ RECEIPTS PAGE ============================ -->
+<section class="view" id="view-receipts" hidden>
+  <div class="wrap wide detail">
+    <a class="back" href="#home">← Back to the story</a>
+    <p class="kicker">The ledger</p>
+    <h1 id="receipts-title" tabindex="-1">The receipts, in full</h1>
+    <p class="lede">Everything damame caught, one line each. The headline says what it cost you; the fine print holds
+      the token counts — <span class="term">tokens</span> being the currency AI work is billed in.</p>
+    <p class="small muted num" style="margin:1rem 0">Severity marks: <strong style="color:var(--accent-deep)">▲ major</strong> ·
+      <strong style="color:#8a6410">◆ moderate</strong> · <strong>○ minor</strong> — always written out, never colour alone.</p>
+    <div id="receiptlist"></div>
+
+    <div class="cleanroom">
+      <h3 style="font-size:1.1rem">Came back clean</h3>
+      <ul id="cleanlist"></ul>
+      <p class="small muted" id="cleannote"></p>
+    </div>
+
+    <h2 style="margin-top:3rem; font-size:1.5rem">How the 42 was built</h2>
+    <p class="muted">Five parameters, each scored 0–100, averaged with the weights of score@1.</p>
+    <div class="params" id="params2" style="margin-top:1.2rem; max-width:34rem"></div>
+    <p style="margin-top:2rem"><a class="go" href="#home">Back to the story <span class="arr">→</span></a></p>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ============ DATA — embedded from data.json (real terminus2 findings) ============ */
+const DATA = {
+  session: {
+    name:"terminus2", project:"~/terminus2", span:"Jun 9 → Aug 28, 2026 · 80 days", score:42,
+    parameters:[
+      { id:"cost-efficiency", label:"Cost efficiency", score:88 },
+      { id:"context-hygiene", label:"Context hygiene", score:0 },
+      { id:"redundant-work", label:"Redundant work", score:0 },
+      { id:"missed-capabilities", label:"Missed capabilities", score:33 },
+      { id:"prompting-recovery", label:"Prompting & recovery", score:88 }
+    ],
+    story:"An 80-day task-production marathon run inside a single chat — heavy delegation and background automation done well, taxed hard by one eternal session and a lot of hand-carried data.",
+    stats:{ turns:962, human_turns:758, tool_calls:7719, subagent_runs:87, compactions:26, tokens_total:"4.34B", tokens_fresh:"190M" }
+  },
+  fixes: {
+    headline_count:4,
+    items:[
+      { what:"Automate the day80 explore check that followed your edits 48 times", destination:"PostToolUse hook → settings.json", kind:"hook" },
+      { what:"Automate the warden sim run that followed edits 21 times", destination:"PostToolUse hook → settings.json", kind:"hook" },
+      { what:"Automate the day72 verification ritual (13 times)", destination:"PostToolUse hook → settings.json", kind:"hook" },
+      { what:"8 more repeated rituals detected — include them in the batch", destination:"PostToolUse hooks", kind:"hook-more" }
+    ],
+    ledger_note:"After you apply: damame measures your next sessions and shows what stopped happening — receipts, not promises."
+  },
+  coach:[
+    { id:"source-access", impact:"time",
+      headline:"Claude couldn't check the grading site itself — so you hand-carried the results, 170 times",
+      body:"Every verification cycle stalled until you delivered the next block by hand. Give Claude direct access to the source and the stall-fix-stall loop becomes one continuous run.",
+      proof:"170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates",
+      detector_votes:["paste-relay ×8"], recipe:"Stop hand-carrying data into the chat",
+      provenance:{ status:"verified", source:"curated from a real transcript" },
+      actions:["See the recipe","Not relevant"] },
+    { id:"session-hygiene", impact:"quality",
+      headline:"One chat became your permanent workspace — Claude's memory of this project is a 26th-generation summary",
+      body:"80 days, 26 resumes, 26 compactions: every morning re-bought the whole pile, and every compaction silently decided what your project's history was. Move memory to files (notes.md + CLAUDE.md); make fresh sessions cheap.",
+      proof:"eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions",
+      detector_votes:["eternal-session","cache-thrash","compaction-burn"],
+      recipe:"End each task with a notes.md handoff, start the next fresh",
+      provenance:{ status:"verified", source:"measured in this session" },
+      actions:["See the ritual","Not relevant"] },
+    { id:"freeze-pattern", impact:"quality",
+      headline:"You re-improvised the same delegation 5 times — the skill you need already exists, written by you, in installments",
+      body:"Each retelling of the cold-opus probe drifted a little. Your 5 versions are the draft: merge them into a saved skill/workflow and the best version becomes the only version. (Your 89 slash-command uses prove the frozen form wins.)",
+      proof:"\"cold-opus probe …\" re-improvised ×5 · every instance linked below",
+      detector_votes:["repeated-delegation"], recipe:"Freeze your own pattern",
+      provenance:{ status:"verified", source:"curated from this transcript" },
+      actions:["Show my 5 versions","Not relevant"], flagship:true }
+  ],
+  receipts:[
+    { severity:"major", currency:"limits", headline:"The whole conversation got re-billed from scratch, repeatedly", proof:"cache-thrash · 17.5M missed input tokens (messages_changed)", evidence_n:8 },
+    { severity:"major", currency:"limits", headline:"Mid-session tool changes broke the cache 4 ways", proof:"cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)", evidence_n:8 },
+    { severity:"major", currency:"quality", headline:"26 compactions — details were lost to summaries 26 times", proof:"compaction-burn · measured pauses recorded", evidence_n:26 },
+    { severity:"major", currency:"time", headline:"You worked as the data courier, 8 different templates' worth", proof:"paste-relay · 170 blocks · 1.64MB by hand", evidence_n:8 },
+    { severity:"major", currency:"quality", headline:"One session spanned 80 days — a permanent workspace", proof:"eternal-session · 26 resumes · 26 compactions", evidence_n:1 },
+    { severity:"moderate", currency:"limits", headline:"A direction change discarded 949k tokens of built work", proof:"abandoned-work · measured, rewind branch", evidence_n:1 },
+    { severity:"moderate", currency:"quality", headline:"Same delegation re-improvised 5× — drift risk each time", proof:"repeated-delegation · no token claim (honest: the cost is drift)", evidence_n:5 },
+    { severity:"minor", currency:"time", headline:"11 manual rituals followed your edits (10–48× each)", proof:"post-edit-ritual · all 11 automatable as hooks", evidence_n:11 }
+  ],
+  clean:["edit-fail-loop","bash-error-loop","duplicate-tool-call","oversized-context-reads","missed-delegation"],
+  clean_note:"233 tool errors occurred — none formed a loop. 87 delegations — none missed. Silence here is earned, not assumed (and not proof of perfection).",
+  not_yours:[
+    { headline:"344 transient API errors + 22 terminal failures — the provider's weather", proof:"retry-storm · always excluded from your score" },
+    { headline:"3 branches orphaned by session resumes — nobody's fault, nothing to fix", proof:"abandoned-work (infra) · 357k + 265k + 875k tokens" }
+  ],
+  capabilities:{ exercised:["subagents","workflows","skills","background tasks"], of:7, highlights:"220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads" },
+  footer:{ versions:"damame 0.6.0 · score@1 · adapter claude-code 0.1.0", privacy:"Analyzed locally. Nothing left your machine." }
+};
+
+/* Plain-language layers written for the story telling */
+const PARAM_NOTES = {
+  "cost-efficiency":"you got strong value per unit of AI work",
+  "context-hygiene":"the chat's working memory — everything the AI can currently see — was overloaded and rewritten constantly",
+  "redundant-work":"the same work kept being re-bought instead of done once",
+  "missed-capabilities":"some built-in powers went unused",
+  "prompting-recovery":"clear instructions; mistakes were caught and fixed fast"
+};
+const VOTE_NOTES = {
+  "paste-relay":"you acted as the courier between two programs — 170 hand-carried blocks",
+  "eternal-session":"one chat lived 80 days and was resumed 26 times",
+  "cache-thrash":"the re-send discount (the cache — providers charge less for unchanged history) kept breaking, so history was re-billed from scratch",
+  "compaction-burn":"26 compactions — each time the chat got summarized to fit, detail was quietly lost",
+  "repeated-delegation":"the same helper-AI briefing was rewritten from memory 5 times, drifting each time"
+};
+const IMPACT_WORD = { time:"pays out in: your time", quality:"pays out in: output quality", limits:"pays out in: usage limits" };
+const COACH_EXTRA = {
+  "source-access":{ n:"1", steps:[
+    "Give Claude its own way to fetch the results — a small script, a CLI call, or an API request it can run itself.",
+    "Replace \"paste, wait, fix\" with one instruction: \"run the check yourself and act on what you see.\"",
+    "Keep your 8 paste templates as the spec — they already define exactly what \"results\" look like." ],
+    ev:[["170","same-shaped blocks entered by hand across the session"],["1.64MB","of data moved through your clipboard"],["8","distinct templates — proof this was a routine, not an accident"]] },
+  "session-hygiene":{ n:"2", steps:[
+    "End each task by writing a short handoff into notes.md — decisions made, current state, next step.",
+    "Start the next task in a fresh chat. It reads notes.md + CLAUDE.md and is fully briefed in seconds, at full fidelity.",
+    "Let facts that keep mattering graduate into CLAUDE.md, the project's standing brief — files don't get compacted." ],
+    ev:[["80","days lived inside a single chat"],["26","compactions — each a lossy summary deciding what history survived"],["17.5M","tokens re-billed because edited history broke the re-send discount"]] },
+  "freeze-pattern":{ n:"3", steps:[
+    "Collect the 5 improvised versions of the cold-opus probe (linked below).",
+    "Merge the best lines of each into one saved skill/workflow — the frozen form.",
+    "Invoke it by name from now on. Your 89 slash-command uses already prove that saved forms are the ones you reach for." ],
+    ev:[["v1–v5","five retellings of the same delegation, each drifting a little — open any instance in the transcript (mock)"],["89","slash-command uses this session: the frozen form wins when it exists"],["87","delegations total — this pattern is worth owning properly"]] }
+};
+const CHAPTERS = [["ch1","What happened"],["ch2","The fixes"],["ch3","Worth changing"],["ch4","The receipts"],["ch5","Not your fault"],["ch6","Credits"]];
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = s => document.querySelector(s);
+const SEV = { major:"▲ major", moderate:"◆ moderate", minor:"○ minor" };
+const fmt = n => n.toLocaleString("en-US");
+const voteName = v => v.split(" ")[0].split("×")[0].trim();
+
+/* ============ build: chapter 1 ============ */
+const S = DATA.session.stats;
+$("#statgrid").innerHTML = [
+  {v:S.turns, label:"turns — one message from you or the AI"},
+  {v:S.tool_calls, label:"tool runs — the AI reading files, running commands"},
+  {v:S.subagent_runs, label:"delegations — helper AIs sent off with one job each"},
+  {v:S.compactions, label:"compactions — the chat got summarized to fit (more on this later)"},
+  {v:4.34, dec:2, unit:"B", label:"tokens billed — tokens are the currency AI work is billed in"},
+  {v:190, unit:"M", label:"genuinely fresh — the rest of the bill was re-sent history"}
+].map(t=>`<div class="stat"><b class="num"><span data-count="${t.v}"${t.dec?` data-dec="${t.dec}"`:""}>0</span>${t.unit||""}</b><span>${t.label}</span></div>`).join("");
+
+function paramsHTML(){
+  return DATA.session.parameters.map(p=>`
+    <div class="param" role="listitem">
+      <div class="row"><span>${p.label}</span><span class="num">${p.score}</span></div>
+      <div class="bar"><i style="--p:${Math.max(p.score,1.2)/100}"></i></div>
+      <div class="why">${PARAM_NOTES[p.id]}</div>
+    </div>`).join("");
+}
+$("#params").innerHTML = paramsHTML();
+$("#params2").innerHTML = paramsHTML();
+
+/* ============ build: chapter 2 (fixes) ============ */
+function fixItems(full){
+  return DATA.fixes.items.map(it=>`
+    <li><span class="tick" aria-hidden="true">${it.kind==="hook-more"?"+":"✓"}</span>
+      <div>${it.what}<span class="dest num">→ ${it.destination}</span>
+      ${full && it.kind!=="hook-more" ? `<span class="small muted">damame drafts the hook; nothing is written until you approve.</span>`:""}</div></li>`).join("");
+}
+$("#fixlist").innerHTML = fixItems(false);
+$("#fixlist-full").innerHTML = fixItems(true);
+$("#ledgernote").textContent = DATA.fixes.ledger_note;
+$("#ledgernote2").textContent = DATA.fixes.ledger_note;
+
+/* ============ build: chapter 3 (coach panels on home) ============ */
+$("#coachpanels").innerHTML = DATA.coach.map((c,i)=>`
+  <div class="panel wrap" id="panel-${c.id}">
+    <div class="panel-card reveal ${c.flagship?"flagship":""}" data-coach="${c.id}">
+      <div class="chiprow">
+        <span class="kicker" style="margin-right:auto">${i+1} of 3${c.flagship?" · the flagship":""}</span>
+        <span class="chip ${c.impact}">${IMPACT_WORD[c.impact]}</span>
+        <span class="chip verified">✓ ${c.provenance.status} · ${c.provenance.source}</span>
+      </div>
+      <h3>${c.headline}</h3>
+      <p style="margin-top:.8rem">${c.body}</p>
+      <p class="proof num"><b>Proof:</b> ${c.proof}</p>
+      <p class="votes num">${c.detector_votes.length>1?c.detector_votes.length+" independent signals point here":"Signal"}: ${c.detector_votes.join(" · ")}</p>
+      <div class="actions">
+        <button class="btn primary" data-go="coach/${c.id}">${c.actions[0]}</button>
+        <button class="btn ghost" data-dismiss="${c.id}">${c.actions[1]}</button>
+        <a class="go" href="#coach/${c.id}">Read the full story <span class="arr">→</span></a>
+      </div>
+    </div>
+  </div>`).join("");
+
+/* ============ build: chapter 4 teaser + receipts page ============ */
+function receiptRow(r){
+  return `<div class="receipt">
+    <span class="sev ${r.severity}">${SEV[r.severity]}</span>
+    <h4>${r.headline} <span class="chip ${r.currency}" style="vertical-align:2px">${r.currency}</span></h4>
+    <span class="proofline num">${r.proof} · ${r.evidence_n} piece${r.evidence_n>1?"s":""} of evidence</span>
+    <span class="where"><button data-mock="Prototype — the real app opens the transcript at the exact spot.">show me where</button></span>
+  </div>`;
+}
+$("#receiptteaser").innerHTML = DATA.receipts.slice(0,3).map(receiptRow).join("");
+$("#receiptlist").innerHTML = DATA.receipts.map(receiptRow).join("");
+$("#cleanlist").innerHTML = DATA.clean.map(c=>`<li>✓ ${c}</li>`).join("");
+$("#cleannote").textContent = DATA.clean_note;
+
+/* ============ build: chapter 5 + credits ============ */
+$("#notyours").innerHTML = `<p class="kicker" style="color:#33506e">A different room — infrastructure</p>` +
+  DATA.not_yours.map(n=>`<div class="item"><h3 style="font-size:1.1rem">${n.headline}</h3>
+    <p class="small muted num" style="margin-top:.25rem">${n.proof}</p></div>`).join("");
+$("#capnote").textContent = `Recognition, not a scold: you already exercised ${DATA.capabilities.exercised.length} of ${DATA.capabilities.of} capabilities — ${DATA.capabilities.highlights}.`;
+$("#caps").innerHTML = DATA.capabilities.exercised.map(c=>`<span class="chip verified">✓ ${c}</span>`).join("") +
+  `<span class="chip">${DATA.capabilities.of-DATA.capabilities.exercised.length} still unexplored</span>`;
+$("#footlines").innerHTML = `${DATA.footer.versions}<br>${DATA.footer.privacy}`;
+
+/* ============ build: coach index + detail ============ */
+$("#coachlinks").innerHTML = DATA.coach.map((c,i)=>`
+  <a href="#coach/${c.id}"><span class="chip ${c.impact}">${c.impact}</span> ${c.flagship?`<span class="chip flag">flagship</span>`:""}
+   <h3 style="margin-top:.5rem; font-size:1.15rem">${c.headline}</h3>
+   <p class="small muted" style="margin-top:.3rem">${c.recipe} →</p></a>`).join("");
+
+function renderCoachDetail(id){
+  const c = DATA.coach.find(x=>x.id===id);
+  if(!c){ location.hash = "#coach"; return; }
+  const ex = COACH_EXTRA[id];
+  $("#coach-detail-body").innerHTML = `
+    <a class="back" href="#coach">← All coaching</a> <a class="back" href="#home" style="margin-left:1rem">⌂ The story</a>
+    <p class="kicker">Worth changing · ${ex.n} of 3 ${c.flagship?"· the flagship":""}</p>
+    <h1 id="coach-detail-title" tabindex="-1" style="font-size:clamp(1.7rem,4.5vw,2.4rem)">${c.headline}</h1>
+    <div class="chiprow" style="margin-top:.6rem">
+      <span class="chip ${c.impact}">${IMPACT_WORD[c.impact]}</span>
+      <span class="chip verified">✓ ${c.provenance.status} · ${c.provenance.source}</span>
+    </div>
+    <p class="lede" style="margin-top:1rem">${c.body}</p>
+    <h3 style="margin-top:2.2rem">The evidence</h3>
+    <p class="small muted num" style="margin:.3rem 0 .6rem"><b>Proof line:</b> ${c.proof}</p>
+    ${ex.ev.map(([n,t])=>`<div class="evrow"><span class="n">${n}</span><span>${t}</span></div>`).join("")}
+    <p class="votes num" style="margin-top:.9rem">${c.detector_votes.length>1?c.detector_votes.length+" independent signals converge on this one change":"One signal, deeply attested"}:</p>
+    <ul style="font-family:var(--sans); font-size:.9rem; color:var(--ink-2); margin:.4rem 0 0 1.2rem">
+      ${c.detector_votes.map(v=>`<li style="padding:.2rem 0"><code style="font-family:var(--mono); font-size:.8rem">${v}</code> — ${VOTE_NOTES[voteName(v)]}</li>`).join("")}
+    </ul>
+    <h3 style="margin-top:2.2rem">The recipe: ${c.recipe}</h3>
+    <ol class="steps">${ex.steps.map(s=>`<li>${s}</li>`).join("")}</ol>
+    <p class="small muted">✓ ${c.provenance.status} means a human checked this against the transcript — damame labels modeled guesses separately, and this is not one.</p>
+    <div class="actions">
+      <button class="btn primary" data-mock="Prototype — '${c.actions[0]}' opens the transcript evidence in the real app.">${c.actions[0]}</button>
+      <button class="btn ghost" data-dismiss="${c.id}">${c.actions[1]}</button>
+    </div>`;
+}
+
+/* ============ router ============ */
+const VIEWS = { home:"#view-home", fixes:"#view-fixes", coach:"#view-coach", "coach-detail":"#view-coach-detail", receipts:"#view-receipts" };
+const TITLES = { home:"h1", fixes:"#fixes-title", coach:"#coach-title", "coach-detail":"#coach-detail-title", receipts:"#receipts-title" };
+let currentRoute = "";
+function route(){
+  let h = decodeURIComponent(location.hash.replace(/^#\/?/,"")) || "home";
+  if(h === "main") return;                       /* skip-link target, not a route */
+  let view = "home", coachId = null;
+  if(h === "fixes" || h === "coach" || h === "receipts") view = h;
+  else if(h.startsWith("coach/")){ view = "coach-detail"; coachId = h.slice(6); }
+  else h = "home";
+  if(view === "coach-detail") renderCoachDetail(coachId);
+  if(view === currentRoute && view !== "coach-detail") return;
+  currentRoute = view;
+  for(const [name,sel] of Object.entries(VIEWS)){
+    const el = $(sel);
+    const show = name === view;
+    el.hidden = !show;
+    el.classList.remove("enter");
+    if(show && !RM){ void el.offsetWidth; el.classList.add("enter"); }
+  }
+  document.body.classList.toggle("route-home", view === "home");
+  document.querySelectorAll("#topnav a").forEach(a=>{
+    const r = a.dataset.route;
+    const on = (r === view) || (r === "coach" && view === "coach-detail");
+    if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+  });
+  window.scrollTo({top:0, behavior:"auto"});
+  const t = $(VIEWS[view]).querySelector(TITLES[view]);
+  if(t) t.focus({preventScroll:true});
+  observeAll();
+}
+window.addEventListener("hashchange", route);
+
+/* ============ chapter dots ============ */
+$("#dots").innerHTML = CHAPTERS.map(([id,label])=>`<button data-ch="${id}" aria-label="Go to chapter: ${label}" title="${label}"></button>`).join("");
+$("#dots").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  document.getElementById(b.dataset.ch).scrollIntoView({behavior: RM?"auto":"smooth"});
+});
+const dotObs = new IntersectionObserver(entries=>{
+  entries.forEach(en=>{ if(en.isIntersecting){
+    document.querySelectorAll("#dots button").forEach(b=>b.setAttribute("aria-current", b.dataset.ch===en.target.id ? "true":"false"));
+  }});
+},{rootMargin:"-45% 0px -45% 0px"});
+CHAPTERS.forEach(([id])=>dotObs.observe(document.getElementById(id)));
+
+/* ============ scroll reveals + counters ============ */
+function animateCount(el){
+  const target = parseFloat(el.dataset.count), dec = parseInt(el.dataset.dec||"0",10);
+  if(RM){ el.textContent = dec? target.toFixed(dec) : fmt(target); return; }
+  const t0 = performance.now(), dur = 1400;
+  (function tick(t){
+    const p = Math.min((t-t0)/dur,1), e = 1-Math.pow(1-p,3);
+    const v = target*e;
+    el.textContent = dec ? v.toFixed(dec) : fmt(Math.round(v));
+    if(p<1) requestAnimationFrame(tick);
+  })(t0);
+}
+const revealObs = new IntersectionObserver(entries=>{
+  entries.forEach(en=>{
+    if(!en.isIntersecting) return;
+    en.target.classList.add("in");
+    en.target.querySelectorAll("[data-count]:not(.done)").forEach(el=>{ el.classList.add("done"); animateCount(el); });
+    if(en.target.matches("[data-count]:not(.done)")){ en.target.classList.add("done"); animateCount(en.target); }
+    revealObs.unobserve(en.target);
+  });
+},{threshold:.18});
+function observeAll(){
+  document.querySelectorAll(".reveal:not(.in), .dial:not(.in), .param:not(.in)").forEach(el=>revealObs.observe(el));
+  document.querySelectorAll(".params").forEach(el=>revealObs.observe(el));
+}
+if(RM){ document.querySelectorAll("[data-count]").forEach(el=>{el.classList.add("done"); animateCount(el);});
+        document.querySelectorAll(".reveal,.dial,.params").forEach(el=>el.classList.add("in")); }
+observeAll();
+
+/* ============ the 80-day strip ============ */
+const notches = $("#dlNotches");
+for(let i=1;i<=26;i++){
+  const n = document.createElement("i");
+  n.className = "dl-notch";
+  n.style.left = (i*80/27*1.25) + "%";   /* 26 compactions spread across 80 days — schematic */
+  notches.appendChild(n);
+}
+let dlTick = false;
+function dayline(){
+  dlTick = false;
+  const max = document.documentElement.scrollHeight - innerHeight;
+  const p = max>0 ? Math.min(Math.max(scrollY/max,0),1) : 1;
+  $("#dlFill").style.transform = `scaleX(${Math.max(p,0.012)})`;
+  $("#dlDay").textContent = `Day ${Math.max(1,Math.ceil(p*80))} of 80 · dark marks: 26 compactions (schematic)`;
+}
+addEventListener("scroll", ()=>{ if(!dlTick && document.body.classList.contains("route-home")){ dlTick=true; requestAnimationFrame(dayline);} }, {passive:true});
+if(RM){ $("#dlFill").style.transform="scaleX(1)"; $("#dlDay").textContent="80 days · dark marks: 26 compactions (schematic)"; }
+else dayline();
+
+/* ============ mock actions, dismiss, nav buttons ============ */
+let toastTimer;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("on"), 3200);
+}
+const dismissed = new Set();
+document.addEventListener("click", e=>{
+  const mock = e.target.closest("[data-mock]");
+  if(mock){ toast(mock.dataset.mock); return; }
+  const go = e.target.closest("[data-go]");
+  if(go){ location.hash = "#"+go.dataset.go; return; }
+  const dis = e.target.closest("[data-dismiss]");
+  if(dis){
+    const id = dis.dataset.dismiss;
+    dismissed.add(id);
+    document.querySelectorAll(`[data-coach="${id}"]`).forEach(el=>el.classList.add("dismissed"));
+    toast("Noted — damame won't raise this again. (Prototype: not persisted.)");
+  }
+});
+
+route();
+</script>
+</body>
+</html>

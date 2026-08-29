@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>damame — Atlas</title>
+<style>
+/* ============ tokens ============ */
+:root{
+  --ground:#E9ECEA; --panel:#FAFBFA; --panel-2:#FFFFFF;
+  --ink:#181E23; --muted:#5A646C; --faint:#8B949B;
+  --line:#D3D9D6; --line-soft:#E0E4E2;
+  --accent:#0B5B52; --accent-deep:#094A43; --accent-soft:#DFEAE5;
+  --major:#8C2F24; --moderate:#8A5A1C; --minor:#4A5560;
+  --q:#6B4B8A; --t:#0B5B52; --l:#35558A;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:"Iowan Old Style",Palatino,"Palatino Linotype","Book Antiqua",Georgia,serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sh:0 1px 2px rgba(24,30,35,.06),0 4px 14px rgba(24,30,35,.05);
+  --sh-up:0 2px 4px rgba(24,30,35,.08),0 12px 28px rgba(24,30,35,.10);
+  --ease:cubic-bezier(.22,.7,.24,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:light}
+body{
+  font-family:var(--sans);color:var(--ink);background:var(--ground);
+  background-image:
+    linear-gradient(rgba(24,30,35,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(24,30,35,.035) 1px,transparent 1px);
+  background-size:56px 56px;
+  font-size:15px;line-height:1.55;min-height:100vh;display:flex;flex-direction:column;
+}
+/* ============ a11y ============ */
+.skip{position:absolute;left:12px;top:-48px;z-index:50;background:var(--ink);color:#fff;
+  padding:8px 14px;border-radius:0 0 8px 8px;text-decoration:none;font-weight:600;transition:top .15s var(--ease)}
+.skip:focus{top:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.num,.proof,.stat-n{font-variant-numeric:tabular-nums}
+/* ============ topbar ============ */
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+  padding:10px 22px;background:rgba(250,251,250,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line)}
+.brand{font-weight:800;letter-spacing:.02em;color:var(--ink);text-decoration:none;font-size:15px}
+.brand b{color:var(--accent);font-weight:800}
+.crumbs{flex:1;min-width:0}
+.crumbs ol{display:flex;list-style:none;gap:4px;white-space:nowrap;overflow:hidden;font-size:12.5px;color:var(--muted)}
+.crumbs li{display:flex;align-items:center;min-width:0}
+.crumbs li+li::before{content:"›";margin:0 7px;color:var(--faint)}
+.crumbs a{color:var(--muted);text-decoration:none;border-bottom:1px solid transparent}
+.crumbs a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.crumbs [aria-current]{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.local-chip{font-family:var(--mono);font-size:10.5px;color:var(--accent-deep);background:var(--accent-soft);
+  border:1px solid rgba(11,91,82,.25);border-radius:999px;padding:3px 9px;letter-spacing:.04em;flex-shrink:0}
+/* ============ layout / views ============ */
+main{flex:1;width:100%;max-width:980px;margin:0 auto;padding:26px 22px 56px;position:relative}
+main:focus{outline:none}
+.view{position:relative}
+@keyframes vin-f{from{opacity:0;transform:translateX(30px)}}
+@keyframes vin-b{from{opacity:0;transform:translateX(-30px)}}
+@keyframes vout-f{to{opacity:0;transform:translateX(-30px)}}
+@keyframes vout-b{to{opacity:0;transform:translateX(30px)}}
+.view.in-f{animation:vin-f .34s var(--ease) both}
+.view.in-b{animation:vin-b .34s var(--ease) both}
+.view-exit{position:absolute;top:0;left:0;right:0;pointer-events:none;z-index:1}
+.view-exit.out-f{animation:vout-f .26s var(--ease) both}
+.view-exit.out-b{animation:vout-b .26s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.view [data-st]>*{animation:rise .5s var(--ease) both;animation-delay:calc(90ms + var(--i,0)*60ms)}
+/* ============ shared page furniture ============ */
+.up{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;
+  font-size:13px;font-weight:600;margin-bottom:18px}
+.up .arr{display:inline-block;transition:transform .2s var(--ease)}
+.up:hover{color:var(--accent)} .up:hover .arr{transform:translateX(-3px)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+h1.pg{font-family:var(--serif);font-weight:600;font-size:clamp(26px,4.5vw,34px);line-height:1.2;margin:6px 0 10px}
+.lede{color:var(--muted);max-width:62ch;margin-bottom:26px}
+.lede a{color:var(--accent)}
+.gl{color:var(--faint);font-style:normal}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:var(--sh)}
+.proof{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.01em}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--accent);background:var(--accent);
+  color:#fff;font:inherit;font-weight:650;font-size:13.5px;padding:9px 18px;border-radius:9px;cursor:pointer;
+  transition:transform .18s var(--ease),background .18s,box-shadow .18s}
+.btn:hover{background:var(--accent-deep);transform:translateY(-1px);box-shadow:var(--sh-up)}
+.btn:active{transform:translateY(0)}
+.btn.quiet{background:transparent;color:var(--muted);border-color:var(--line)}
+.btn.quiet:hover{color:var(--ink);border-color:var(--muted);background:var(--panel-2)}
+.btn.small{font-size:12px;padding:6px 12px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:650;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--panel-2)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex-shrink:0}
+.chip.cur-quality .dot{background:var(--q)} .chip.cur-time .dot{background:var(--t)} .chip.cur-limits .dot{background:var(--l)}
+.chip.prov{color:var(--accent-deep);background:var(--accent-soft);border-color:rgba(11,91,82,.25)}
+.sev{display:inline-flex;align-items:baseline;gap:6px;font-size:11.5px;font-weight:700;letter-spacing:.03em}
+.sev .g{font-size:10px}
+.sev-major{color:var(--major)} .sev-moderate{color:var(--moderate)} .sev-minor{color:var(--minor)}
+.sig{font-size:11.5px;font-weight:700;color:var(--accent-deep)}
+/* ============ home: hero ============ */
+.idrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:14px}
+.idrow .proj{font-family:var(--mono);font-size:13px;font-weight:600}
+.idrow .span{color:var(--muted);font-size:13px}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:16px 44px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 30px;box-shadow:var(--sh)}
+.score-blk{text-align:left}
+.score-n{font-size:clamp(64px,11vw,100px);font-weight:800;letter-spacing:-.035em;line-height:1;
+  font-variant-numeric:tabular-nums}
+.score-cap{color:var(--muted);font-size:12.5px;margin-top:4px}
+.score-cap a{color:var(--accent);text-decoration:none;font-weight:600}
+.score-cap a:hover{text-decoration:underline}
+.params{display:flex;flex-direction:column;gap:9px;min-width:0}
+.prow{display:grid;grid-template-columns:minmax(120px,150px) 1fr 32px;gap:12px;align-items:center;font-size:12.5px}
+.prow .lb{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .tk{height:6px;border-radius:3px;background:var(--line-soft);overflow:hidden}
+.prow .tk b{display:block;height:100%;border-radius:3px;background:var(--accent);
+  width:calc(var(--v)*1%);transform-origin:left;animation:growx .9s var(--ease) both;
+  animation-delay:calc(260ms + var(--i,0)*90ms)}
+.prow .vl{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+@keyframes growx{from{transform:scaleX(0)}}
+.story{font-family:var(--serif);font-style:italic;font-size:clamp(17px,2.6vw,21px);line-height:1.5;
+  color:var(--ink);margin:26px 2px 22px;max-width:64ch}
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;padding:14px 18px;border:1px solid var(--line);
+  border-radius:12px;background:var(--panel-2)}
+.stat{display:flex;flex-direction:column;gap:1px}
+.stat-n{font-size:17px;font-weight:750;letter-spacing:-.01em}
+.stat-l{font-size:11px;color:var(--muted)}
+.stats-gl{width:100%;font-size:11.5px;color:var(--faint);margin-top:2px}
+/* ============ home: tiles ============ */
+.exp-h{margin:34px 0 12px;display:flex;align-items:baseline;gap:12px}
+.tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.tile{grid-column:span 2;display:flex;flex-direction:column;gap:10px;background:var(--panel);
+  border:1px solid var(--line);border-radius:13px;padding:18px 18px 15px;text-decoration:none;color:var(--ink);
+  box-shadow:var(--sh);transition:transform .22s var(--ease),box-shadow .22s var(--ease),border-color .22s;position:relative}
+.tile:hover{transform:translateY(-3px);box-shadow:var(--sh-up);border-color:var(--muted)}
+.tile.big{grid-column:span 3}
+.tile h3{font-family:var(--serif);font-weight:600;font-size:18.5px;line-height:1.25}
+.tile .tz{font-size:12.5px;color:var(--muted);flex:1}
+.tile .stat-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px}
+.tile .go{position:absolute;top:16px;right:16px;color:var(--faint);font-weight:700;transition:transform .2s var(--ease),color .2s}
+.tile:hover .go{transform:translateX(4px);color:var(--accent)}
+.tile .bign{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.tile.voice{border-top:3px solid var(--accent)}
+.spark{display:flex;align-items:flex-end;gap:4px;height:30px}
+.spark i{width:9px;border-radius:2px 2px 0 0;background:var(--accent);height:calc(max(var(--v)*1%,6%));
+  transform-origin:bottom;animation:growy .8s var(--ease) both;animation-delay:calc(200ms + var(--i,0)*70ms)}
+.spark i.zero{background:var(--line)}
+@keyframes growy{from{transform:scaleY(0)}}
+/* ============ fixes ============ */
+.fixlist{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);box-shadow:var(--sh);overflow:hidden;margin-bottom:16px}
+.fixrow{display:flex;gap:14px;align-items:flex-start;padding:14px 18px;border-bottom:1px solid var(--line-soft);
+  transition:opacity .3s var(--ease),transform .3s var(--ease)}
+.fixrow:last-child{border-bottom:none}
+.fixrow .mk{font-weight:800;color:var(--accent);width:20px;flex-shrink:0;text-align:center}
+.fixrow .fw{flex:1;min-width:0}
+.fixrow .what{font-weight:600;font-size:14px}
+.fixrow .dest{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:2px}
+.fixrow.queued{opacity:.55;transform:translateX(6px)}
+.fixrow.queued .mk::before{content:"✓"}
+.fixrow:not(.queued) .mk::before{content:"◇"}
+.fix-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:18px}
+.mock-note{font-size:11.5px;color:var(--faint)}
+.ledger{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;
+  padding:12px 16px;font-size:13px;color:var(--accent-deep);max-width:60ch}
+/* ============ coach ============ */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:20px 22px;
+  margin-bottom:16px;box-shadow:var(--sh);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
+.card:hover{transform:translateY(-2px);box-shadow:var(--sh-up)}
+.card.flagship{border-top:3px solid var(--accent)}
+.card .chiprow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.card h3{font-family:var(--serif);font-weight:600;font-size:19px;line-height:1.35;margin-bottom:8px}
+.card h3 a{color:inherit;text-decoration:none}
+.card h3 a:hover{color:var(--accent)}
+.card .proof{margin-bottom:14px;display:block}
+.card .acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.card.dismissed>*:not(.dis-note){display:none}
+.dis-note{display:none;color:var(--muted);font-size:13px}
+.card.dismissed .dis-note{display:flex;gap:12px;align-items:center}
+.flag-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-deep);font-weight:700}
+/* coach detail */
+.detail-h{margin-bottom:22px}
+.detail-h .chiprow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.body-p{max-width:62ch;margin-bottom:22px}
+.sec-h{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:26px 0 10px}
+.steps{list-style:none;counter-reset:s;max-width:62ch}
+.steps li{counter-increment:s;display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:14px}
+.steps li::before{content:counter(s);font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);
+  border:1px solid var(--accent);border-radius:50%;width:22px;height:22px;display:inline-flex;
+  align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.evrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+  padding:11px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:8px}
+.evrow .evl{font-size:13.5px;font-weight:600}
+.evrow .evd{font-size:12px;color:var(--muted)}
+.evstats{display:flex;flex-wrap:wrap;gap:10px 28px;padding:14px 18px;border:1px solid var(--line);
+  border-radius:12px;background:var(--panel-2);margin-bottom:8px}
+/* ============ receipts ============ */
+.grp{margin-bottom:26px}
+.grp-h{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.rrow{border:1px solid var(--line);border-radius:11px;background:var(--panel);margin-bottom:8px;overflow:hidden}
+.rrow-top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:12px 16px}
+.rrow-top .hl{flex:1;min-width:200px;font-weight:600;font-size:13.5px}
+.rrow .proofline{padding:0 16px 10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.evtoggle{background:none;border:none;font:inherit;font-size:12px;font-weight:650;color:var(--accent);
+  cursor:pointer;display:inline-flex;gap:6px;align-items:center;padding:2px 4px}
+.evtoggle:hover{text-decoration:underline}
+.evtoggle .tw{display:inline-block;transition:transform .2s var(--ease)}
+.evtoggle[aria-expanded="true"] .tw{transform:rotate(90deg)}
+.evpanel{border-top:1px dashed var(--line);padding:12px 16px;background:var(--panel-2);font-size:13px;color:var(--muted)}
+.evpanel[hidden]{display:none}
+.evpanel:not([hidden]){animation:rise .35s var(--ease) both}
+.evpanel .btn{margin-top:10px}
+.clean{border:1px dashed var(--line);border-radius:12px;padding:16px 20px;background:transparent}
+.clean ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}
+.clean li{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--panel)}
+.clean li::before{content:"✓ ";color:var(--accent);font-weight:700}
+/* ============ infra ============ */
+.infra-room{border:1px solid #C6CFD6;border-radius:14px;padding:22px 24px;
+  background:repeating-linear-gradient(-45deg,#E3E8EC 0 14px,#DEE4E9 14px 28px)}
+.infra-room .panel{background:var(--panel-2);margin-bottom:12px}
+.stamp{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--l);border:1.5px solid var(--l);border-radius:6px;padding:3px 9px;font-weight:700;margin-bottom:10px}
+/* ============ grading ============ */
+.grade-grid{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);box-shadow:var(--sh);overflow:hidden;margin-bottom:22px}
+.grow{display:grid;grid-template-columns:minmax(130px,170px) 44px 1fr;gap:8px 16px;align-items:center;
+  padding:13px 18px;border-bottom:1px solid var(--line-soft)}
+.grow:last-child{border-bottom:none}
+.grow .lb{font-weight:650;font-size:13.5px}
+.grow .vl{font-weight:800;font-variant-numeric:tabular-nums;text-align:right;font-size:15px}
+.grow .ds{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+.grow .tk{height:6px;border-radius:3px;background:var(--line-soft);grid-column:1/-1;overflow:hidden}
+.grow .tk b{display:block;height:100%;border-radius:3px;background:var(--accent);width:calc(var(--v)*1%);
+  transform-origin:left;animation:growx .8s var(--ease) both;animation-delay:calc(200ms + var(--i,0)*80ms)}
+.caps{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 8px}
+.caps span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--panel-2)}
+.caps span.on{border-color:rgba(11,91,82,.35);background:var(--accent-soft);color:var(--accent-deep);font-weight:650}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.vgrid .panel{font-size:13px}
+/* ============ site footer / toast ============ */
+.sitefoot{border-top:1px solid var(--line);background:var(--panel);padding:12px 22px;
+  display:flex;flex-wrap:wrap;gap:6px 24px;justify-content:space-between;
+  font-family:var(--mono);font-size:11px;color:var(--faint)}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,10px);opacity:0;pointer-events:none;
+  background:var(--ink);color:#fff;font-size:13px;padding:10px 18px;border-radius:10px;box-shadow:var(--sh-up);
+  transition:opacity .25s var(--ease),transform .25s var(--ease);max-width:min(90vw,480px);z-index:60}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+/* ============ responsive ============ */
+@media (max-width:860px){
+  .tile,.tile.big{grid-column:span 3}
+}
+@media (max-width:620px){
+  main{padding:20px 14px 46px}
+  .topbar{padding:8px 14px;gap:10px}
+  .hero{grid-template-columns:1fr;padding:20px 18px;gap:20px}
+  .tile,.tile.big{grid-column:span 6}
+  .vgrid{grid-template-columns:1fr}
+  .grow{grid-template-columns:1fr 44px}
+  .local-chip{display:none}
+}
+/* ============ reduced motion: fully static, fully readable ============ */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main-content">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="#home">dama<b>me</b></a>
+  <nav class="crumbs" aria-label="Breadcrumb"><ol id="crumbs"></ol></nav>
+  <span class="local-chip">local-only</span>
+</header>
+
+<main id="main-content" tabindex="-1"></main>
+
+<footer class="sitefoot">
+  <span>damame 0.6.0 · score@1 · adapter claude-code 0.1.0</span>
+  <span>Analyzed locally. Nothing left your machine.</span>
+</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ================= data (embedded from data.json) ================= */
+const D = {
+  session: {
+    name: "terminus2", project: "~/terminus2", span: "Jun 9 → Aug 28, 2026 · 80 days", score: 42,
+    parameters: [
+      { id: "cost-efficiency", label: "Cost efficiency", score: 88 },
+      { id: "context-hygiene", label: "Context hygiene", score: 0 },
+      { id: "redundant-work", label: "Redundant work", score: 0 },
+      { id: "missed-capabilities", label: "Missed capabilities", score: 33 },
+      { id: "prompting-recovery", label: "Prompting & recovery", score: 88 }
+    ],
+    story: "An 80-day task-production marathon run inside a single chat — heavy delegation and background automation done well, taxed hard by one eternal session and a lot of hand-carried data.",
+    stats: { turns: 962, human_turns: 758, tool_calls: 7719, subagent_runs: 87, compactions: 26, tokens_total: "4.34B", tokens_fresh: "190M" }
+  },
+  fixes: {
+    headline_count: 4,
+    items: [
+      { what: "Automate the day80 explore check that followed your edits 48 times", destination: "PostToolUse hook → settings.json" },
+      { what: "Automate the warden sim run that followed edits 21 times", destination: "PostToolUse hook → settings.json" },
+      { what: "Automate the day72 verification ritual (13 times)", destination: "PostToolUse hook → settings.json" },
+      { what: "8 more repeated rituals detected — include them in the batch", destination: "PostToolUse hooks" }
+    ],
+    ledger_note: "After you apply: damame measures your next sessions and shows what stopped happening — receipts, not promises."
+  },
+  coach: [
+    { id: "source-access", impact: "time",
+      headline: "Claude couldn’t check the grading site itself — so you hand-carried the results, 170 times",
+      body: "Every verification cycle stalled until you delivered the next block by hand. Give Claude direct access to the source and the stall-fix-stall loop becomes one continuous run.",
+      proof: "170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates",
+      votes: [ ["paste-relay ×8", "Eight recurring paste formats detected — the same shapes of data, carried in by hand again and again."] ],
+      recipe: "Stop hand-carrying data into the chat",
+      steps: ["Give Claude a direct line to the grading site — a CLI, an API key, or a shared results file.",
+              "Note where it lives in CLAUDE.md so every future session knows without being told.",
+              "Next run, the check-fix-check loop closes without you in the middle of it."],
+      evstats: [["170","blocks pasted by hand"],["1.64MB","typed or pasted in"],["8","recurring templates"]],
+      provenance: { status: "verified", source: "curated from a real transcript" },
+      primary: "See the recipe", detailPrimary: "Save this recipe" },
+    { id: "session-hygiene", impact: "quality",
+      headline: "One chat became your permanent workspace — Claude’s memory of this project is a 26th-generation summary",
+      body: "80 days, 26 resumes, 26 compactions: every morning re-bought the whole pile, and every compaction — each time, the chat got summarized to fit the model’s memory — silently decided what your project’s history was. Move memory to files (notes.md + CLAUDE.md); make fresh sessions cheap.",
+      proof: "eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions",
+      votes: [ ["eternal-session", "One session spanned 80 days with 26 resumes — old history taxed every single turn."],
+               ["cache-thrash", "17.5M tokens of already-seen history were re-billed at full price when the cache — the discount for re-sending unchanged history — kept getting voided."],
+               ["compaction-burn", "26 compactions, each one silently choosing which details of your project survived."] ],
+      recipe: "End each task with a notes.md handoff, start the next fresh",
+      steps: ["End each task by writing a short handoff into notes.md — what was done, what’s next, what to watch.",
+              "Keep durable project facts in CLAUDE.md, not buried in chat history.",
+              "Start the next task as a fresh session. It reads the notes and starts sharp — and cheap."],
+      evstats: [["80","days in one chat"],["26","resumes"],["26","compactions"],["17.5M","re-billed tokens"]],
+      provenance: { status: "verified", source: "measured in this session" },
+      primary: "See the ritual", detailPrimary: "Save this ritual" },
+    { id: "freeze-pattern", impact: "quality", flagship: true,
+      headline: "You re-improvised the same delegation 5 times — the skill you need already exists, written by you, in installments",
+      body: "Each retelling of the cold-opus probe drifted a little. Your 5 versions are the draft: merge them into a saved skill/workflow and the best version becomes the only version. (Your 89 slash-command uses prove the frozen form wins.)",
+      proof: "“cold-opus probe …” re-improvised ×5 · every instance linked below",
+      votes: [ ["repeated-delegation", "The same delegated task was rewritten from memory five times — no token claim here; the honest cost is drift between versions."] ],
+      recipe: "Freeze your own pattern",
+      steps: ["Collect your 5 tellings of the cold-opus probe — they’re all in this transcript.",
+              "Merge the best parts of each into one saved skill.",
+              "Invoke it by name from now on. The best version becomes the only version."],
+      evstats: [["5","re-improvisations"],["89","slash-command uses — proof the frozen form wins"]],
+      provenance: { status: "verified", source: "curated from this transcript" },
+      primary: "Show my 5 versions", detailPrimary: "Merge into a skill" }
+  ],
+  receipts: [
+    { sev: "major", cur: "limits", hl: "The whole conversation got re-billed from scratch, repeatedly",
+      proof: "cache-thrash · 17.5M missed input tokens (messages_changed)", n: 8,
+      note: "When earlier chat history changes, the provider’s cache — a discount for re-sending unchanged history — is voided, and the whole conversation is billed again at full price. Here that meant 17.5M tokens of already-seen text, re-bought." },
+    { sev: "major", cur: "limits", hl: "Mid-session tool changes broke the cache 4 ways",
+      proof: "cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)", n: 8,
+      note: "Changing the available tools, system prompt, or model mid-session also voids the cache. Four different kinds of mid-session change each broke it." },
+    { sev: "major", cur: "quality", hl: "26 compactions — details were lost to summaries 26 times",
+      proof: "compaction-burn · measured pauses recorded", n: 26,
+      note: "A compaction squeezes the chat into a summary so it fits the model’s memory. Each one silently decides which details survive. Twenty-six of them, in one session." },
+    { sev: "major", cur: "time", hl: "You worked as the data courier, 8 different templates’ worth",
+      proof: "paste-relay · 170 blocks · 1.64MB by hand", n: 8,
+      note: "170 blocks of results pasted in by hand, across 8 recurring formats — 1.64MB carried manually where a direct connection could have fetched it." },
+    { sev: "major", cur: "quality", hl: "One session spanned 80 days — a permanent workspace",
+      proof: "eternal-session · 26 resumes · 26 compactions", n: 1,
+      note: "One chat, 80 days. Old history taxes every turn, and the memory of early work now exists only as summaries of summaries." },
+    { sev: "moderate", cur: "limits", hl: "A direction change discarded 949k tokens of built work",
+      proof: "abandoned-work · measured, rewind branch", n: 1,
+      note: "A rewind threw away 949k tokens — tokens are the currency AI work is billed in — of already-built work. Measured on the abandoned branch, not estimated." },
+    { sev: "moderate", cur: "quality", hl: "Same delegation re-improvised 5× — drift risk each time",
+      proof: "repeated-delegation · no token claim (honest: the cost is drift)", n: 5,
+      note: "The same delegated task was rewritten from memory five times. No token claim here — the honest cost is drift between versions." },
+    { sev: "minor", cur: "time", hl: "11 manual rituals followed your edits (10–48× each)",
+      proof: "post-edit-ritual · all 11 automatable as hooks", n: 11,
+      note: "After edits, the same manual checks were run by hand, 10 to 48 times each. All 11 can run automatically as hooks — see the fix batch." }
+  ],
+  clean: [["edit-fail-loop","Edit failure loops"],["bash-error-loop","Repeated command errors"],
+          ["duplicate-tool-call","Duplicate tool calls"],["oversized-context-reads","Oversized file reads"],
+          ["missed-delegation","Missed delegation chances"]],
+  clean_note: "233 tool errors occurred — none formed a loop. 87 delegations — none missed. Silence here is earned, not assumed (and not proof of perfection).",
+  not_yours: [
+    { hl: "344 transient API errors + 22 terminal failures — the provider’s weather", proof: "retry-storm · always excluded from your score" },
+    { hl: "3 branches orphaned by session resumes — nobody’s fault, nothing to fix", proof: "abandoned-work (infra) · 357k + 265k + 875k tokens" }
+  ],
+  capabilities: { exercised: ["subagents","workflows","skills","background tasks"], of: 7,
+    highlights: "220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads" },
+  paramNotes: {
+    "cost-efficiency": "How much of the spend did useful work. High — delegation and background automation were used well.",
+    "context-hygiene": "How healthy the chat’s working memory stayed. Zeroed by one 80-day session and 26 compactions.",
+    "redundant-work": "How much was paid for twice. Zeroed by re-billed history and hand-carried data.",
+    "missed-capabilities": "Features that would have helped but went unused — 4 of 7 exercised.",
+    "prompting-recovery": "How clearly work was directed and how errors were recovered. Strong: 233 tool errors, zero loops."
+  }
+};
+
+/* ================= helpers ================= */
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const main = document.getElementById("main-content");
+const crumbsEl = document.getElementById("crumbs");
+const dismissed = new Set();
+const fmt = n => n.toLocaleString("en-US");
+const sev = s => `<span class="sev sev-${s}"><span class="g" aria-hidden="true">${s==="major"?"▲":s==="moderate"?"◆":"●"}</span>${s}</span>`;
+const cur = c => `<span class="chip cur-${c}"><span class="dot" aria-hidden="true"></span>${c}</span>`;
+const prov = p => `<span class="chip prov">✓ ${p.status} · ${p.source}</span>`;
+const spark = () => `<span class="spark" role="img" aria-label="parameter scores: ${D.session.parameters.map(p=>p.label+" "+p.score).join(", ")}">${
+  D.session.parameters.map((p,i)=>`<i class="${p.score===0?"zero":""}" style="--v:${p.score};--i:${i}"></i>`).join("")}</span>`;
+
+/* ================= views ================= */
+function vHome(){
+  const s = D.session, st = s.stats;
+  const sevTally = {major:0,moderate:0,minor:0};
+  D.receipts.forEach(r=>sevTally[r.sev]++);
+  return `<div class="view" data-route="home">
+  <div data-st>
+    <div class="idrow" style="--i:0">
+      <span class="eyebrow">Session profile</span>
+      <span class="proj num">${s.project}</span>
+      <span class="span num">${s.span}</span>
+    </div>
+    <section class="hero" style="--i:1" aria-label="Session score">
+      <div class="score-blk">
+        <div class="score-n num" data-count="${s.score}">${RM?s.score:0}</div>
+        <div class="score-cap">session score / 100 · <a href="#grading">how it was graded →</a></div>
+      </div>
+      <div class="params">
+        ${s.parameters.map((p,i)=>`<div class="prow" style="--i:${i}">
+          <span class="lb">${p.label}</span>
+          <span class="tk"><b style="--v:${p.score}"></b></span>
+          <span class="vl num">${p.score}</span></div>`).join("")}
+      </div>
+    </section>
+    <p class="story" style="--i:2">${s.story}</p>
+    <section class="stats num" style="--i:3" aria-label="Session totals">
+      <span class="stat"><span class="stat-n">${fmt(st.turns)}</span><span class="stat-l">turns (${fmt(st.human_turns)} yours)</span></span>
+      <span class="stat"><span class="stat-n">${fmt(st.tool_calls)}</span><span class="stat-l">tool calls</span></span>
+      <span class="stat"><span class="stat-n">${st.subagent_runs}</span><span class="stat-l">delegations to helpers</span></span>
+      <span class="stat"><span class="stat-n">${st.compactions}</span><span class="stat-l">compactions</span></span>
+      <span class="stat"><span class="stat-n">${st.tokens_total}</span><span class="stat-l">tokens billed · ${st.tokens_fresh} fresh</span></span>
+      <span class="stats-gl">tokens — the currency AI work is billed in · a compaction — the chat got summarized to fit the model’s memory</span>
+    </section>
+  </div>
+  <div class="exp-h"><span class="eyebrow">Explore this session</span></div>
+  <nav class="tiles" data-st aria-label="Section navigation">
+    <a class="tile big" href="#fixes" style="--i:0">
+      <span class="go" aria-hidden="true">→</span>
+      <span class="bign num">${D.fixes.headline_count}</span>
+      <h3>Fix these</h3>
+      <span class="tz">Repeated chores damame can retire for you — applied as one batch, hands-free.</span>
+      <span class="stat-line num"><span class="chip">11 rituals · 10–48× each</span></span>
+    </a>
+    <a class="tile big voice" href="#coach" style="--i:1">
+      <span class="go" aria-hidden="true">→</span>
+      <span class="bign num">3</span>
+      <h3>Worth adopting</h3>
+      <span class="tz">Three habits, one recommendation each — the coaching voice of this profile.</span>
+      <span class="stat-line num"><span class="chip cur-quality"><span class="dot" aria-hidden="true"></span>quality ×2</span><span class="chip cur-time"><span class="dot" aria-hidden="true"></span>time ×1</span></span>
+    </a>
+    <a class="tile" href="#receipts" style="--i:2">
+      <span class="go" aria-hidden="true">→</span>
+      <h3>Receipts</h3>
+      <span class="tz">Every finding with its proof line.</span>
+      <span class="stat-line num">${sev("major")} ${sevTally.major} · ${sev("moderate")} ${sevTally.moderate} · ${sev("minor")} ${sevTally.minor}</span>
+    </a>
+    <a class="tile" href="#infra" style="--i:3">
+      <span class="go" aria-hidden="true">→</span>
+      <h3>Not your inefficiency</h3>
+      <span class="tz">Infra noise, in its own room.</span>
+      <span class="stat-line num"><span class="chip">2 findings · never scored</span></span>
+    </a>
+    <a class="tile" href="#grading" style="--i:4">
+      <span class="go" aria-hidden="true">→</span>
+      <h3>How it was graded</h3>
+      <span class="tz">Five parameters, versions, privacy.</span>
+      ${spark()}
+    </a>
+  </nav>
+</div>`;
+}
+
+function vFixes(){
+  return `<div class="view" data-route="fixes">
+  <a class="up" href="#home"><span class="arr" aria-hidden="true">←</span> Overview</a>
+  <div data-st>
+    <div style="--i:0"><span class="eyebrow">The fix surface</span>
+      <h1 class="pg">damame can fix ${D.fixes.headline_count} things</h1>
+      <p class="lede">These are chores it watched you repeat by hand. Each one becomes a hook <span class="gl">— a small rule in settings.json that runs a command for you automatically</span>. Apply them as one batch; they leave your attention for good.</p>
+    </div>
+    <div class="fixlist" style="--i:1">
+      ${D.fixes.items.map(f=>`<div class="fixrow">
+        <span class="mk" aria-hidden="true"></span>
+        <span class="fw"><span class="what">${f.what}</span><span class="dest num">${f.destination}</span></span>
+      </div>`).join("")}
+    </div>
+    <div class="fix-actions" style="--i:2">
+      <button class="btn" data-act="review-diff">Review the diff</button>
+      <span class="mock-note">mock action — the real app opens the settings.json diff for your approval</span>
+    </div>
+    <p class="ledger" style="--i:3">${D.fixes.ledger_note}</p>
+  </div>
+</div>`;
+}
+
+function coachCard(c, i){
+  const dis = dismissed.has(c.id) ? " dismissed" : "";
+  return `<article class="card${c.flagship?" flagship":""}${dis}" data-card="${c.id}" style="--i:${i}">
+    <div class="chiprow">
+      ${c.flagship?`<span class="flag-tag">★ Flagship — start here</span>`:""}
+      ${cur(c.impact)} ${prov(c.provenance)}
+      ${c.votes.length>1?`<span class="sig num">${c.votes.length} signals point here</span>`:""}
+    </div>
+    <h3><a href="#coach/${c.id}">${c.headline}</a></h3>
+    <span class="proof num">${c.proof}</span>
+    <div class="acts">
+      <a class="btn small" href="#coach/${c.id}">${c.primary}</a>
+      <button class="btn quiet small" data-act="dismiss" data-id="${c.id}">Not relevant</button>
+    </div>
+    <div class="dis-note">Marked not relevant — damame won’t bring it up again.
+      <button class="btn quiet small" data-act="undismiss" data-id="${c.id}">Undo</button></div>
+  </article>`;
+}
+
+function vCoach(){
+  return `<div class="view" data-route="coach">
+  <a class="up" href="#home"><span class="arr" aria-hidden="true">←</span> Overview</a>
+  <div data-st>
+    <div style="--i:0"><span class="eyebrow">The coach</span>
+      <h1 class="pg">Worth adopting</h1>
+      <p class="lede">Three habits, grouped by root cause — you’ll never read the same advice twice. Open one for its evidence and recipe.</p>
+    </div>
+    ${D.coach.map((c,i)=>coachCard(c,i+1)).join("")}
+  </div>
+</div>`;
+}
+
+function vCoachDetail(id){
+  const c = D.coach.find(x=>x.id===id);
+  if(!c) return vCoach();
+  return `<div class="view" data-route="coach/${id}">
+  <a class="up" href="#coach"><span class="arr" aria-hidden="true">←</span> Worth adopting</a>
+  <div data-st>
+    <header class="detail-h" style="--i:0">
+      <div class="chiprow">${c.flagship?`<span class="flag-tag">★ Flagship</span>`:""}${cur(c.impact)} ${prov(c.provenance)}
+        ${c.votes.length>1?`<span class="sig num">${c.votes.length} signals point here</span>`:""}</div>
+      <h1 class="pg">${c.headline}</h1>
+    </header>
+    <p class="body-p" style="--i:1">${c.body}</p>
+    <div style="--i:2">
+      <h2 class="sec-h">The recipe — ${c.recipe}</h2>
+      <ol class="steps">${c.steps.map(s=>`<li>${s}</li>`).join("")}</ol>
+    </div>
+    <div style="--i:3">
+      <h2 class="sec-h">Evidence</h2>
+      <div class="evstats num">${c.evstats.map(([n,l])=>`<span class="stat"><span class="stat-n">${n}</span><span class="stat-l">${l}</span></span>`).join("")}</div>
+      ${c.votes.map(([v,expl])=>`<div class="evrow">
+        <span><span class="evl num">${v}</span><br><span class="evd">${expl}</span></span>
+        <button class="btn quiet small" data-act="transcript">Open in transcript</button>
+      </div>`).join("")}
+      ${c.id==="freeze-pattern"?[1,2,3,4,5].map(n=>`<div class="evrow">
+        <span><span class="evl">Version ${n} of 5</span><br><span class="evd">One telling of the cold-opus probe — each drifts a little from the last.</span></span>
+        <button class="btn quiet small" data-act="transcript">Open in transcript</button></div>`).join(""):""}
+      <p class="mock-note">“Open in transcript” is a mock affordance in this prototype — the real app jumps to the exact turns.</p>
+    </div>
+    <div style="--i:4">
+      <h2 class="sec-h">Provenance</h2>
+      <p class="body-p">${prov(c.provenance)}<br><span class="gl">verified — a person checked this finding against the transcript; it isn’t a raw guess. Savings shown by damame are labeled measured (counted in this transcript) or modeled (estimated).</span></p>
+      <div class="acts" style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" data-act="adopt">${c.detailPrimary}</button>
+        <button class="btn quiet" data-act="dismiss-detail" data-id="${c.id}">Not relevant</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+function vReceipts(){
+  const groups = [["major","Major"],["moderate","Moderate"],["minor","Minor"]];
+  return `<div class="view" data-route="receipts">
+  <a class="up" href="#home"><span class="arr" aria-hidden="true">←</span> Overview</a>
+  <div data-st>
+    <div style="--i:0"><span class="eyebrow">The ledger</span>
+      <h1 class="pg">Receipts</h1>
+      <p class="lede">Every finding, with its numbers as the proof line — not the headline. <a href="#grading">See how these grade into the score →</a></p>
+    </div>
+    ${groups.map(([g,label],gi)=>{
+      const rows = D.receipts.filter(r=>r.sev===g);
+      return `<section class="grp" style="--i:${gi+1}">
+      <div class="grp-h">${sev(g)}<span class="eyebrow">${rows.length} finding${rows.length>1?"s":""}</span></div>
+      ${rows.map((r,ri)=>{const rid=`ev-${g}-${ri}`;return `<div class="rrow">
+        <div class="rrow-top">${sev(r.sev)}<span class="hl">${r.hl}</span>${cur(r.cur)}</div>
+        <div class="proofline"><span class="proof num">${r.proof}</span>
+          <button class="evtoggle num" data-act="toggle-ev" aria-expanded="false" aria-controls="${rid}">
+            <span class="tw" aria-hidden="true">›</span>show me where (${r.n} evidence)</button></div>
+        <div class="evpanel" id="${rid}" hidden>
+          ${r.note}<br><span class="proof num">${r.n} piece${r.n>1?"s":""} of evidence recorded in this transcript.</span>
+          <br><button class="btn quiet small" data-act="transcript">Open in transcript</button>
+        </div>
+      </div>`}).join("")}
+      </section>`}).join("")}
+    <section class="clean" style="--i:4">
+      <span class="eyebrow">Nothing caught in 5 categories</span>
+      <ul>${D.clean.map(([id,label])=>`<li title="${id}">${label}</li>`).join("")}</ul>
+      <p class="gl" style="font-size:12.5px">${D.clean_note}</p>
+    </section>
+  </div>
+</div>`;
+}
+
+function vInfra(){
+  return `<div class="view" data-route="infra">
+  <a class="up" href="#home"><span class="arr" aria-hidden="true">←</span> Overview</a>
+  <div data-st>
+    <div style="--i:0"><span class="eyebrow">A separate room</span>
+      <h1 class="pg">Not your inefficiency</h1>
+      <p class="lede">Some waste isn’t yours. Provider hiccups and session-resume side effects live here, visibly apart — and they never count against your score. Keeping them out is how the score stays honest.</p>
+    </div>
+    <section class="infra-room" style="--i:1" aria-label="Infrastructure findings, excluded from score">
+      <span class="stamp">Excluded from your score</span>
+      ${D.not_yours.map(n=>`<div class="panel">
+        <p style="font-weight:600;font-size:14px;margin-bottom:4px">${n.hl}</p>
+        <span class="proof num">${n.proof}</span>
+      </div>`).join("")}
+      <p class="gl" style="font-size:12.5px;margin-top:6px">These were detected, counted, and set aside before grading began. Nothing here needs fixing by you.</p>
+    </section>
+  </div>
+</div>`;
+}
+
+function vGrading(){
+  const s = D.session;
+  return `<div class="view" data-route="grading">
+  <a class="up" href="#home"><span class="arr" aria-hidden="true">←</span> Overview</a>
+  <div data-st>
+    <div style="--i:0"><span class="eyebrow">Transparency</span>
+      <h1 class="pg">How it was graded</h1>
+      <p class="lede">Five parameters, each scored 0–100, combine into the session score of <strong class="num">${s.score}</strong>. Infra noise is excluded before grading. Nothing in this page is a black box.</p>
+    </div>
+    <div class="grade-grid" style="--i:1">
+      ${s.parameters.map((p,i)=>`<div class="grow" style="--i:${i}">
+        <span class="lb">${p.label}</span><span class="vl num">${p.score}</span>
+        <span class="tk"><b style="--v:${p.score}"></b></span>
+        <span class="ds">${D.paramNotes[p.id]}</span>
+      </div>`).join("")}
+    </div>
+    <section class="panel" style="--i:2">
+      <span class="eyebrow">Capabilities exercised — ${D.capabilities.exercised.length} of ${D.capabilities.of}</span>
+      <div class="caps">
+        ${D.capabilities.exercised.map(c=>`<span class="on">✓ ${c}</span>`).join("")}
+        <span>${D.capabilities.of - D.capabilities.exercised.length} not yet exercised</span>
+      </div>
+      <p class="gl" style="font-size:12.5px">Recognition only — never a penalty. ${D.capabilities.highlights}.
+      <br>subagents / delegations — side tasks handed to helper sessions · slash commands — saved, reusable prompts.</p>
+    </section>
+    <div class="vgrid" style="--i:3">
+      <div class="panel"><span class="eyebrow">Honesty vocabulary</span>
+        <p style="margin-top:8px;font-size:13px"><strong>verified</strong> — checked by a person against the transcript · <strong>candidate</strong> — detected, awaiting review.<br>
+        <strong>measured</strong> — counted in this transcript · <strong>modeled</strong> — estimated from patterns. Savings always carry one of these labels.</p>
+      </div>
+      <div class="panel"><span class="eyebrow">Versions &amp; privacy</span>
+        <p style="margin-top:8px;font-size:13px" class="num">damame 0.6.0 · score@1 · adapter claude-code 0.1.0<br>
+        <span class="gl">Analyzed locally. Nothing left your machine.</span></p>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+/* ================= router ================= */
+const ROUTES = {
+  home:    { depth:0, crumbs:[], render:vHome },
+  fixes:   { depth:1, crumbs:["Fix these"], render:vFixes },
+  coach:   { depth:1, crumbs:["Worth adopting"], render:vCoach },
+  receipts:{ depth:1, crumbs:["Receipts"], render:vReceipts },
+  infra:   { depth:1, crumbs:["Not your inefficiency"], render:vInfra },
+  grading: { depth:1, crumbs:["How it was graded"], render:vGrading }
+};
+let lastDepth = 0, firstRender = true;
+
+function parseHash(){
+  const h = location.hash.replace(/^#/,"");
+  if(h === "" ) return { key:"home" };
+  if(ROUTES[h]) return { key:h };
+  const m = h.match(/^coach\/([\w-]+)$/);
+  if(m && D.coach.some(c=>c.id===m[1])) return { key:"coach-detail", id:m[1] };
+  return null; /* unknown hash (e.g. skip-link target): let the browser handle it */
+}
+
+function renderCrumbs(key, id){
+  let parts = [];
+  if(key==="home") parts = [];
+  else if(key==="coach-detail"){
+    const c = D.coach.find(x=>x.id===id);
+    parts = [["Worth adopting","#coach"],[c.recipe,null]];
+  } else parts = [[ROUTES[key].crumbs[0],null]];
+  let html = key==="home"
+    ? `<li><span aria-current="page">Overview</span></li>`
+    : `<li><a href="#home">Overview</a></li>` + parts.map(([label,href])=>
+        href ? `<li><a href="${href}">${label}</a></li>` : `<li><span aria-current="page">${label}</span></li>`).join("");
+  crumbsEl.innerHTML = html;
+}
+
+function render(){
+  const r = parseHash() || (firstRender ? {key:"home"} : null);
+  if(!r) return;
+  const depth = r.key==="coach-detail" ? 2 : ROUTES[r.key].depth;
+  const dir = depth >= lastDepth ? "f" : "b";
+  const html = r.key==="coach-detail" ? vCoachDetail(r.id) : ROUTES[r.key].render();
+
+  const old = main.querySelector(".view:not(.view-exit)");
+  if(old && !RM){
+    old.classList.add("view-exit","out-"+dir);
+    old.setAttribute("aria-hidden","true");
+    old.addEventListener("animationend", ()=>old.remove(), {once:true});
+    setTimeout(()=>old.remove(), 450);
+  } else if(old){ old.remove(); }
+
+  main.insertAdjacentHTML("beforeend", html);
+  const nv = main.querySelector(".view:not(.view-exit):last-of-type");
+  nv.classList.add(dir==="f"?"in-f":"in-b");
+  nv.querySelectorAll("[data-count]").forEach(countUp);
+
+  renderCrumbs(r.key, r.id);
+  scrollTo({top:0, behavior:"instant"});
+  if(!firstRender) main.focus({preventScroll:true});
+  firstRender = false;
+  lastDepth = depth;
+}
+
+function countUp(el){
+  const end = +el.dataset.count;
+  if(RM){ el.textContent = fmt(end); return; }
+  const dur = 950, t0 = performance.now();
+  const step = t => {
+    const p = Math.min(1,(t-t0)/dur), e = 1-Math.pow(1-p,3);
+    el.textContent = fmt(Math.round(end*e));
+    if(p<1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* ================= interactions ================= */
+let toastT;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove("show"), 3800);
+}
+
+document.addEventListener("click", e=>{
+  const b = e.target.closest("[data-act]");
+  if(!b) return;
+  const act = b.dataset.act;
+  if(act==="review-diff"){
+    document.querySelectorAll(".fixrow").forEach(r=>r.classList.add("queued"));
+    toast("Prototype — in the real app, this opens the settings.json diff for your approval. 4 fixes queued.");
+  }
+  else if(act==="dismiss"){
+    dismissed.add(b.dataset.id);
+    b.closest(".card").classList.add("dismissed");
+  }
+  else if(act==="undismiss"){
+    dismissed.delete(b.dataset.id);
+    b.closest(".card").classList.remove("dismissed");
+  }
+  else if(act==="dismiss-detail"){
+    dismissed.add(b.dataset.id);
+    toast("Marked not relevant — damame won’t bring it up again. Undo from the Worth adopting page.");
+    location.hash = "#coach";
+  }
+  else if(act==="adopt"){
+    toast("Prototype — in the real app, this saves the recipe and the fix ledger starts measuring it.");
+  }
+  else if(act==="transcript"){
+    toast("Mock affordance — the real app opens the exact turns in your local transcript.");
+  }
+  else if(act==="toggle-ev"){
+    const panel = document.getElementById(b.getAttribute("aria-controls"));
+    const open = b.getAttribute("aria-expanded")==="true";
+    b.setAttribute("aria-expanded", String(!open));
+    panel.hidden = open;
+  }
+});
+
+document.addEventListener("keydown", e=>{
+  if(e.key!=="Escape") return;
+  const r = parseHash();
+  if(!r || r.key==="home") return;
+  location.hash = r.key==="coach-detail" ? "#coach" : "#home";
+});
+
+addEventListener("hashchange", render);
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>damame — Kinetic</title>
+<style>
+/* ============ tokens ============ */
+:root{
+  --bg:#120F1E; --bg2:#191331; --card:#1D1737; --card2:#241D45;
+  --line:#332A56; --line2:#453A72;
+  --ink:#F1EDFB; --mut:#A89ECB; --faint:#7A6FA0;
+  --ele:#8F79FF; --tea:#4DE0D2; --amb:#FFB454; --red:#FF7086; --grn:#5BE3A4;
+  --grad:linear-gradient(100deg,var(--ele),var(--tea));
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px; --pad:clamp(16px,4vw,40px);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--sans);
+  line-height:1.5;min-height:100vh;overflow-x:hidden;
+}
+::selection{background:var(--ele);color:#0E0B18}
+/* ============ animated ground: gradient blobs + grain ============ */
+.ground{position:fixed;inset:0;z-index:-1;overflow:hidden;background:var(--bg)}
+.ground::before,.ground::after{
+  content:"";position:absolute;width:60vmax;height:60vmax;border-radius:50%;
+  filter:blur(90px);opacity:.16;will-change:transform;
+}
+.ground::before{background:#6A4DFF;top:-25vmax;left:-15vmax;animation:drift1 26s ease-in-out infinite alternate}
+.ground::after{background:#1B8F86;bottom:-30vmax;right:-18vmax;animation:drift2 32s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(12vmax,10vmax) scale(1.15)}}
+@keyframes drift2{to{transform:translate(-10vmax,-8vmax) scale(1.1)}}
+.grain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* ============ a11y ============ */
+.skip{position:absolute;left:12px;top:-60px;z-index:99;background:var(--ele);color:#0E0B18;
+  padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none;transition:top .2s}
+.skip:focus{top:12px}
+:focus-visible{outline:2px solid var(--tea);outline-offset:3px;border-radius:4px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* ============ top bar ============ */
+.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:18px;
+  padding:14px var(--pad);background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.mark{font-weight:900;font-size:1.15rem;letter-spacing:-.03em;color:var(--ink);text-decoration:none}
+.mark b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.top nav{display:flex;gap:2px;margin-left:auto;overflow-x:auto;font-family:var(--mono);font-size:.72rem}
+.top nav a{color:var(--mut);text-decoration:none;padding:7px 10px;border-radius:8px;position:relative;white-space:nowrap}
+.top nav a::after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:2px;
+  background:var(--grad);border-radius:2px;transform:scaleX(0);transform-origin:left;transition:transform .25s}
+.top nav a:hover{color:var(--ink)} .top nav a:hover::after{transform:scaleX(1)}
+.top nav a[aria-current="page"]{color:var(--ink)} .top nav a[aria-current="page"]::after{transform:scaleX(1)}
+/* ============ views + transitions ============ */
+main{display:block;position:relative;z-index:1}
+.view{display:none;padding:clamp(24px,5vw,56px) var(--pad) 40px;max-width:1080px;margin:0 auto}
+.view.on{display:block}
+.motion-ok .view.on.enter{animation:viewIn .45s cubic-bezier(.22,.9,.3,1) both}
+.motion-ok .view.on.leave{animation:viewOut .16s ease-in both}
+@keyframes viewIn{from{opacity:0;transform:translateY(16px)}}
+@keyframes viewOut{to{opacity:0;transform:translateY(-10px)}}
+.motion-ok .view.on.enter [data-s]{opacity:0;animation:rise .55s cubic-bezier(.2,.85,.25,1.04) forwards;
+  animation-delay:calc(90ms + var(--i,0)*65ms)}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.motion-ok .kword{display:inline-block;opacity:0;animation:wordIn .6s cubic-bezier(.2,.9,.25,1.05) forwards;
+  animation-delay:calc(120ms + var(--w,0)*55ms)}
+@keyframes wordIn{from{opacity:0;transform:translateY(.55em) rotate(1.5deg)}to{opacity:1;transform:none}}
+/* ============ shared page furniture ============ */
+.back{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.75rem;
+  color:var(--tea);text-decoration:none;margin-bottom:18px}
+.back:hover{text-decoration:underline}
+.eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+h1{font-size:clamp(1.7rem,4.6vw,2.7rem);font-weight:900;letter-spacing:-.03em;line-height:1.08;margin:8px 0 10px}
+.lede{color:var(--mut);max-width:56ch;margin-bottom:26px}
+.def{color:var(--faint);font-size:.82rem;max-width:62ch}
+.def i{color:var(--mut);font-style:normal;font-weight:600}
+.num,.proof,.chip,.stat b,.pnum{font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:.66rem;letter-spacing:.06em;
+  padding:3px 9px;border-radius:99px;border:1px solid var(--line2);color:var(--mut);text-transform:uppercase}
+.chip.quality{border-color:#5f4bd8;color:#B5A6FF}
+.chip.time{border-color:#22796f;color:#6FE7D9}
+.chip.limits{border-color:#8a6224;color:#FFC97E}
+.chip.ok{border-color:#2c7a55;color:var(--grn)}
+.sev{font-family:var(--mono);font-size:.68rem;white-space:nowrap}
+.sev.major{color:var(--red)} .sev.moderate{color:var(--amb)} .sev.minor{color:var(--faint)}
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;cursor:pointer;text-decoration:none;
+  font:700 .85rem var(--sans);padding:11px 20px;border-radius:10px;color:#0E0B18;
+  background:var(--grad);transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px -8px rgba(143,121,255,.55)}
+.btn.ghost{background:none;color:var(--mut);border:1px solid var(--line2)}
+.btn.ghost:hover{color:var(--ink);box-shadow:none}
+/* ============ HOME hero ============ */
+.hero{display:grid;grid-template-columns:auto 1fr;gap:clamp(20px,5vw,56px);align-items:center;margin-bottom:8px}
+.scorebox{position:relative;width:clamp(190px,32vw,250px);aspect-ratio:1;display:grid;place-items:center}
+.arc{position:absolute;inset:0;transform:rotate(-90deg)}
+.arc circle{fill:none;stroke-width:6;stroke-linecap:round}
+.arc .bgc{stroke:var(--line)}
+.arc .fgc{stroke:url(#arcg);stroke-dasharray:var(--val,0) 100;transition:stroke-dasharray 1.5s cubic-bezier(.2,.8,.2,1)}
+.digits{display:flex;font-weight:900;font-size:clamp(3.6rem,9vw,5.2rem);letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums}
+.digit{height:1em;overflow:hidden}
+.reel{display:block;transition:transform 1.35s cubic-bezier(.22,1.14,.32,1)}
+.reel span{display:block;height:1em;text-align:center}
+.of100{position:absolute;bottom:17%;font-family:var(--mono);font-size:.72rem;color:var(--faint)}
+.hero-copy .eyebrow{margin-bottom:2px}
+.hero-copy h1{margin-bottom:6px}
+.span-line{font-family:var(--mono);font-size:.75rem;color:var(--faint);margin-bottom:14px}
+.story{color:var(--mut);max-width:52ch}
+/* waveform */
+.wavewrap{margin:30px 0 6px}
+.wave{width:100%;height:96px;display:block;border-radius:10px}
+.wavecap{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:8px;font-family:var(--mono);font-size:.7rem;color:var(--faint)}
+.wavecap .amb{color:var(--amb)}
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:26px 0 10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.stat b{display:block;font-size:1.35rem;font-weight:700;letter-spacing:-.02em}
+.stat span{font-size:.72rem;color:var(--faint)}
+.glossary{margin:8px 0 30px}
+/* params mini */
+.params{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:30px}
+.params h2{font-size:.85rem;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.params h2 a{font:400 .72rem var(--mono);color:var(--tea);text-decoration:none}
+.params h2 a:hover{text-decoration:underline}
+.prow{display:grid;grid-template-columns:minmax(120px,180px) 1fr 3ch;gap:12px;align-items:center;padding:5px 0;font-size:.8rem}
+.prow .plabel{color:var(--mut)}
+.ptrack{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden}
+.pfill{height:100%;background:var(--grad);border-radius:99px;transform:scaleX(var(--p,0));transform-origin:left;
+  transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
+.pnum{font-size:.78rem;text-align:right;color:var(--ink)}
+/* doors */
+.doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:16px;perspective:900px}
+.door{display:block;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:22px;text-decoration:none;color:var(--ink);will-change:transform;
+  transition:transform .25s cubic-bezier(.2,.8,.3,1.1),border-color .25s,box-shadow .25s}
+.door:hover{border-color:var(--line2);box-shadow:0 16px 40px -18px rgba(143,121,255,.4)}
+.door .eyebrow{margin-bottom:8px}
+.door h3{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin-bottom:6px}
+.door p{color:var(--mut);font-size:.82rem;margin-bottom:14px}
+.door .go{font-family:var(--mono);font-size:.72rem;color:var(--tea)}
+.door em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* infra strip / room */
+.infra-strip{display:block;border:1px dashed #3E6663;background:#15211F;border-radius:var(--r);
+  padding:16px 20px;color:var(--mut);text-decoration:none;font-size:.85rem;margin-bottom:34px;transition:border-color .25s}
+.infra-strip:hover{border-color:var(--tea)}
+.infra-strip b{color:#8FD9CF}
+.room{background:#15211F;border:1px dashed #3E6663;border-radius:var(--r);padding:clamp(18px,4vw,32px)}
+.room h1,.room .eyebrow{color:#CDEEE8}
+.room .eyebrow{color:#6FA79E}
+/* ============ FIXES ============ */
+.fixlist{display:grid;gap:10px;margin:22px 0}
+.fix{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.fix p{font-size:.9rem;max-width:48ch}
+.fix .dest{font-family:var(--mono);font-size:.68rem;color:var(--tea);white-space:nowrap}
+.fixact{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:20px 0 10px}
+.ledger{color:var(--faint);font-size:.82rem;max-width:58ch}
+.diff{display:none;background:#0E0B18;border:1px solid var(--line);border-radius:12px;
+  padding:16px 18px;margin-top:18px;overflow-x:auto}
+.diff.open{display:block}
+.motion-ok .diff.open{animation:rise .4s cubic-bezier(.2,.85,.25,1) both}
+.diff pre{font:.74rem/1.6 var(--mono);color:var(--mut)}
+.diff .add{color:var(--grn)}
+.diff .meta{color:var(--faint)}
+.diff-note{font-size:.72rem;color:var(--faint);margin-top:10px;font-family:var(--mono)}
+/* ============ COACH ============ */
+.coachgrid{display:grid;gap:14px;margin-top:22px;perspective:900px}
+.ccard{display:block;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:22px;color:var(--ink);text-decoration:none;will-change:transform;
+  transition:transform .25s cubic-bezier(.2,.8,.3,1.1),border-color .25s,box-shadow .25s}
+.ccard:hover{border-color:var(--line2);box-shadow:0 16px 40px -18px rgba(77,224,210,.35)}
+.ccard.flag{background:linear-gradient(140deg,var(--card2),var(--card));border-color:var(--line2)}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.flagtag{font-family:var(--mono);font-size:.66rem;color:var(--amb);letter-spacing:.08em}
+.ccard h3{font-size:clamp(1.05rem,2.4vw,1.3rem);font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-bottom:8px}
+.ccard .proof{display:block;font-size:.7rem;color:var(--faint);margin-bottom:10px}
+.ccard .go{font-family:var(--mono);font-size:.72rem;color:var(--tea)}
+.votes{font-size:.78rem;color:var(--mut);margin-bottom:10px}
+/* coach detail */
+.dstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:20px 0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin:14px 0}
+.panel h2{font-size:.8rem;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+.panel ol,.panel ul{padding-left:20px;display:grid;gap:8px;font-size:.88rem;color:var(--mut)}
+.panel .proof{font-size:.74rem;color:var(--faint)}
+.sigrow{display:grid;gap:8px;font-size:.85rem}
+.sigrow li{list-style:none}
+.sigrow b{font-family:var(--mono);font-size:.74rem;color:var(--ink);font-weight:600}
+.vrow{display:flex;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:.84rem;flex-wrap:wrap}
+.vrow:last-child{border-bottom:0}
+.vrow b{font-family:var(--mono);font-size:.72rem;color:var(--tea);font-weight:600;white-space:nowrap}
+.vrow span{color:var(--mut)}
+.mock{font-family:var(--mono);font-size:.68rem;color:var(--faint)}
+.acts{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.dismissed{border-color:var(--line);opacity:.45}
+.dismiss-note{font-family:var(--mono);font-size:.72rem;color:var(--faint);margin-top:10px}
+/* ============ RECEIPTS ============ */
+.rlist{display:grid;gap:8px;margin:22px 0}
+.rrow{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px}
+.rtop{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.rtop p{font-size:.88rem;flex:1;min-width:200px}
+.rrow .proof{display:block;font-size:.7rem;color:var(--faint);margin-top:4px}
+.where{background:none;border:0;cursor:pointer;font:600 .7rem var(--mono);color:var(--tea);padding:2px 0}
+.where:hover{text-decoration:underline}
+.where-note{display:none;font-family:var(--mono);font-size:.7rem;color:var(--faint);margin-top:6px}
+.where-note.open{display:block}
+.clean{background:var(--card);border:1px solid #2c4a3c;border-radius:var(--r);padding:18px 20px;margin:26px 0 10px}
+.clean h2{font-size:.85rem;margin-bottom:8px;color:var(--grn)}
+.cleanrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+/* ============ footer ============ */
+footer{border-top:1px solid var(--line);padding:26px var(--pad) 40px;position:relative;z-index:1;
+  max-width:1080px;margin:20px auto 0;display:grid;gap:8px}
+footer p{font-family:var(--mono);font-size:.7rem;color:var(--faint)}
+footer .caps{color:var(--mut)}
+footer .caps b{color:var(--ink);font-weight:600}
+/* ============ responsive ============ */
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .hero-copy{display:grid;justify-items:center}
+  .story{max-width:100%}
+  .prow{grid-template-columns:minmax(90px,120px) 1fr 3ch;font-size:.74rem}
+  .fix{flex-direction:column;align-items:flex-start}
+}
+/* ============ reduced motion: complete static page ============ */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="ground" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="top">
+  <a class="mark" href="#home">dama<b>me</b></a>
+  <nav aria-label="Sections">
+    <a href="#home">Overview</a>
+    <a href="#fixes">Fixes</a>
+    <a href="#coach">Coach</a>
+    <a href="#receipts">Receipts</a>
+    <a href="#infra">Not yours</a>
+  </nav>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <!-- ================= HOME ================= -->
+  <section class="view" id="v-home" aria-labelledby="h-home">
+    <div class="hero">
+      <div class="scorebox" data-s role="img" aria-label="Session score: 42 out of 100">
+        <svg class="arc" viewBox="0 0 120 120" aria-hidden="true">
+          <defs><linearGradient id="arcg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#8F79FF"/><stop offset="1" stop-color="#4DE0D2"/>
+          </linearGradient></defs>
+          <circle class="bgc" cx="60" cy="60" r="54" pathLength="100"/>
+          <circle class="fgc" id="arcfill" cx="60" cy="60" r="54" pathLength="100"/>
+        </svg>
+        <div class="digits" id="scoredigits" aria-hidden="true"></div>
+        <span class="of100" aria-hidden="true">/ 100</span>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow" data-s>Session profile · terminus2 · ~/terminus2</p>
+        <h1 id="h-home" tabindex="-1" data-s data-kinetic>An 80-day marathon in a single chat</h1>
+        <p class="span-line" data-s>Jun 9 → Aug 28, 2026 · 80 days</p>
+        <p class="story" data-s>Heavy delegation and background automation done well — taxed hard
+          by one eternal session and a lot of hand-carried data.</p>
+      </div>
+    </div>
+
+    <div class="wavewrap" data-s>
+      <canvas class="wave" id="wave" aria-label="Activity across the session: 962 turns over 80 days, with 26 compaction points marked"></canvas>
+      <p class="wavecap"><span>962 turns · one bar ≈ a slice of the session</span>
+        <span class="amb">▲ amber tick = a compaction — the chat got summarized to fit, losing detail</span></p>
+    </div>
+
+    <div class="stats" id="homestats" data-s></div>
+    <p class="def glossary" data-s><i>tokens</i> — the currency AI work is billed in. Of 4.34B billed here,
+      190M were fresh; the rest was the same long conversation re-sent again and again.
+      <i>Subagents</i> are helper AIs spawned for side tasks.</p>
+
+    <div class="params" data-s>
+      <h2>Five parameters behind the 42 <a href="#score">how the score is built →</a></h2>
+      <div id="paramrows"></div>
+    </div>
+
+    <div class="doors">
+      <a class="door" href="#fixes" data-s data-tilt>
+        <p class="eyebrow">Zone A · the fix surface</p>
+        <h3>damame can fix <em>4 things</em> for you</h3>
+        <p>Repeated manual rituals, converted to hooks — rules that run automatically. One diff to review.</p>
+        <span class="go">Open the batch →</span>
+      </a>
+      <a class="door" href="#coach" data-s data-tilt>
+        <p class="eyebrow">Zone B · worth adopting</p>
+        <h3><em>3 habits</em> worth adopting</h3>
+        <p>The coach's picks — written in time, quality and limits, not token counts.</p>
+        <span class="go">Meet the coach →</span>
+      </a>
+      <a class="door" href="#receipts" data-s data-tilt>
+        <p class="eyebrow">Zone C · the ledger</p>
+        <h3><em>8 findings</em>, receipts attached</h3>
+        <p>Every claim with its proof line. Plus 5 detectors that came back clean.</p>
+        <span class="go">Read the receipts →</span>
+      </a>
+    </div>
+
+    <a class="infra-strip" href="#infra" data-s>
+      <b>A different room:</b> 2 findings that are <b>not your inefficiency</b> — provider retries and
+      resume-orphaned branches. They never count against your score. Visit the room →
+    </a>
+  </section>
+
+  <!-- ================= SCORE ================= -->
+  <section class="view" id="v-score" aria-labelledby="h-score">
+    <a class="back" href="#home">← Overview</a>
+    <p class="eyebrow">Score breakdown</p>
+    <h1 id="h-score" tabindex="-1" data-s data-kinetic>How the 42 is built</h1>
+    <p class="lede" data-s>Five parameters, each 0–100, blended into one score. Two floors drag this
+      session down; two 88s prove the skill is already there.</p>
+    <div id="scorerows" data-s></div>
+  </section>
+
+  <!-- ================= FIXES ================= -->
+  <section class="view" id="v-fixes" aria-labelledby="h-fixes">
+    <a class="back" href="#home">← Overview</a>
+    <p class="eyebrow">Zone A · Tier 1 · machine-applicable</p>
+    <h1 id="h-fixes" tabindex="-1" data-s data-kinetic>damame can fix 4 things</h1>
+    <p class="lede" data-s>You ran the same checks by hand after your edits — hundreds of times.
+      Each becomes a <strong>hook</strong>: a small rule Claude Code runs for you automatically,
+      set once in settings.json. Apply the batch and these leave your attention for good.</p>
+    <div class="fixlist" id="fixlist" data-s></div>
+    <div class="fixact" data-s>
+      <button class="btn" id="diffbtn" aria-expanded="false" aria-controls="diffblock">Review the diff</button>
+      <span class="mock">one action applies the whole batch · mock in this prototype</span>
+    </div>
+    <p class="ledger" data-s>After you apply: damame measures your next sessions and shows what
+      stopped happening — receipts, not promises.</p>
+    <div class="diff" id="diffblock" role="region" aria-label="Proposed settings.json diff">
+<pre><span class="meta">--- a/.claude/settings.json
++++ b/.claude/settings.json
+@@ hooks @@</span>
+<span class="add">+  "hooks": {
++    "PostToolUse": [{ "matcher": "Edit|Write", "hooks": [
++      { "type": "command", "command": "python day80/explore.py --check" },
++      { "type": "command", "command": "./warden sim --quick" },
++      { "type": "command", "command": "make day72-verify" }
++      /* …8 more rituals in the full batch */
++    ]}]
++  }</span></pre>
+      <p class="diff-note">+ marks added lines · mock preview — the real diff is generated from your transcript</p>
+    </div>
+  </section>
+
+  <!-- ================= COACH ================= -->
+  <section class="view" id="v-coach" aria-labelledby="h-coach">
+    <a class="back" href="#home">← Overview</a>
+    <p class="eyebrow">Zone B · Tier 2 · the voice of the page</p>
+    <h1 id="h-coach" tabindex="-1" data-s data-kinetic>Three things worth adopting</h1>
+    <p class="lede" data-s>Not homework — three habit changes, each grouped from every signal that
+      points at the same root cause. Open one for its evidence.</p>
+    <div class="coachgrid" id="coachgrid" data-s></div>
+  </section>
+
+  <!-- ================= COACH DETAIL (JS-filled) ================= -->
+  <section class="view" id="v-detail" aria-labelledby="h-detail"></section>
+
+  <!-- ================= RECEIPTS ================= -->
+  <section class="view" id="v-receipts" aria-labelledby="h-receipts">
+    <a class="back" href="#home">← Overview</a>
+    <p class="eyebrow">Zone C · the ledger</p>
+    <h1 id="h-receipts" tabindex="-1" data-s data-kinetic>Every finding, with its receipt</h1>
+    <p class="lede" data-s>Each row: severity, the cost currency it hits, and the proof line in small
+      print. <span class="def"><i>cache</i> — the discount for re-sending the unchanged part of a chat;
+      a miss re-bills it at full price.</span></p>
+    <p class="def" data-s style="margin-bottom:6px">Severity marks: <span class="sev major">▲ major</span> ·
+      <span class="sev moderate">■ moderate</span> · <span class="sev minor">● minor</span> — never color alone.</p>
+    <div class="rlist" id="rlist" data-s></div>
+    <div class="clean" data-s>
+      <h2>Came back clean</h2>
+      <div class="cleanrow" id="cleanrow"></div>
+      <p class="def">233 tool errors occurred — none formed a loop. 87 delegations — none missed.
+        Silence here is earned, not assumed (and not proof of perfection).</p>
+    </div>
+    <p data-s><a class="back" href="#score" style="margin:0">How these feed the score →</a></p>
+  </section>
+
+  <!-- ================= INFRA ================= -->
+  <section class="view" id="v-infra" aria-labelledby="h-infra">
+    <a class="back" href="#home">← Overview</a>
+    <div class="room">
+      <p class="eyebrow" data-s>Zone D · a separate room</p>
+      <h1 id="h-infra" tabindex="-1" data-s data-kinetic>Not your inefficiency</h1>
+      <p class="lede" data-s>Infrastructure weather. These happened in your session, but they are the
+        provider's or the tooling's — <strong>they never count against your score</strong>. They live in
+        this room so they can never be mistaken for your habits.</p>
+      <div class="rlist" id="infralist" data-s></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p class="caps"><b>4 of 7</b> capabilities exercised — recognition only, never a demerit ·
+    220 background tasks · 87 delegations · 89 slash commands · 358 targeted reads</p>
+  <p>damame 0.6.0 · score@1 · adapter claude-code 0.1.0</p>
+  <p>Analyzed locally. Nothing left your machine.</p>
+</footer>
+
+<script>
+"use strict";
+/* ============ inline data (from data.json, unmodified numbers) ============ */
+const DATA = {
+  session: {
+    name:"terminus2", project:"~/terminus2", span:"Jun 9 → Aug 28, 2026 · 80 days", score:42,
+    parameters:[
+      {id:"cost-efficiency",label:"Cost efficiency",score:88,desc:"How much of the spend was doing real work. High — delegation and background automation kept it lean."},
+      {id:"context-hygiene",label:"Context hygiene",score:0,desc:"How clean the chat's working memory stayed. Floored by one 80-day session and 26 compactions."},
+      {id:"redundant-work",label:"Redundant work",score:0,desc:"Work paid for more than once. Floored by full-price re-billing and hand-carried repeats."},
+      {id:"missed-capabilities",label:"Missed capabilities",score:33,desc:"Tools that would have helped but went unused. 4 of 7 exercised — recognition, never a demerit."},
+      {id:"prompting-recovery",label:"Prompting & recovery",score:88,desc:"How well requests landed and how errors were recovered. Strong — 233 errors, zero loops."}
+    ],
+    stats:[ {v:962,l:"turns"}, {v:758,l:"from you"}, {v:7719,l:"tool calls"},
+      {v:87,l:"subagent runs"}, {v:26,l:"compactions"},
+      {v:4.34,d:2,suf:"B",l:"tokens billed"}, {v:190,suf:"M",l:"fresh tokens"} ]
+  },
+  fixes:[
+    {what:"Automate the day80 explore check that followed your edits 48 times",dest:"PostToolUse hook → settings.json"},
+    {what:"Automate the warden sim run that followed edits 21 times",dest:"PostToolUse hook → settings.json"},
+    {what:"Automate the day72 verification ritual (13 times)",dest:"PostToolUse hook → settings.json"},
+    {what:"8 more repeated rituals detected — include them in the batch",dest:"PostToolUse hooks"}
+  ],
+  coach:[
+    {id:"source-access",impact:"time",
+     headline:"Claude couldn't check the grading site itself — so you hand-carried the results, 170 times",
+     body:"Every verification cycle stalled until you delivered the next block by hand. Give Claude direct access to the source and the stall-fix-stall loop becomes one continuous run.",
+     proof:"170 same-shaped blocks entered by hand · 1.64MB · 8 distinct templates",
+     votes:["paste-relay ×8"], recipe:"Stop hand-carrying data into the chat",
+     prov:"verified · curated from a real transcript", cta:"See the recipe"},
+    {id:"session-hygiene",impact:"quality",
+     headline:"One chat became your permanent workspace — Claude's memory of this project is a 26th-generation summary",
+     body:"80 days, 26 resumes, 26 compactions: every morning re-bought the whole pile, and every compaction silently decided what your project's history was. Move memory to files (notes.md + CLAUDE.md); make fresh sessions cheap.",
+     proof:"eternal-session (80d/26/26) · 17.5M cache-miss tokens (messages_changed) · 26 compactions",
+     votes:["eternal-session","cache-thrash","compaction-burn"], recipe:"End each task with a notes.md handoff, start the next fresh",
+     prov:"verified · measured in this session", cta:"See the ritual"},
+    {id:"freeze-pattern",impact:"quality",flagship:true,
+     headline:"You re-improvised the same delegation 5 times — the skill you need already exists, written by you, in installments",
+     body:"Each retelling of the cold-opus probe drifted a little. Your 5 versions are the draft: merge them into a saved skill and the best version becomes the only version. (Your 89 slash-command uses prove the frozen form wins.)",
+     proof:"“cold-opus probe …” re-improvised ×5 · every instance linked below",
+     votes:["repeated-delegation"], recipe:"Freeze your own pattern",
+     prov:"verified · curated from this transcript", cta:"Show my 5 versions"}
+  ],
+  receipts:[
+    {sev:"major",cur:"limits",h:"The whole conversation got re-billed from scratch, repeatedly",p:"cache-thrash · 17.5M missed input tokens (messages_changed)",n:8},
+    {sev:"major",cur:"limits",h:"Mid-session tool changes broke the cache 4 ways",p:"cache-thrash · 3.7M (tools_changed) + 691k (system) + 576k (model)",n:8},
+    {sev:"major",cur:"quality",h:"26 compactions — details were lost to summaries 26 times",p:"compaction-burn · measured pauses recorded",n:26},
+    {sev:"major",cur:"time",h:"You worked as the data courier, 8 different templates' worth",p:"paste-relay · 170 blocks · 1.64MB by hand",n:8},
+    {sev:"major",cur:"quality",h:"One session spanned 80 days — a permanent workspace",p:"eternal-session · 26 resumes · 26 compactions",n:1},
+    {sev:"moderate",cur:"limits",h:"A direction change discarded 949k tokens of built work",p:"abandoned-work · measured, rewind branch",n:1},
+    {sev:"moderate",cur:"quality",h:"Same delegation re-improvised 5× — drift risk each time",p:"repeated-delegation · no token claim (honest: the cost is drift)",n:5},
+    {sev:"minor",cur:"time",h:"11 manual rituals followed your edits (10–48× each)",p:"post-edit-ritual · all 11 automatable as hooks",n:11}
+  ],
+  clean:["edit-fail-loop","bash-error-loop","duplicate-tool-call","oversized-context-reads","missed-delegation"],
+  notYours:[
+    {h:"344 transient API errors + 22 terminal failures — the provider's weather",p:"retry-storm · always excluded from your score"},
+    {h:"3 branches orphaned by session resumes — nobody's fault, nothing to fix",p:"abandoned-work (infra) · 357k + 265k + 875k tokens"}
+  ]
+};
+const SIGNALS = {
+  "paste-relay ×8":"you hand-carried data into the chat — 8 template shapes, 170 blocks",
+  "eternal-session":"one chat kept alive far past its task — 80 days, 26 resumes",
+  "cache-thrash":"the re-send discount kept breaking, so old turns were re-billed at full price",
+  "compaction-burn":"summaries kept replacing the real history — 26 times",
+  "repeated-delegation":"the same instructions re-written from memory each time, drifting a little"
+};
+const DETAILS = {
+  "source-access":{
+    stats:[{v:170,l:"blocks entered by hand"},{v:1.64,d:2,suf:"MB",l:"carried into the chat"},{v:8,l:"distinct templates"}],
+    steps:["Give Claude a way to read the grading site itself — a CLI, an API key, or a fetch script it can run.",
+      "Replace “paste the results” with “run the check” in your workflow.",
+      "Let the stall-fix-stall loop run as one continuous pass — you review outcomes, not transport data."]},
+  "session-hygiene":{
+    stats:[{v:80,l:"days in one chat"},{v:26,l:"resumes"},{v:26,l:"compactions"},{v:17.5,d:1,suf:"M",l:"cache-miss tokens"}],
+    steps:["End each task by writing a short notes.md handoff — what was done, what's next, what's fragile.",
+      "Start the next task in a fresh session that reads it. Fresh sessions become cheap, not costly.",
+      "Keep durable project facts in CLAUDE.md, not in chat history a summary can silently drop."]},
+  "freeze-pattern":{
+    stats:[{v:5,l:"improvised versions"},{v:89,l:"slash-command uses (the frozen form wins)"}],
+    steps:["Collect your 5 improvised versions — linked below.",
+      "Merge the best lines of each into one saved skill with a name.",
+      "Invoke it by name from now on. The best version becomes the only version."],
+    versions:[["v1 · Jun 14 · turn 118","the original cold-opus probe — 14 lines, sharpest framing"],
+      ["v2 · Jun 29 · turn 301","retold from memory — dropped the guard-rail step"],
+      ["v3 · Jul 12 · turn 476","re-added guard-rail, lost the output format"],
+      ["v4 · Jul 30 · turn 642","longest retelling — 22 lines, two contradictions"],
+      ["v5 · Aug 19 · turn 863","closest to v1 — proof the pattern is stable enough to freeze"]]}
+};
+
+/* ============ helpers ============ */
+const $=(s,c=document)=>c.querySelector(s), $$=(s,c=document)=>[...c.querySelectorAll(s)];
+const motionOK = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(motionOK) document.documentElement.classList.add("motion-ok");
+const fineHover = matchMedia("(hover:hover) and (pointer:fine)").matches;
+const fmt=(v,d=0)=> d? v.toFixed(d) : Math.round(v).toLocaleString("en-US");
+const SEVG={major:"▲",moderate:"■",minor:"●"};
+
+function countUp(el,v,d=0,suf=""){
+  if(!motionOK){ el.textContent=fmt(v,d)+suf; return; }
+  const t0=performance.now(), dur=1000;
+  const tick=t=>{ const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3);
+    el.textContent=fmt(v*e,d)+suf; if(p<1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+function statTiles(host,stats){
+  host.innerHTML="";
+  for(const s of stats){
+    const d=document.createElement("div"); d.className="stat";
+    d.innerHTML=`<b data-v></b><span></span>`;
+    d.querySelector("span").textContent=s.l; host.appendChild(d);
+    d.querySelector("b").textContent=fmt(0,s.d||0)+(s.suf||"");
+  }
+}
+function runStats(host,stats){
+  $$("[data-v]",host).forEach((b,i)=>{ const s=stats[i];
+    setTimeout(()=>countUp(b,s.v,s.d||0,s.suf||""), motionOK? i*90:0); });
+}
+/* kinetic headline: split into words (visual only) */
+function kinetic(h){
+  if(!motionOK || h.dataset.split) return; h.dataset.split="1";
+  const text=h.textContent; h.setAttribute("aria-label",text); h.textContent="";
+  text.split(" ").forEach((w,i)=>{ const s=document.createElement("span");
+    s.className="kword"; s.style.setProperty("--w",i); s.textContent=w; s.setAttribute("aria-hidden","true");
+    h.appendChild(s); h.appendChild(document.createTextNode(" ")); });
+}
+
+/* ============ score reels + arc ============ */
+function buildScoreReels(){
+  const host=$("#scoredigits"); host.innerHTML="";
+  const ds=String(DATA.session.score).split("");
+  if(!motionOK){ host.textContent=DATA.session.score; $("#arcfill").style.setProperty("--val",DATA.session.score); return; }
+  ds.forEach((ch,i)=>{
+    const digit=document.createElement("span"); digit.className="digit";
+    const reel=document.createElement("span"); reel.className="reel";
+    for(let k=0;k<20;k++){ const c=document.createElement("span"); c.textContent=k%10; reel.appendChild(c); }
+    digit.appendChild(reel); host.appendChild(digit);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      setTimeout(()=>{ reel.style.transform=`translateY(${-(10+ +ch)}em)`; }, 200+i*170);
+    }));
+  });
+  setTimeout(()=>$("#arcfill").style.setProperty("--val",DATA.session.score), 250);
+}
+
+/* ============ waveform canvas ============ */
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let waveRAF=null, waveStart=0;
+function drawWave(){
+  const cv=$("#wave"); if(!cv) return;
+  const dpr=Math.min(2,devicePixelRatio||1), w=cv.clientWidth, h=cv.clientHeight;
+  cv.width=w*dpr; cv.height=h*dpr;
+  const ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
+  const n=Math.max(60,Math.floor(w/3)), rng=mulberry(563), series=[];
+  for(let i=0;i<n;i++){
+    const burst=Math.pow(Math.sin(i*0.061)+1,2)/4, spike=rng()>0.93?0.85:0;
+    series.push(Math.min(1,0.12+rng()*0.3+burst*0.5+spike*rng()));
+  }
+  const compIdx=[]; const r2=mulberry(26);
+  for(let k=0;k<26;k++) compIdx.push(Math.floor((k+r2()*0.9)*(n/26)));
+  const render=(t)=>{
+    ctx.clearRect(0,0,w,h);
+    const p = motionOK? Math.min(1,(t-waveStart)/1500) : 1;
+    const ease=1-Math.pow(1-p,3);
+    for(let i=0;i<n;i++){
+      const reveal=ease*n; if(i>reveal) continue;
+      const pop=Math.min(1,(reveal-i)/6), over=1+0.25*(1-pop);
+      let bh=series[i]*(h-16)*Math.min(1,pop*over);
+      let alpha=0.35+series[i]*0.55;
+      if(motionOK) alpha+=Math.sin(t/900+i*0.07)*0.08;
+      const g=ctx.createLinearGradient(0,h,0,h-bh-8);
+      g.addColorStop(0,"rgba(143,121,255,"+Math.max(0.1,alpha)+")");
+      g.addColorStop(1,"rgba(77,224,210,"+Math.max(0.1,alpha*0.9)+")");
+      ctx.fillStyle=g; ctx.fillRect(i*(w/n),h-8-bh,Math.max(1.4,w/n-1.2),bh);
+    }
+    ctx.fillStyle="rgba(255,180,84,0.9)";
+    for(const ci of compIdx){ if(ci>ease*n) continue; const x=ci*(w/n);
+      ctx.fillRect(x,4,1.4,h-10);
+      ctx.beginPath(); ctx.moveTo(x-3.5,4); ctx.lineTo(x+4.5,4); ctx.lineTo(x+0.5,10); ctx.fill();
+    }
+    if(motionOK && !document.hidden) waveRAF=requestAnimationFrame(render);
+  };
+  cancelAnimationFrame(waveRAF);
+  if(motionOK){ waveStart=performance.now(); waveRAF=requestAnimationFrame(render); }
+  else render(0);
+}
+addEventListener("resize",()=>{ if($("#v-home").classList.contains("on")) drawWave(); });
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && $("#v-home").classList.contains("on")) drawWave(); });
+
+/* ============ builders ============ */
+function chipEl(cls,txt){ return `<span class="chip ${cls}">${txt}</span>`; }
+function buildHome(){
+  statTiles($("#homestats"),DATA.session.stats);
+  const pr=$("#paramrows"); pr.innerHTML="";
+  for(const p of DATA.session.parameters){
+    const row=document.createElement("div"); row.className="prow";
+    row.innerHTML=`<span class="plabel">${p.label}</span>
+      <span class="ptrack"><span class="pfill" data-p="${p.score}"></span></span>
+      <span class="pnum">${p.score}</span>`;
+    pr.appendChild(row);
+  }
+}
+function buildScorePage(){
+  const host=$("#scorerows"); host.innerHTML="";
+  for(const p of DATA.session.parameters){
+    const d=document.createElement("div"); d.className="panel";
+    d.innerHTML=`<div class="prow" style="grid-template-columns:minmax(120px,220px) 1fr 3ch">
+        <span class="plabel" style="color:var(--ink);font-weight:700">${p.label}</span>
+        <span class="ptrack"><span class="pfill" data-p="${p.score}"></span></span>
+        <span class="pnum">${p.score}</span></div>
+      <p class="def" style="margin-top:8px">${p.desc}</p>`;
+    host.appendChild(d);
+  }
+}
+function buildFixes(){
+  const host=$("#fixlist"); host.innerHTML="";
+  for(const f of DATA.fixes){
+    const d=document.createElement("div"); d.className="fix";
+    d.innerHTML=`<p>${f.what}</p><span class="dest">${f.dest}</span>`;
+    host.appendChild(d);
+  }
+}
+function coachCard(c){
+  const a=document.createElement("a");
+  a.className="ccard"+(c.flagship?" flag":""); a.href="#coach/"+c.id;
+  a.dataset.tilt="";
+  const votes=c.votes.length>1?
+    `<p class="votes">${c.votes.length} signals point here: <b class="num" style="font-size:.72rem;color:var(--tea)">${c.votes.join(" · ")}</b></p>`:"";
+  a.innerHTML=`<div class="chiprow">${c.flagship?'<span class="flagtag">★ FLAGSHIP — your own pattern</span>':""}
+      ${chipEl(c.impact,c.impact)}${chipEl("ok","✓ "+c.prov.split(" · ")[0])}</div>
+    <h3>${c.headline}</h3>${votes}
+    <span class="proof">${c.proof}</span>
+    <span class="go">${c.cta} →</span>`;
+  return a;
+}
+function buildCoach(){
+  const host=$("#coachgrid"); host.innerHTML="";
+  const order=[...DATA.coach].sort((x,y)=>(y.flagship?1:0)-(x.flagship?1:0));
+  order.forEach(c=>host.appendChild(coachCard(c)));
+}
+function buildDetail(id){
+  const c=DATA.coach.find(x=>x.id===id); if(!c) return false;
+  const x=DETAILS[id], v=$("#v-detail");
+  const sigs=c.votes.map(vt=>{ const key=vt.replace(/ ×\d+$/,"");
+    return `<li class="vrow"><b>${vt}</b><span>${SIGNALS[vt]||SIGNALS[key]||""}</span></li>`; }).join("");
+  const versions=x.versions? `<div class="panel"><h2>Your 5 versions <span class="mock">(mock preview — pinned from your transcript)</span></h2>
+      ${x.versions.map(([a,b])=>`<div class="vrow"><b>${a}</b><span>${b}</span></div>`).join("")}</div>`:"";
+  v.innerHTML=`<a class="back" href="#coach">← All three</a>
+    <div class="chiprow" data-s>${c.flagship?'<span class="flagtag">★ FLAGSHIP</span>':""}
+      ${chipEl(c.impact,"impact: "+c.impact)}${chipEl("ok","✓ "+c.prov)}</div>
+    <h1 id="h-detail" tabindex="-1" data-s data-kinetic>${c.recipe}</h1>
+    <p class="lede" data-s>${c.headline}.</p>
+    <p class="story" data-s style="margin-bottom:8px">${c.body}</p>
+    <div class="dstats" data-s id="dstats"></div>
+    <div class="panel" data-s><h2>${c.votes.length>1? c.votes.length+" signals point here":"The signal"}</h2>
+      <ul class="sigrow">${sigs}</ul>
+      <p class="proof" style="margin-top:10px">${c.proof}</p></div>
+    <div class="panel" data-s><h2>The recipe</h2>
+      <ol>${x.steps.map(s=>`<li>${s}</li>`).join("")}</ol></div>
+    ${versions? `<div data-s>${versions}</div>`:""}
+    <div class="acts" data-s>
+      <button class="btn" data-adopt>${c.flagship?"Freeze it as a skill":"Adopt this"}</button>
+      <button class="btn ghost" data-dismiss>Not relevant</button>
+    </div>
+    <p class="dismiss-note" hidden data-note></p>`;
+  statTiles($("#dstats"),x.stats);
+  $("[data-adopt]",v).addEventListener("click",e=>{
+    const n=$("[data-note]",v); n.hidden=false;
+    n.textContent="Marked for adoption — damame will watch your next sessions for it (mock)."; });
+  $("[data-dismiss]",v).addEventListener("click",()=>{
+    const n=$("[data-note]",v); n.hidden=false;
+    n.textContent="Dismissed — this card won't come back for this project (mock).";
+    v.querySelectorAll(".panel,.dstats").forEach(p=>p.classList.add("dismissed")); });
+  return true;
+}
+function buildReceipts(){
+  const host=$("#rlist"); host.innerHTML="";
+  for(const r of DATA.receipts){
+    const d=document.createElement("div"); d.className="rrow";
+    d.innerHTML=`<div class="rtop"><span class="sev ${r.sev}">${SEVG[r.sev]} ${r.sev}</span>
+        ${chipEl(r.cur,r.cur)}<p>${r.h}</p>
+        <button class="where" aria-expanded="false">show me where</button></div>
+      <span class="proof">${r.p}</span>
+      <span class="where-note">would pin ${r.n} ${r.n===1?"place":"places"} in the transcript (mock)</span>`;
+    const b=$(".where",d), note=$(".where-note",d);
+    b.addEventListener("click",()=>{ const open=note.classList.toggle("open");
+      b.setAttribute("aria-expanded",open); });
+    host.appendChild(d);
+  }
+  const cr=$("#cleanrow"); cr.innerHTML="";
+  DATA.clean.forEach(c=>cr.insertAdjacentHTML("beforeend",chipEl("ok","✓ "+c)));
+}
+function buildInfra(){
+  const host=$("#infralist"); host.innerHTML="";
+  for(const r of DATA.notYours){
+    const d=document.createElement("div"); d.className="rrow"; d.style.borderColor="#2c4a46";
+    d.innerHTML=`<div class="rtop"><span class="sev minor">○ infra</span><p>${r.h}</p></div>
+      <span class="proof">${r.p}</span>`;
+    host.appendChild(d);
+  }
+}
+
+/* ============ hover tilt (fine pointers + motion only) ============ */
+function armTilt(scope){
+  if(!motionOK||!fineHover) return;
+  $$("[data-tilt]",scope).forEach(card=>{
+    if(card.dataset.armed) return; card.dataset.armed="1";
+    card.addEventListener("pointermove",e=>{
+      const r=card.getBoundingClientRect();
+      const rx=((e.clientY-r.top)/r.height-.5)*-4, ry=((e.clientX-r.left)/r.width-.5)*4;
+      card.style.transform=`translateY(-4px) rotateX(${rx}deg) rotateY(${ry}deg)`; });
+    card.addEventListener("pointerleave",()=>{ card.style.transform=""; });
+  });
+}
+
+/* ============ router ============ */
+const VIEWS={home:"v-home",score:"v-score",fixes:"v-fixes",coach:"v-coach",receipts:"v-receipts",infra:"v-infra"};
+let current=null; const visited=new Set();
+function enter(v,routeKey){
+  v.classList.add("on");
+  if(motionOK){ v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
+  $$("[data-s]",v).forEach((el,i)=>el.style.setProperty("--i",i));
+  $$("[data-kinetic]",v).forEach(kinetic);
+  armTilt(v);
+  scrollTo(0,0);
+  const h=$("h1",v); if(h) h.focus({preventScroll:true});
+  $$(".top nav a").forEach(a=>{
+    const target=a.getAttribute("href").slice(1);
+    const on=target===routeKey||(routeKey&&routeKey.startsWith("coach")&&target==="coach");
+    if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+  });
+  if(v.id==="v-home"){ buildScoreReels(); drawWave();
+    if(!visited.has("home")){ runStats($("#homestats"),DATA.session.stats); visited.add("home"); }
+    else $$("#homestats [data-v]").forEach((b,i)=>{const s=DATA.session.stats[i];b.textContent=fmt(s.v,s.d||0)+(s.suf||"");});
+    setTimeout(()=>$$(".pfill",v).forEach(f=>f.style.setProperty("--p",f.dataset.p/100)), motionOK?350:0);
+  }
+  if(v.id==="v-score") setTimeout(()=>$$(".pfill",v).forEach(f=>f.style.setProperty("--p",f.dataset.p/100)), motionOK?300:0);
+  if(v.id==="v-detail"){ const st=$("#dstats");
+    runStats(st, DETAILS[location.hash.split("/")[1]].stats); }
+}
+function route(){
+  let key=(location.hash||"#home").slice(1);
+  if(key==="main"){ if(current) return; key="home"; }   /* skip-link target, not a route */
+  let viewId;
+  if(key.startsWith("coach/")){ viewId = buildDetail(key.split("/")[1])? "v-detail":"v-coach"; if(viewId==="v-coach") key="coach"; }
+  else viewId=VIEWS[key];
+  if(!viewId){ if(!current){ key="home"; viewId="v-home"; } else return; }
+  const next=document.getElementById(viewId);
+  if(next===current && viewId!=="v-detail") return;
+  const swap=()=>{ if(current){ current.classList.remove("on","enter","leave"); } current=next; enter(next,key); };
+  if(current&&motionOK){ current.classList.add("leave"); setTimeout(swap,160); }
+  else swap();
+}
+addEventListener("hashchange",route);
+
+/* ============ fixes diff toggle ============ */
+$("#diffbtn").addEventListener("click",()=>{
+  const d=$("#diffblock"), open=d.classList.toggle("open");
+  $("#diffbtn").setAttribute("aria-expanded",open);
+  $("#diffbtn").textContent=open? "Hide the diff":"Review the diff";
+});
+
+/* ============ boot ============ */
+buildHome(); buildScorePage(); buildFixes(); buildCoach(); buildReceipts(); buildInfra();
+route();
+</script>
+</body>
+</html>
