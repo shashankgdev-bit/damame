@@ -101,7 +101,8 @@ const COACH_GROUPS: Array<{
     impact: "quality",
     recipe: "freeze-your-own-pattern",
     headline: ({ findings }) => {
-      const spawns = findings.reduce((s, f) => s + Number(f.evidence.metrics?.spawn_count ?? 0), 0);
+      // repeated-delegation records the family size as `occurrences`
+      const spawns = findings.reduce((s, f) => s + Number(f.evidence.metrics?.occurrences ?? 0), 0);
       return spawns > 0
         ? `The same delegation was re-improvised ${spawns} times — the skill you need already exists, written by you, in installments`
         : "The same delegation keeps getting re-improvised — freeze it into a skill or workflow";
@@ -124,7 +125,7 @@ const COACH_GROUPS: Array<{
     id: "targeted-reads",
     rules: ["oversized-context-reads"],
     impact: "limits",
-    recipe: "session-per-task-bootstrap",
+    recipe: "targeted-reads",
     headline: () => "Whole files entered the context to answer narrow questions — read targeted",
     body: "Grep for the section, then read around it. Whole-file reads belong to whole-file tasks.",
   },
@@ -174,17 +175,33 @@ function fmtTokens(n: number): string {
   return `${n} tokens`;
 }
 
-/** The user's own prompt nearest before the finding's first evidence event. */
+/**
+ * The user's own prompt at the scene of the finding. Two cases:
+ *  - abandoned-work: the first evidence event IS the scene — the retracted
+ *    prompt at the abandoned branch's root ("the prompt you rewound from"),
+ *    which lives on the abandoned branch by definition.
+ *  - everything else: the nearest live human prompt strictly BEFORE the
+ *    first evidence event (exclusive — for paste-relay the evidence events
+ *    are themselves human messages, and echoing the paste back would not be
+ *    a scene).
+ */
 function scenePrompt(session: Session, finding: Finding): string | undefined {
+  const clip = (t: string) => {
+    const text = t.replace(/\s+/g, " ").trim();
+    return text.length > 180 ? `${text.slice(0, 180)}…` : text;
+  };
   const firstRef = finding.evidence.events[0];
   if (!firstRef) return undefined;
   const idx = session.events.findIndex((e) => e.event_id === firstRef.event_id);
   if (idx < 0) return undefined;
-  for (let i = idx; i >= 0; i--) {
+  const first = session.events[idx]!;
+  if (first.kind === "user_message" && first.origin === "human" && !first.is_meta && first.on_abandoned_branch) {
+    return clip(first.text);
+  }
+  for (let i = idx - 1; i >= 0; i--) {
     const e = session.events[i]!;
     if (e.kind === "user_message" && e.origin === "human" && !e.is_meta && !e.on_abandoned_branch) {
-      const text = e.text.replace(/\s+/g, " ").trim();
-      return text.length > 180 ? `${text.slice(0, 180)}…` : text;
+      return clip(e.text);
     }
   }
   return undefined;
@@ -192,10 +209,21 @@ function scenePrompt(session: Session, finding: Finding): string | undefined {
 
 function proofLine(f: Finding): string {
   const parts: string[] = [];
-  if (f.savings?.tokens) parts.push(`${fmtTokens(f.savings.tokens.value)} ${f.savings.basis}`);
+  // Exact-value dedupe: a metric that repeats the savings number adds no
+  // information (abandoned-work's branch total, cache-thrash's missed
+  // total). Substring matching failed both ways — formatted "1.3M" never
+  // contained "1288713", and tiny values false-matched inside bigger ones.
+  const shown = new Set<number>();
+  if (f.savings?.tokens) {
+    parts.push(`${fmtTokens(f.savings.tokens.value)} ${f.savings.basis}`);
+    shown.add(f.savings.tokens.value);
+  }
   const m = f.evidence.metrics ?? {};
-  for (const [k, v] of Object.entries(m).slice(0, 2)) {
-    if (typeof v === "number" && !parts.some((p) => p.includes(String(v)))) parts.push(`${k.replace(/_/g, " ")}: ${v.toLocaleString()}`);
+  for (const [k, v] of Object.entries(m).slice(0, 3)) {
+    if (typeof v !== "number" || shown.has(v)) continue;
+    parts.push(`${k.replace(/_/g, " ")}: ${v.toLocaleString()}`);
+    shown.add(v);
+    if (parts.length >= 3) break;
   }
   parts.push(`${f.rule.id}@${f.rule.version}`);
   return parts.join(" · ");

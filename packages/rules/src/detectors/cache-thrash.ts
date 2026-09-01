@@ -22,7 +22,7 @@ const INFRA_REASONS = new Set(["previous_message_not_found", "unavailable"]);
  */
 export const cacheThrash: Detector = {
   id: "cache-thrash",
-  version: "0.1.0",
+  version: "0.2.0", // 0.2.0: provider-side miss reasons (previous_message_not_found, unavailable) now carry category "infra" — same treatment as retry-storm and resume orphans, so they route to "not your inefficiency" and can never read as the user's fault. Review-driven fix.
   category: "context-hygiene",
   summary: "Prompt-cache misses reported by the API (missed input tokens re-processed at full price)",
   defaults: {
@@ -56,7 +56,10 @@ export const cacheThrash: Detector = {
       out.push(
         finding({
           rule: { id: this.id, version: this.version },
-          category: this.category,
+          // Provider-side reasons are the provider's weather: category
+          // "infra" keeps them out of the score and out of the user's
+          // receipts (they render in "not your inefficiency").
+          category: infra ? "infra" : this.category,
           severity,
           confidence: { source: "deterministic" },
           title: `${formatTokens(group.total)} input tokens missed the prompt cache (${reason})`,

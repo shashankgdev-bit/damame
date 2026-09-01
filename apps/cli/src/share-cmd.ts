@@ -48,18 +48,24 @@ export async function runShare(opts: { root?: string }, damameVersion: string): 
     `- findings per rule: ${[...ruleCounts.entries()].sort((a, b) => b[1] - a[1]).map(([r, n]) => `${r}×${n}`).join(" · ") || "none"}`,
     `- compactions: ${s.map((x) => x.totals.compactions ?? 0).join(", ")} · subagent runs: ${s.map((x) => x.totals.subagent_runs ?? 0).join(", ")}`,
     ``,
-    `_Numbers only — no prompts, no file names, no transcript content. Full schema: attach export.json if you're comfortable (same guarantee)._`,
+    `_Numbers only — no prompts, no file names, no transcript content._`,
   ];
   const body = lines.join("\n");
   const out = join(process.cwd(), "damame-share.md");
   writeFileSync(out, `${body}\n`);
 
+  // Truncate the RAW body before encoding — slicing the encoded string can
+  // cut through the middle of a %XX escape and yield a malformed URL.
   const url = `https://github.com/shashankgdev-bit/damame/issues/new?title=${encodeURIComponent(
     "calibration stats: " + s.length + " sessions",
-  )}&labels=${encodeURIComponent("calibration-data")}&body=${encodeURIComponent(body).slice(0, 6000)}`;
+  )}&labels=${encodeURIComponent("calibration-data")}&body=${encodeURIComponent(body.slice(0, 1800))}`;
 
   console.log(`\n${pc.bold("damame share")} — numbers-only stats, preview before anything leaves your machine`);
   console.log(pc.dim(`  wrote ${out} — read it; that is the entirety of what would be shared`));
-  console.log(pc.dim(`  full export (numbers only) at ${tmp}`));
+  console.log(
+    pc.dim(
+      `  full export (for your own use) at ${tmp} — note: finding titles in it can name files and commands; review before sharing it anywhere`,
+    ),
+  );
   console.log(`\n  open this to share it as a GitHub issue (nothing is sent until you press submit):\n  ${url}\n`);
 }

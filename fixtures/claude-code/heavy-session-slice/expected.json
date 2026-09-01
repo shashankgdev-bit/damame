@@ -22,7 +22,7 @@
     {
       "rule": {
         "id": "cache-thrash",
-        "version": "0.1.0"
+        "version": "0.2.0"
       },
       "category": "context-hygiene",
       "severity": "major",
@@ -180,7 +180,7 @@
     {
       "rule": {
         "id": "cache-thrash",
-        "version": "0.1.0"
+        "version": "0.2.0"
       },
       "category": "context-hygiene",
       "severity": "moderate",
@@ -225,7 +225,7 @@
     {
       "rule": {
         "id": "cache-thrash",
-        "version": "0.1.0"
+        "version": "0.2.0"
       },
       "category": "context-hygiene",
       "severity": "moderate",

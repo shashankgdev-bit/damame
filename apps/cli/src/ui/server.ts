@@ -14,7 +14,7 @@ import { DETECTORS, gradingVersion, runRules } from "@damame/rules";
 import { buildProfile, probeEnvironment, sessionSkills, summarizeWithCache } from "@damame/profile";
 import { feedbackStats, indexFindings, lastAnswers, recordAnswer, QUESTIONS, type Question } from "../feedback.js";
 import { computeRecurrence } from "../recurrence.js";
-import { auditFindings, auditorHealth, buildExcerpts, ClaudeCliDriver, humanAgreement, lastAudits } from "@damame/judge";
+import { auditFindings, auditorHealth, ClaudeCliDriver, humanAgreement, lastAudits } from "@damame/judge";
 import { buildSurfaces } from "../surfaces.js";
 import { briefWithCache, cachedBrief, type GeneratedBrief } from "@damame/brief";
 import { matchPlaybooks } from "@damame/playbooks";
@@ -524,7 +524,25 @@ async function analyzeSession(path: string): Promise<unknown> {
  * availability probed once.
  */
 const briefInFlight = new Map<string, Promise<GeneratedBrief>>();
-const auditInFlight = new Map<string, Promise<{ records: number; honeypots_caught: number; honeypots_total: number }>>();
+interface AuditJob {
+  running: boolean;
+  started_at: string;
+  result?: { records: number; honeypots_caught: number; honeypots_total: number };
+  error?: string;
+}
+/** Async audit jobs keyed by transcript path — POST starts one and returns
+ * immediately; the UI polls /audit/status. A held-open multi-minute response
+ * dies to browser fetch timeouts while the server keeps spending. */
+const auditJobs = new Map<string, AuditJob>();
+
+/** Browsers happily fire cross-origin POSTs at 127.0.0.1 from any web page.
+ * The bind address does not stop that — the Origin header does: state-writing
+ * and token-spending endpoints reject any origin that isn't this server. */
+function sameOrigin(req: IncomingMessage): boolean {
+  const origin = req.headers.origin;
+  if (!origin) return true; // same-origin fetches and curl send no Origin
+  return /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(origin);
+}
 let cliAvailable: Promise<boolean> | undefined;
 
 async function sessionBrief(path: string): Promise<{ status: string; [k: string]: unknown }> {
@@ -614,27 +632,56 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
           json(res, 404, { error: "session not found" });
           return;
         }
-        const { session } = await parseSessionWithChildren(target.path);
-        const metrics = computeMetrics(session);
-        const findings = runRules(session, metrics);
+        // Served from the mtime-keyed analysis cache — an estimate must not
+        // re-parse a 250MB transcript and freeze every other endpoint. The
+        // excerpt sizes are approximated from cited-event counts (capped the
+        // way buildExcerpts caps); the POST run builds real excerpts once.
+        const payload = (await analyzeSession(target.path)) as {
+          findings: Array<{ dedupe_key: string; evidence: { events: unknown[] } }>;
+        };
+        const findings = payload.findings;
+        const n = findings.length;
         const runs = 3;
-        const honeypots = Math.max(2, Math.floor(findings.length / 5));
-        const promptBytes = findings.reduce((sum, f) => sum + buildExcerpts(session, f).length + 1500, 0);
-        const estTokens = findings.length
-          ? Math.round(((promptBytes / findings.length) * (findings.length + honeypots) * runs) / 4)
-          : 0;
+        const honeypots = n ? Math.max(2, Math.floor(n / 5)) : 0;
+        const promptBytes = findings.reduce(
+          (sum, f) => sum + Math.min(9_000, Math.max(1, f.evidence.events.length) * 3_000) + 1_500,
+          0,
+        );
+        const low = n ? Math.round(((promptBytes / n) * (n + honeypots) * runs) / 4) : 0;
+        // Ceiling: every case escalates one extra run on the stronger model,
+        // plus an output allowance per call. CLI harness overhead per
+        // invocation is real but unmodeled — the range is labeled a floor.
+        const high = n ? Math.round(low * ((runs + 1) / runs) + (n + honeypots) * (runs + 1) * 500) : 0;
         json(res, 200, {
-          findings: findings.length,
+          findings: n,
+          finding_keys: findings.map((f) => f.dedupe_key),
           honeypots,
           runs,
-          est_tokens: estTokens,
+          est_tokens: low,
+          est_tokens_high: high,
           cli_available: await ClaudeCliDriver.available(),
-          running: auditInFlight.has(target.path),
+          running: auditJobs.get(target.path)?.running ?? false,
         });
+        return;
+      }
+      const auditStatusMatch = /^\/api\/session\/([\w-]+)\/audit\/status$/.exec(url.pathname);
+      if (req.method === "GET" && auditStatusMatch) {
+        const sessions = await discoverSessions(root);
+        const target = sessions.find((s) => s.sessionId.startsWith(auditStatusMatch[1]!));
+        if (!target) {
+          json(res, 404, { error: "session not found" });
+          return;
+        }
+        const job = auditJobs.get(target.path);
+        json(res, 200, job ?? { running: false });
         return;
       }
       const auditRunMatch = /^\/api\/session\/([\w-]+)\/audit$/.exec(url.pathname);
       if (req.method === "POST" && auditRunMatch) {
+        if (!sameOrigin(req)) {
+          json(res, 403, { error: "cross-origin request rejected" });
+          return;
+        }
         const sessions = await discoverSessions(root);
         const target = sessions.find((s) => s.sessionId.startsWith(auditRunMatch[1]!));
         if (!target) {
@@ -645,31 +692,74 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
           json(res, 503, { error: "claude CLI not found — the audit runs through your own claude login" });
           return;
         }
+        // Bind the run to the set the user consented to: the estimate hands
+        // out finding_keys; a still-growing session must not widen the spend.
+        let consentedKeys: Set<string> | undefined;
+        try {
+          const body = JSON.parse((await readBody(req)) || "{}") as { keys?: string[] };
+          if (Array.isArray(body.keys) && body.keys.length) consentedKeys = new Set(body.keys);
+        } catch {
+          /* no body = audit current set */
+        }
         // Single-flighted per transcript: two tabs must not double-spend.
-        let run = auditInFlight.get(target.path);
-        if (!run) {
-          run = (async () => {
+        const existing = auditJobs.get(target.path);
+        if (existing?.running) {
+          json(res, 202, { started: false, already_running: true });
+          return;
+        }
+        const job: AuditJob = { running: true, started_at: new Date().toISOString() };
+        auditJobs.set(target.path, job);
+        void (async () => {
+          try {
+            // Probe first: `claude --version` succeeds even logged-out, and a
+            // driver that answers nothing would pollute audits.jsonl with
+            // all-null verdicts reported as success.
+            const driver = new ClaudeCliDriver("haiku");
+            const probe = await driver.run('Reply with exactly: OK').catch(() => "");
+            if (!probe || !/\bOK\b/i.test(probe)) {
+              job.error = "the claude CLI is installed but answered nothing — are you logged in? (run: claude, then /login)";
+              return;
+            }
             const { session } = await parseSessionWithChildren(target.path);
             const metrics = computeMetrics(session);
-            const findings = runRules(session, metrics);
-            if (findings.length === 0) return { records: 0, honeypots_caught: 0, honeypots_total: 0 };
-            const result = await auditFindings(new ClaudeCliDriver("haiku"), session, findings, {
+            let findings = runRules(session, metrics);
+            if (consentedKeys) findings = findings.filter((f) => consentedKeys.has(f.dedupe_key));
+            if (findings.length === 0) {
+              job.result = { records: 0, honeypots_caught: 0, honeypots_total: 0 };
+              return;
+            }
+            const result = await auditFindings(driver, session, findings, {
               runs: 3,
               escalateModel: "sonnet",
             });
-            return {
-              records: result.records.filter((r) => !r.honeypot).length,
+            const real = result.records.filter((r) => !r.honeypot);
+            // Every question abstained AND zero votes cast anywhere = the
+            // driver returned garbage for the whole batch, not judgments.
+            const allNull =
+              result.records.length > 0 &&
+              result.records.every(
+                (r) =>
+                  r.accurate.answer === null &&
+                  r.applicable.answer === null &&
+                  r.accurate.votes_true + r.accurate.votes_false === 0,
+              );
+            if (allNull) {
+              job.error =
+                "every audit run came back invalid — the claude CLI likely failed mid-run; verdicts were not counted";
+              return;
+            }
+            job.result = {
+              records: real.length,
               honeypots_caught: result.honeypots_caught,
               honeypots_total: result.honeypots_total,
             };
-          })().finally(() => auditInFlight.delete(target.path));
-          auditInFlight.set(target.path, run);
-        }
-        try {
-          json(res, 200, await run);
-        } catch (error) {
-          json(res, 500, { error: String(error instanceof Error ? error.message : error) });
-        }
+          } catch (error) {
+            job.error = String(error instanceof Error ? error.message : error);
+          } finally {
+            job.running = false;
+          }
+        })();
+        json(res, 202, { started: true });
         return;
       }
       const briefMatch = /^\/api\/session\/([\w-]+)\/brief$/.exec(url.pathname);
@@ -712,6 +802,10 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
         return;
       }
       if (req.method === "POST" && url.pathname === "/api/feedback") {
+        if (!sameOrigin(req)) {
+          json(res, 403, { error: "cross-origin request rejected" });
+          return;
+        }
         const body = JSON.parse(await readBody(req));
         const question = body.question as Question;
         if (typeof body.key !== "string" || !QUESTIONS.includes(question) || typeof body.answer !== "boolean") {

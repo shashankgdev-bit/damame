@@ -61,7 +61,9 @@ describe("cache-thrash", () => {
     const findings = await run(path);
     expect(findings).toHaveLength(1);
     const f = findings[0]!;
-    expect(f.category).toBe("context-hygiene");
+    // v0.2.0: provider-side reasons carry category "infra" — routed to
+    // "not your inefficiency", excluded from the score, like retry-storm.
+    expect(f.category).toBe("infra");
     expect(f.severity).toBe("info");
     expect(f.description).toMatch(/infrastructure-side/);
     expect(f.recommendation.resource.kind).toBe("prompting_pattern");

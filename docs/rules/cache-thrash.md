@@ -54,3 +54,8 @@ invalidates every cached block after it.
 - summed misses just under `min_missed_tokens` (99,999 across one reason)
 - misses that cross the threshold only in aggregate across *different* reasons
   (no single reason group reaches the threshold)
+
+## Changelog
+
+- **0.2.0** — provider-side miss reasons (`previous_message_not_found`, `unavailable`) now carry category `infra`: they route to "not your inefficiency," are excluded from the score, and can never read as the user's fault — the same treatment retry-storm and resume-orphaned branches get. Found by adversarial review of the surfaces layer: the old info-severity findings were voting into the session-hygiene coach card as if the user had caused them.
+- **0.1.0** — initial rule.

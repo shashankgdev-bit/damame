@@ -823,39 +823,79 @@ function surfaceZones(d, sid) {
     ${s.coach_more.length ? `<div class="muted" style="font-size:12px">+ ${s.coach_more.length} more on the recommendations page</div>` : ""}</div>` : "";
   const notyours = s.not_yours.length ? `
     <div class="notyours"><b>Not your inefficiency:</b> ${s.not_yours.map((n) => esc(n.headline)).join(" · ")} — provider-side, never counted against you.</div>` : "";
-  return fixzone + coach + notyours + `
+  const auditbar = (s.receipts.length || s.not_yours.length) ? `
     <div class="auditbar" id="auditbar">
       <button id="auditbtn">Get a second opinion</button>
       <span>an LLM cross-examines each finding against its evidence — runs on your own claude account, verdicts stay local</span>
-    </div>`;
+    </div>` : "";
+  return fixzone + coach + notyours + auditbar;
 }
 
+// The audit runs as a server-side background job; the UI polls status so a
+// multi-minute run survives navigation, browser fetch timeouts, and other
+// tabs. The button is re-queried every update — a stale reference after a
+// re-render would write completion state into a detached node.
+let auditPoll = null;
+function setAuditLabel(text, disabled) {
+  const b = $("auditbtn");
+  if (b) { b.textContent = text; b.disabled = !!disabled; }
+}
+function pollAudit(sid) {
+  if (auditPoll) clearInterval(auditPoll);
+  auditPoll = setInterval(async () => {
+    try {
+      const st = await api(`/api/session/${sid}/audit/status`);
+      if (st.running) { setAuditLabel("auditing… (safe to keep browsing)", true); return; }
+      clearInterval(auditPoll); auditPoll = null;
+      if (st.error) { setAuditLabel("audit failed — " + st.error, false); return; }
+      if (st.result) {
+        setAuditLabel(`done — ${st.result.records} verdicts, honeypots ${st.result.honeypots_caught}/${st.result.honeypots_total}`, false);
+        // Refresh only if the user is still looking at this session — never
+        // yank a different page out from under them.
+        if ((location.hash || "").slice(1).startsWith(sid.slice(0, 8))) setTimeout(() => location.reload(), 900);
+      } else {
+        setAuditLabel("Get a second opinion", false);
+      }
+    } catch { /* transient poll failure — try again next tick */ }
+  }, 4000);
+}
 async function runAudit(sid) {
-  const btn = $("auditbtn");
+  const idle = "Get a second opinion";
+  let started = false;
   try {
-    btn.disabled = true;
-    btn.textContent = "estimating…";
+    setAuditLabel("estimating…", true);
     const est = await api(`/api/session/${sid}/audit/estimate`);
-    if (!est.cli_available) { alert("claude CLI not found — the audit runs through your own claude login."); return; }
-    if (est.running) { btn.textContent = "audit already running…"; return; }
+    if (!est.cli_available) {
+      setAuditLabel(idle, false);
+      alert("claude CLI not found — the audit runs through your own claude login.");
+      return;
+    }
+    if (!est.findings) { setAuditLabel("nothing to audit — no findings", true); return; }
+    if (est.running) { setAuditLabel("auditing… (started elsewhere)", true); pollAudit(sid); return; }
     const ok = confirm(
       `Second opinion on ${est.findings} findings\n` +
       `+ ${est.honeypots} hidden honeypots × ${est.runs} runs\n` +
-      `estimated ~${Math.round(est.est_tokens / 1000)}k input tokens on YOUR claude account.\n\nProceed?`);
-    if (!ok) return;
-    btn.textContent = "auditing… (a few minutes; safe to keep browsing)";
+      `estimated ${Math.round(est.est_tokens / 1000)}k–${Math.round((est.est_tokens_high || est.est_tokens) / 1000)}k input tokens ` +
+      `on YOUR claude account (a floor — CLI overhead per call is extra).\n\nProceed?`);
+    if (!ok) { setAuditLabel(idle, false); return; }
+    started = true;
     progressStart();
-    const r = await fetch(`/api/session/${sid}/audit`, { method: "POST" });
+    setAuditLabel("starting…", true);
+    const r = await fetch(`/api/session/${sid}/audit`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ keys: est.finding_keys || [] }),
+    });
     const out = await r.json();
-    if (!r.ok) throw new Error(out.error || "audit failed");
-    btn.textContent = `done — ${out.records} verdicts, honeypots ${out.honeypots_caught}/${out.honeypots_total}`;
-    setTimeout(() => location.reload(), 1200);
+    if (!r.ok && !out.already_running) throw new Error(out.error || "audit failed to start");
+    pollAudit(sid);
   } catch (e) {
-    btn.textContent = "audit failed — see terminal";
+    setAuditLabel("audit failed — see terminal", false);
     alert(String(e.message || e));
   } finally {
-    progressDone();
-    btn.disabled = false;
+    // progressStart only ran after consent; an unmatched progressDone would
+    // hide the shared top bar while other requests are still in flight.
+    if (started) progressDone();
   }
 }
 
