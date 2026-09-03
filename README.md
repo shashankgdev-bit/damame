@@ -1,11 +1,16 @@
 # damame
 
-**A profiler for your AI coding sessions.**
+**A profiler for your AI coding sessions — evaluation infrastructure for agent sessions.**
 
 damame analyzes agentic coding sessions — Claude Code transcripts first — and produces
 evidence-linked findings about how the session went: wasted retries, cache thrash,
 abandoned work, manual grinding that an available subagent would have handled, and
 resources (skills, agents, tools) that were available but unused.
+
+The detectors are graded against manufactured ground truth (recall 1.00 / precision 1.00
+over 540 planted-defect sessions) — see [EVAL.md](EVAL.md). A worked profile of a real
+80-day agent-task production pipeline is in
+[docs/case-study-task-production.md](docs/case-study-task-production.md).
 
 Think **Lighthouse/ESLint for AI-assisted development**: named, versioned, documented
 rules; every finding cites the exact transcript events it keys on; every savings number
@@ -20,13 +25,16 @@ and no layer ever grades its own homework:
 
 - **Detectors are graded by planted crimes.** A synthetic ground-truth corpus generates sessions
   with inefficiencies *planted by construction*, plus innocent look-alikes engineered to sit just
-  under thresholds. CI demands perfect recall on plants and zero false positives on innocents —
-  one miss fails the build. The gate has caught real detector bugs before any user saw them.
+  under thresholds — decision-boundary testing of each detector, not just the easy cases. CI
+  demands perfect recall on plants and zero false positives on innocents — one miss fails the
+  build. The gate has caught real detector bugs before any user saw them. Full method + the
+  current table: [EVAL.md](EVAL.md).
 - **The LLM judge is graded by counterfeits.** When an LLM audits findings, every batch silently
   includes *honeypots* — findings corrupted by construction (evidence swapped, counts inflated)
-  that the judge must refute. Its catch-rate is a live, label-free accuracy score; verdicts also
-  pass a mechanical quote gate (citations that don't literally appear are discarded), majority
-  voting with abstention, and calibration against human answers.
+  that the judge must refute. This is adversarial testing of the judge itself: its catch-rate is a
+  live, label-free accuracy score; verdicts also pass a mechanical quote gate (citations that
+  don't literally appear are discarded), majority voting with abstention, and calibration against
+  human answers.
 - **The AI-written brief is graded by citations.** The session story generator never sees the raw
   transcript — only a measured digest — and every claim must cite digest items. A dumb string
   check deletes uncited claims before render.

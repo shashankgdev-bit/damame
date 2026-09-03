@@ -127,7 +127,7 @@
 }
 * { box-sizing: border-box; margin: 0; }
 html, body { height: 100%; }
-body { background: var(--paper); color: var(--ink); font: 14px/1.55 var(--sans); }
+body { background: var(--paper); color: var(--ink); font: 450 14.5px/1.6 var(--sans); }
 .app { display: grid; grid-template-columns: 288px 1fr; height: 100vh; }
 .menu-btn { display: none; position: fixed; top: 10px; left: 10px; z-index: 21; background: var(--card); border: 1px solid var(--hair); border-radius: 8px; padding: 6px 10px; cursor: pointer; color: var(--ink); font: 12px var(--mono); }
 @media (max-width: 860px) {
@@ -505,6 +505,64 @@ h2.eyebrow { font-size: 10px; }
   .flash { animation: none; outline: 2px solid var(--pod); outline-offset: 2px; }
   .side { transition: none; }
 }
+/* ————— Sprint C port: clay hero · what-now · ledger (tokens keep every theme working) ————— */
+.hero { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 48px; padding: 26px 0 34px; border-bottom: 1px solid var(--hair); align-items: start; }
+.h-eyebrow { font: 500 12px var(--mono); color: var(--ink-2); letter-spacing: .08em; }
+.session-name { font: 500 clamp(30px, 4.6vw, 42px)/1.14 var(--serif); letter-spacing: -.012em; margin-top: 8px; text-wrap: balance; }
+.hero .briefbox { margin-top: 14px; min-height: 64px; }
+.hero .briefbox .big { font: italic 500 17.5px/1.6 var(--serif); color: var(--ink-2); max-width: 36em; letter-spacing: 0; }
+.hstats { margin-top: 20px; font: 12.5px/1.9 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.hstats b { color: var(--ink-2); font-weight: 500; }
+.hstats .sep { color: var(--hair); padding: 0 6px; }
+.scoreblock { display: block; padding-top: 2px; text-decoration: none; color: var(--ink); }
+.score-line2 { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+.score-num { font: 350 clamp(64px, 9vw, 92px)/1 var(--serif); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.score-of { font: 400 18px var(--serif); color: var(--ink-3); }
+.params { margin-top: 16px; display: grid; gap: 10px; }
+.param { display: grid; grid-template-columns: 1fr 34px; gap: 8px 10px; align-items: center; }
+.param .plabel { font-size: 12.5px; color: var(--ink-2); line-height: 1.3; }
+.param .pnum { font: 12.5px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.param .track { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--bar-notif); overflow: hidden; }
+.param .fill { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--pod), var(--pod-deep)); min-width: 2px; }
+.param.zero .fill { background: transparent; }
+.params-note { margin-top: 12px; font-size: 11.5px; color: var(--ink-3); }
+.scoreblock:hover .params-note { color: var(--pod-deep); }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; gap: 28px; } .scoreblock { border-top: 1px solid var(--hair); padding-top: 22px; } }
+
+.whatnow { padding: 30px 0 6px; }
+.wn-head { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.wn-row { display: flex; align-items: baseline; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--hair-2); }
+.wn-ic { color: var(--pod-deep); font-size: 15px; width: 20px; flex: none; text-align: center; }
+.wn-text { flex: 1; font-size: 15.5px; line-height: 1.55; max-width: 52em; }
+.wn-act { flex: none; font: 500 13px var(--sans); color: var(--pod-deep); text-decoration: none; border: 1px solid var(--hair); border-radius: 999px; padding: 7px 14px; background: var(--card); white-space: nowrap; }
+.wn-act:hover { border-color: var(--pod); background: var(--pod-tint); }
+.homefoot { margin-top: 26px; font: 12px var(--mono); color: var(--ink-3); }
+.homefoot a { color: var(--ink-2); text-decoration: none; }
+.homefoot a:hover { color: var(--pod-deep); }
+
+.fixlist { margin-top: 6px; }
+.fx-row { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--hair-2); }
+.fx-what { font-size: 14px; max-width: 46em; }
+.dest { font: 10.5px var(--mono); color: var(--pod-deep); background: var(--pod-tint); border-radius: 5px; padding: 3px 8px; white-space: nowrap; }
+.wn-actbar { margin-top: 16px; }
+
+.lg-row { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--hair-2); align-items: baseline; }
+.lg-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; position: relative; top: -1px; background: var(--info); }
+.lg-row.sev-major .lg-dot { background: var(--major); } .lg-row.sev-moderate .lg-dot { background: var(--moderate); } .lg-row.sev-minor .lg-dot { background: var(--minor); }
+.lg-body { flex: 1; min-width: 0; }
+.lg-head { font-size: 14.5px; line-height: 1.5; }
+.lg-proof { font: 11px var(--mono); color: var(--ink-3); margin-top: 4px; overflow-wrap: anywhere; }
+.lg-sev { flex: none; font: 600 10px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.lg-row.sev-major .lg-sev { color: var(--major); } .lg-row.sev-moderate .lg-sev { color: var(--moderate); } .lg-row.sev-minor .lg-sev { color: var(--minor); }
+.lg-where { margin-top: 6px; } .lg-where summary { cursor: pointer; font: 11px var(--mono); color: var(--pod-deep); list-style: none; }
+.lg-scene { margin-top: 6px; font: italic 13px/1.55 var(--serif); color: var(--ink-2); border-left: 2px solid var(--hair); padding: 2px 0 2px 10px; max-width: 60em; }
+.lg-audit { font: 11px var(--mono); color: var(--ink-2); margin-top: 4px; }
+
+.coolroom { margin-top: 28px; background: var(--minor-tint); border: 1px solid var(--hair); border-radius: 14px; padding: 18px 20px; }
+.coolroom h3 { font: 500 13px var(--mono); letter-spacing: .06em; color: var(--minor); text-transform: uppercase; }
+.cool-row { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--hair-2); font-size: 13.5px; align-items: baseline; }
+.cool-row:last-of-type { border-bottom: 0; }
+.cool-note { margin-top: 8px; font: 11px var(--mono); color: var(--ink-3); }
 </style>
 </head>
 <body>
@@ -753,82 +811,94 @@ function renderSession(d) {
   else renderHome(d);
 }
 
-function renderHome(d) {
+function sessionHero(d) {
   const f = d.facts;
+  const u = f.usage || {};
+  const fresh = (u.input_tokens ?? 0) + (u.output_tokens ?? 0) + (u.cache_creation_tokens ?? 0);
+  const days = d.meta.started_at && d.meta.ended_at
+    ? Math.max(1, Math.round((Date.parse(d.meta.ended_at) - Date.parse(d.meta.started_at)) / 86400000))
+    : null;
+  const agents = (d.agents || []).filter((a) => !a.on_abandoned_branch).length;
+  const sep = '<span class="sep">·</span>';
+  const params = (d.score?.buckets || []).map((b) => `
+      <div class="param${b.score === 0 ? " zero" : ""}" role="listitem">
+        <span class="plabel">${esc(b.label)}</span><span class="pnum">${b.score}</span>
+        <span class="track"><span class="fill" style="width:${b.score}%"></span></span>
+      </div>`).join("");
+  return `
+    <section class="hero" aria-label="Session identity and score">
+      <div>
+        <p class="h-eyebrow">${esc(d.meta.project || "session")}${days !== null ? ` ${sep} ${esc(fmtDate(d.meta.started_at))} → ${esc(fmtDate(d.meta.ended_at))} ${sep} ${days} day${days === 1 ? "" : "s"}` : ""}</p>
+        <h1 class="session-name">${esc(d.meta.title)}</h1>
+        <div class="briefbox" id="briefbox"><span class="muted">✦ reading this session's story… first open takes a moment; cached after</span><div class="mini-progress"><i></i></div></div>
+        <p class="hstats">
+          <b>${f.turn_count.toLocaleString()}</b> turns${sep}<b>${f.human_turn_count.toLocaleString()}</b> yours${sep}<b>${f.tool_call_count.toLocaleString()}</b> tool calls${sep}<b>${agents}</b> subagent runs${sep}<b>${f.compactions}</b> compaction${f.compactions === 1 ? "" : "s"}<br>
+          <b>${fmtTok(f.total_tokens)}</b> tokens total${sep}<b>${fmtTok(fresh)}</b> fresh
+        </p>
+      </div>
+      ${d.score ? `
+      <a class="scoreblock" href="#${d.meta.id.slice(0, 8)}/score" aria-label="Session score ${d.score.overall} out of 100 — how it's computed">
+        <p class="h-eyebrow">Session score</p>
+        <p class="score-line2"><span class="score-num">${d.score.overall}</span><span class="score-of">/ 100</span></p>
+        <div class="params" role="list" aria-label="Score parameters">${params}</div>
+        <p class="params-note">Five parameters. Infra weather never counts here. How it's computed →</p>
+      </a>` : ""}
+    </section>`;
+}
+
+/* Home below the hero: exactly three quiet rows — fix / change / proof.
+   One plain sentence and one action each; everything else lives one click
+   away. Headlines carry human quantities, never token counts. */
+function whatNow(d, sid) {
+  const s = d.surfaces || { fixes: [], coach: [], coach_more: [], receipts: [], not_yours: [] };
+  const rows = [];
+  if (s.fixes.length) {
+    rows.push(`
+    <div class="wn-row">
+      <span class="wn-ic" aria-hidden="true">⚙</span>
+      <span class="wn-text">${s.fixes.length} small thing${s.fixes.length === 1 ? "" : "s"} can be fixed automatically — hooks &amp; settings.</span>
+      <a class="wn-act" href="#${sid}/fixes">Fix these →</a>
+    </div>`);
+  }
+  const top = s.coach[0];
+  if (top) {
+    rows.push(`
+    <div class="wn-row">
+      <span class="wn-ic" aria-hidden="true">✦</span>
+      <span class="wn-text">${esc(top.headline)}</span>
+      <a class="wn-act" href="#${sid}/recs">Show me →</a>
+    </div>`);
+  }
+  const n = s.receipts.length, m = s.not_yours.length;
+  if (n || m) {
+    rows.push(`
+    <div class="wn-row">
+      <span class="wn-ic" aria-hidden="true">≡</span>
+      <span class="wn-text">Every number above has a receipt — ${n} finding${n === 1 ? "" : "s"}${m ? `; ${m} ${m === 1 ? "was" : "were"} the provider's fault, not yours` : ""}.</span>
+      <a class="wn-act" href="#${sid}/ledger">Open the ledger →</a>
+    </div>`);
+  }
+  if (!rows.length) {
+    rows.push(`
+    <div class="wn-row">
+      <span class="wn-ic" aria-hidden="true">✓</span>
+      <span class="wn-text">Nothing flagged — a clean session. Not proof of perfection, but a good day.</span>
+      <a class="wn-act" href="#${sid}/ledger">Open the ledger →</a>
+    </div>`);
+  }
+  return `<section class="whatnow" aria-label="what now"><h2 class="wn-head">What now</h2>${rows.join("")}</section>`;
+}
+
+function renderHome(d) {
   const sid = d.meta.id.slice(0, 8);
-  const wall = d.meta.started_at && d.meta.ended_at ? Date.parse(d.meta.ended_at) - Date.parse(d.meta.started_at) : null;
-  const usd = estCost(d.per_model);
-  const agents = (d.agents || []).filter((a) => !a.on_abandoned_branch);
-  const items = state.items;
-  const secCard = (id, title, sentence, count) => `
-    <a class="seccard" href="#${sid}/${id}">
-      <span class="sc-body"><span class="sc-title">${esc(title)}</span><span class="sc-sent">${esc(sentence)}</span></span>
-      <span class="sc-count">${count > 0 ? count : "✓"}</span>
-      <span class="sc-arrow">→</span>
-    </a>`;
-  const secFor = (sec) => {
-    const list = items.filter((it) => sec.rules.includes(it.rule_id) && !it.dismissed);
-    const sentence = list.length ? headlineFor(list[0]) + (list.length > 1 ? ` · +${list.length - 1} more` : "") : "nothing flagged — clear";
-    return secCard(sec.id, sec.title, sentence, list.length);
-  };
-  const unusedSkills = (d.inventory?.skills || []).filter((x) => !x.used);
-  const activeRecs = items.filter((it) => !it.dismissed && !it.improving);
-
   $("view").innerHTML = `
-    ${sessionHeader(d, false)}
-    ${d.score ? `
-    <a class="scoreline" href="#${sid}/score">
-      <span class="n">${d.score.overall}</span>
-      <span class="sl-body"><span class="sl-cap">session score · ${esc(d.score.version)} — how it's computed →</span>
-      <span class="statline">${fmtTok(f.total_tokens)} tok${usd !== null ? ` · $${usd.toFixed(2)} est` : ""}${wall !== null ? ` · ${fmtMs(wall)}` : ""} · ${f.human_turn_count} prompts · ${agents.length} agents · ${(d.per_tool || []).length} tools</span></span>
-    </a>` : ""}
-
-    <div class="briefbox" id="briefbox"><span class="muted">✦ reading this session's story… first open takes a moment; cached after</span><div class="mini-progress"><i></i></div></div>
-
-    ${surfaceZones(d, sid)}
-
-    <div class="seccards">
-      ${SECTIONS.map(secFor).join("")}
-      ${secCard("quality", "Better results possible", unusedSkills.length ? `${unusedSkills.length} helper${unusedSkills.length === 1 ? "" : "s"} sat unused this session — see what they do` : "every available helper that mattered was used", unusedSkills.length)}
-      ${secCard("recs", "Recommendations", activeRecs.length ? `${activeRecs.length} ranked by measured cost — top: ${headlineFor(activeRecs.sort((a, b) => (b.sev - a.sev) || (b.tokens - a.tokens))[0]).slice(0, 70)}` : "nothing to recommend — clean session", activeRecs.length)}
-      ${secCard("activity", "How the chat worked", `${(d.phases || []).length} phases of work · ${f.tool_call_count} tool calls · ${agents.length} delegations`, 0)}
-    </div>
+    ${sessionHero(d)}
+    ${whatNow(d, sid)}
+    <div class="homefoot"><a href="#${sid}/activity">activity</a> · <a href="#${sid}/quality">helpers</a> · <a href="#${sid}/score">score</a> · <a href="#library">library</a></div>
     <div class="grading">grading: damame ${esc(d.grading.damame_version)} · ${esc(d.grading.score_version || "")} · ir ${esc(d.grading.ir_version)} · adapter ${esc(d.grading.adapter)}@${esc(d.grading.adapter_version)} · ${Object.keys(d.grading.rule_versions).length} rules — reports are comparable only when these match</div>`;
 
   fetchBrief(d.meta.id);
   fetchRecs(d.meta.id, []);
-  const ab = $("auditbtn");
-  if (ab) ab.onclick = () => runAudit(sid);
-}
-
-/* —— the three surfaces (functional pass; visual identity comes with the Sprint C port) —— */
-function surfaceZones(d, sid) {
-  const s = d.surfaces;
-  if (!s) return "";
-  const fixzone = s.fixes.length ? `
-    <section class="fixzone" aria-label="what damame can fix">
-      <h3>damame can fix ${s.fixes.length} thing${s.fixes.length === 1 ? "" : "s"}</h3>
-      <div class="fx-sub">machine-applicable — hooks and settings; the fix agent will apply these as one reviewed diff, then measure what stopped happening</div>
-      <ul>${s.fixes.map((x) => `<li><span>${esc(x.what)}</span><span class="dest">${esc(x.destination)}</span></li>`).join("")}</ul>
-    </section>` : "";
-  const card = (c) => `
-    <article class="coachcard${c.flagship ? " flagship" : ""}">
-      <div><span class="impact ${esc(c.impact)}">${esc(c.impact)}</span>${c.recipe ? `<span class="tag" style="font:10px var(--mono)">${esc(c.recipe.status)} · ${esc(c.recipe.source.split("—")[0].trim().slice(0, 40))}</span>` : ""}</div>
-      <div class="cc-head" style="margin-top:8px">${esc(c.headline)}</div>
-      <div class="cc-body">${esc(c.body)}</div>
-      <div class="cc-meta">${c.votes.length > 1 ? `${c.votes.length} detectors agree: ` : ""}${esc(c.proof.slice(0, 120))} · <a href="#${sid}/recs">recipe →</a></div>
-    </article>`;
-  const coach = s.coach.length ? `
-    <div class="coachwrap" aria-label="worth adopting">${s.coach.map(card).join("")}
-    ${s.coach_more.length ? `<div class="muted" style="font-size:12px">+ ${s.coach_more.length} more on the recommendations page</div>` : ""}</div>` : "";
-  const notyours = s.not_yours.length ? `
-    <div class="notyours"><b>Not your inefficiency:</b> ${s.not_yours.map((n) => esc(n.headline)).join(" · ")} — provider-side, never counted against you.</div>` : "";
-  const auditbar = (s.receipts.length || s.not_yours.length) ? `
-    <div class="auditbar" id="auditbar">
-      <button id="auditbtn">Get a second opinion</button>
-      <span>an LLM cross-examines each finding against its evidence — runs on your own claude account, verdicts stay local</span>
-    </div>` : "";
-  return fixzone + coach + notyours + auditbar;
 }
 
 // The audit runs as a server-side background job; the UI polls status so a
@@ -917,6 +987,54 @@ function obsBlock(d, it) {
 
 function renderDetail(d, page) {
   const items = state.items;
+  if (page === "fixes") {
+    const s = d.surfaces || { fixes: [] };
+    $("view").innerHTML = `${sessionHeader(d, true)}
+      <div class="section"><h2 class="eyebrow">Fixed for you</h2>
+        <div class="gloss">Machine-applicable items — each is a file or settings write. The fix agent will apply them as one reviewed diff and then measure what stopped happening; until then, each recipe in the <a href="#library">library</a> shows the exact lines.</div>
+        ${s.fixes.length ? `<div class="fixlist">${s.fixes.map((x) => `
+          <div class="fx-row"><span class="fx-what">${esc(x.what)}</span><span class="dest">${esc(x.destination)}</span></div>`).join("")}</div>
+        <div class="wn-actbar"><a class="wn-act" href="#library">See the recipes →</a></div>` : '<div class="empty"><b>Nothing to fix automatically.</b> No hook- or settings-shaped findings this session.</div>'}
+      </div>`;
+    return;
+  }
+  if (page === "ledger") {
+    const s = d.surfaces || { receipts: [], not_yours: [] };
+    const findingByKey = new Map((d.findings || []).map((x) => [x.dedupe_key, x]));
+    const row = (r) => {
+      const fd = findingByKey.get(r.dedupe_key);
+      return `
+      <div class="lg-row sev-${esc(r.severity)}">
+        <span class="lg-dot" aria-hidden="true"></span>
+        <div class="lg-body">
+          <div class="lg-head">${esc(r.headline)}</div>
+          <div class="lg-proof">${esc(r.proof)}</div>
+          ${fd?.audit ? `<div class="lg-audit">second opinion: accurate ${auditChip(fd.audit.accurate)} · applicable ${auditChip(fd.audit.applicable)} — independent LLM check</div>` : ""}
+          ${r.scene_prompt ? `<details class="lg-where"><summary>where → your prompt at the scene</summary><div class="lg-scene">“${esc(r.scene_prompt)}”</div></details>` : ""}
+        </div>
+        <span class="lg-sev">${esc(r.severity)}</span>
+      </div>`;
+    };
+    $("view").innerHTML = `${sessionHeader(d, true)}
+      <div class="section"><h2 class="eyebrow">The ledger</h2>
+        <div class="gloss">Every claim, with its receipt. Severity always carries a label, tokens live in the small print, and "where →" shows your own prompt at the scene.</div>
+        ${s.receipts.length ? s.receipts.map(row).join("") : '<div class="empty"><b>No findings.</b> Conservative detectors flagged nothing — not proof of perfection.</div>'}
+        ${s.not_yours.length ? `
+        <div class="coolroom">
+          <h3>Not your inefficiency</h3>
+          ${s.not_yours.map((x) => `<div class="cool-row"><span>${esc(x.headline)}</span><span class="lg-proof">${esc(x.proof)}</span></div>`).join("")}
+          <div class="cool-note">provider-side — never counted in your score.</div>
+        </div>` : ""}
+        <div class="auditbar" id="auditbar">
+          <button id="auditbtn">Get a second opinion</button>
+          <span>an LLM cross-examines each finding against its evidence — runs on your own claude account, verdicts stay local</span>
+        </div>
+        <div class="grading">grading: damame ${esc(d.grading.damame_version)} · ${esc(d.grading.score_version || "")} · ${Object.keys(d.grading.rule_versions).length} rules · <a href="#${d.meta.id.slice(0, 8)}/score">how the score works →</a></div>
+      </div>`;
+    const ab = $("auditbtn");
+    if (ab) ab.onclick = () => runAudit(d.meta.id.slice(0, 8));
+    return;
+  }
   const sec = SECTIONS.find((x) => x.id === page);
   if (sec) {
     const list = items.filter((it) => sec.rules.includes(it.rule_id));

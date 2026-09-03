@@ -139,6 +139,16 @@ program
   });
 
 program
+  .command("eval")
+  .description("Ground-truth evaluation: planted-defect corpus → per-rule recall/precision table (see EVAL.md)")
+  .option("--per <n>", "sessions generated per archetype", "10")
+  .option("--seed <n>", "corpus seed — failures reproduce byte-identically", "42")
+  .action(async (opts: { per: string; seed: string }) => {
+    const { runEval } = await import("./eval-cmd.js");
+    await runEval(opts);
+  });
+
+program
   .command("audit")
   .description("LLM second opinion: adversarially re-check findings against their evidence (opt-in)")
   .argument("[target]", "transcript path or session id prefix")
