@@ -563,6 +563,131 @@ h2.eyebrow { font-size: 10px; }
 .cool-row { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--hair-2); font-size: 13.5px; align-items: baseline; }
 .cool-row:last-of-type { border-bottom: 0; }
 .cool-note { margin-top: 8px; font: 11px var(--mono); color: var(--ink-3); }
+
+/* ————— stats band ————— */
+.statsband { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1px; margin: 30px 0 8px; background: var(--hair); border: 1px solid var(--hair); border-radius: 14px; overflow: hidden; }
+.stat { background: var(--card); padding: 18px 20px; }
+.stat .sv { font: 350 30px/1 var(--serif); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; display: block; }
+.stat .sl { font: 11px var(--mono); color: var(--ink-3); margin-top: 6px; display: block; letter-spacing: .03em; }
+.stat.big { grid-column: span 1; }
+.stat.big .sv { font-size: 40px; }
+.stat.big .sv em { font-style: normal; color: var(--pod-deep); }
+@media (max-width: 620px) { .stat.big .sv { font-size: 32px; } .stat .sv { font-size: 25px; } }
+
+/* ————— section nav cards ————— */
+.navcards { display: grid; gap: 10px; margin-top: 22px; }
+.navcard { display: flex; align-items: center; gap: 16px; background: var(--card); border: 1px solid var(--hair); border-radius: 14px; padding: 18px 20px; text-decoration: none; color: var(--ink); transition: border-color .15s, transform .15s; }
+.navcard:hover { border-color: var(--pod); transform: translateY(-1px); }
+.navcard .nc-body { flex: 1; min-width: 0; }
+.navcard .nc-title { font: 500 17px var(--serif); letter-spacing: -.005em; }
+.navcard .nc-sent { display: block; color: var(--ink-2); font-size: 13px; margin-top: 3px; max-width: 60em; }
+.navcard .nc-count { font: 350 26px var(--serif); color: var(--ink-2); font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; }
+.navcard .nc-count.zero { color: var(--pod-deep); font-size: 18px; }
+.navcard .nc-arrow { color: var(--ink-3); font-size: 18px; }
+
+/* ————— issues / fixed ————— */
+.issues-wrap { margin-top: 6px; }
+.issue-row { display: flex; align-items: center; gap: 13px; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; margin-bottom: 9px; cursor: pointer; color: var(--ink); }
+.issue-row:hover { border-color: var(--pod); }
+.issue-row .idot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--info); }
+.issue-row.sev-major .idot { background: var(--major); } .issue-row.sev-moderate .idot { background: var(--moderate); } .issue-row.sev-minor .idot { background: var(--minor); }
+.issue-row .iname { flex: 1; min-width: 0; }
+.issue-row .iname b { font-weight: 500; font-size: 14.5px; }
+.issue-row .imeta { display: block; font: 11px var(--mono); color: var(--ink-3); margin-top: 3px; }
+.issue-row .ibadge { flex: none; font: 10px var(--mono); border-radius: 999px; padding: 3px 10px; letter-spacing: .04em; }
+.ibadge.fix { background: var(--pod-tint); color: var(--pod-deep); }
+.ibadge.coach { background: var(--hair-2); color: var(--ink-2); }
+.issue-row .iarrow { flex: none; color: var(--ink-3); }
+.fixed-head { margin-top: 30px; font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--pod-deep); }
+.fixed-sub { font-size: 12.5px; color: var(--ink-3); margin: 4px 0 12px; }
+.fixed-row { display: flex; align-items: center; gap: 12px; background: var(--pod-tint); border: 1px solid var(--hair); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
+.fixed-row .fcheck { color: var(--pod-deep); font-size: 15px; flex: none; }
+.fixed-row .fname { flex: 1; font-size: 13.5px; }
+.fixed-row .fname em { font-style: normal; color: var(--ink-3); font: 11px var(--mono); display: block; margin-top: 2px; }
+.fixed-row .fundo { background: none; border: 0; color: var(--ink-3); font: 11px var(--mono); cursor: pointer; text-decoration: underline; }
+.m-fixbtn { display: inline-block; margin-top: 14px; background: var(--pod-deep); color: #fff; border: 0; border-radius: 999px; padding: 9px 18px; font: 500 13px var(--sans); cursor: pointer; }
+.m-fixbtn:hover { background: var(--pod); }
+.m-fixbtn.coach { background: var(--card); color: var(--pod-deep); border: 1px solid var(--pod-deep); }
+.m-fixnote { font: 11px var(--mono); color: var(--ink-3); margin-top: 8px; }
+
+/* ————— about / how-it-works ————— */
+.aboutcard { margin-top: 12px; border-style: dashed; }
+.pipeline { background: var(--card); border: 1px solid var(--hair); border-radius: 14px; padding: 20px 22px; margin: 4px 0 22px; }
+.pipeline .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 12.5px var(--mono); color: var(--ink-2); }
+.pipeline .step { background: var(--pod-tint); color: var(--pod-deep); border-radius: 8px; padding: 5px 11px; }
+.pipeline .arr { color: var(--ink-3); }
+.pipeline .evalline { margin-top: 14px; font-size: 13.5px; color: var(--ink-2); }
+.pipeline .evalline b { color: var(--pod-deep); }
+.pipeline code { font: 12px var(--mono); background: var(--hair-2); padding: 2px 7px; border-radius: 5px; }
+.det-cat-head { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 24px 0 10px; }
+.det-card { border: 1px solid var(--hair); border-radius: 12px; background: var(--card); margin-bottom: 9px; overflow: hidden; }
+.det-top { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: 0; padding: 14px 16px; cursor: pointer; color: var(--ink); }
+.det-top .det-name { font: 500 14.5px var(--mono); }
+.det-top .det-ver { font: 10.5px var(--mono); color: var(--ink-3); }
+.det-top .det-what { flex: 1; min-width: 0; color: var(--ink-2); font-size: 13px; }
+.det-status { flex: none; font: 10.5px var(--mono); border-radius: 999px; padding: 3px 11px; letter-spacing: .03em; }
+.det-status.fired { background: var(--major-tint); color: var(--major); }
+.det-status.fired.moderate { background: var(--moderate-tint); color: var(--moderate); }
+.det-status.fired.minor { background: var(--minor-tint); color: var(--minor); }
+.det-status.fired.info { background: var(--info-tint); color: var(--info); }
+.det-status.clean { background: var(--hair-2); color: var(--ink-3); }
+.det-top .det-caret { flex: none; color: var(--ink-3); font-size: 12px; }
+.det-ev { padding: 0 16px 16px; border-top: 1px solid var(--hair-2); }
+.det-ev .det-defn { font-size: 13px; color: var(--ink-2); margin: 12px 0; max-width: 70em; }
+.det-ev .det-clean { font: 12px var(--mono); color: var(--ink-3); margin: 12px 0; }
+.det-info { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--hair-2); background: var(--card); color: var(--ink-3); font: italic 600 12px var(--serif); cursor: pointer; line-height: 1; padding: 0; }
+.det-info:hover, .det-info:focus-visible { border-color: var(--pod); color: var(--pod-deep); background: var(--pod-tint); }
+
+/* ————— eval / ground truth ————— */
+.trust-matrix { width: 100%; border-collapse: collapse; margin: 8px 0 4px; }
+.trust-matrix th { text-align: left; font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: 8px 12px; border-bottom: 1px solid var(--hair); }
+.trust-matrix td { padding: 11px 12px; border-bottom: 1px solid var(--hair-2); font-size: 13px; vertical-align: top; }
+.trust-matrix td:first-child { font: 500 13px var(--serif); white-space: nowrap; }
+.trust-matrix .grader { color: var(--pod-deep); font: 12px var(--mono); }
+.evalrun { background: var(--card); border: 1px solid var(--hair); border-radius: 14px; padding: 20px 22px; margin: 18px 0; }
+.evalrun-cta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.evalrun button { background: var(--pod-deep); color: #fff; border: 0; border-radius: 999px; padding: 10px 20px; font: 500 13px var(--sans); cursor: pointer; }
+.evalrun button:hover { background: var(--pod); } .evalrun button:disabled { opacity: .6; cursor: default; }
+.evalrun .er-note { font: 11.5px var(--mono); color: var(--ink-3); }
+.er-banner { margin-top: 16px; font: 500 14px var(--sans); padding: 12px 16px; border-radius: 10px; }
+.er-banner.pass { background: var(--pod-tint); color: var(--pod-deep); }
+.er-banner.fail { background: var(--major-tint); color: var(--major); }
+.er-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-variant-numeric: tabular-nums; }
+.er-table th { text-align: right; font: 500 10.5px var(--mono); color: var(--ink-3); padding: 6px 10px; letter-spacing: .04em; }
+.er-table th:first-child { text-align: left; }
+.er-table td { padding: 5px 10px; border-top: 1px solid var(--hair-2); font: 12px var(--mono); text-align: right; }
+.er-table td:first-child { text-align: left; color: var(--ink); }
+.er-table td.perfect { color: var(--pod-deep); }
+.arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+@media (max-width: 680px) { .arch-grid { grid-template-columns: 1fr; } }
+.arch-card { border: 1px solid var(--hair); border-radius: 11px; background: var(--card); padding: 13px 15px; }
+.arch-card .an { font: 500 13px var(--mono); }
+.arch-card .ak { display: block; margin-top: 5px; font-size: 12px; color: var(--ink-2); }
+.arch-badge { float: right; font: 10px var(--mono); border-radius: 999px; padding: 2px 9px; letter-spacing: .03em; }
+.arch-badge.plant { background: var(--major-tint); color: var(--major); }
+.arch-badge.near { background: var(--moderate-tint); color: var(--moderate); }
+/* CI-run visualization */
+.cirun { margin-top: 16px; border: 1px solid var(--hair); border-radius: 12px; overflow: hidden; }
+.ci-check-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--hair-2); font: 12.5px var(--mono); border-bottom: 1px solid var(--hair); }
+.ci-check-head .ci-dot { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px; color: #fff; flex: none; }
+.ci-check-head.run .ci-dot { background: var(--moderate); }
+.ci-check-head.pass .ci-dot { background: var(--pod-deep); }
+.ci-check-head.fail .ci-dot { background: var(--major); }
+.ci-check-head .ci-meta { margin-left: auto; color: var(--ink-3); }
+.ci-steps { padding: 6px 16px 12px; background: var(--card); }
+.ci-step { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--hair-2); font: 12.5px var(--mono); color: var(--ink-3); }
+.ci-step:last-child { border-bottom: 0; }
+.ci-step .ci-ic { flex: none; width: 16px; text-align: center; }
+.ci-step .ci-name { color: var(--ink-2); }
+.ci-step .ci-sub { color: var(--ink-3); font-size: 11.5px; }
+.ci-step.done { color: var(--ink); }
+.ci-step.done .ci-ic { color: var(--pod-deep); }
+.ci-step.pending .ci-ic { color: var(--moderate); }
+.ci-spin { display: inline-block; width: 11px; height: 11px; border: 2px solid var(--hair-2); border-top-color: var(--moderate); border-radius: 50%; animation: cispin .7s linear infinite; }
+@keyframes cispin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ci-spin { animation: none; } }
+.ci-yaml { font: 11px var(--mono); color: var(--ink-3); background: var(--hair-2); border-radius: 8px; padding: 10px 13px; margin-top: 12px; white-space: pre-wrap; }
+.ci-yaml b { color: var(--pod-deep); font-weight: 500; }
 </style>
 </head>
 <body>
@@ -578,6 +703,7 @@ h2.eyebrow { font-size: 10px; }
       <button class="navbtn" id="libraryBtn">library</button>
       <button class="navbtn" id="overviewBtn">your skills</button>
       <button class="navbtn" id="rulesBtn">rules &amp; precision</button>
+      <button class="navbtn" id="evalBtn">eval &amp; ground truth</button>
       <div class="local-note">local only — nothing leaves this machine</div>
     </div>
   </nav>
@@ -707,6 +833,7 @@ function route() {
   if (h === "library") return showLibrary();
   if (h === "skills") return showOverview();
   if (h === "rules") return showRules();
+  if (h === "eval") return showEval();
   const [sid, page] = h.split("/");
   const target = sid && state.sessions.find((s) => s.id.startsWith(sid));
   if (target) return selectSession(target.id, page || null);
@@ -725,6 +852,7 @@ function renderSidebar() {
     </button>`).join("");
   for (const el of document.querySelectorAll(".sess")) el.onclick = () => selectSession(el.dataset.id);
   $("rulesBtn").classList.toggle("active", state.view === "rules");
+  $("evalBtn").classList.toggle("active", state.view === "eval");
   $("overviewBtn").classList.toggle("active", state.view === "overview");
   $("libraryBtn").classList.toggle("active", state.view === "library");
 }
@@ -831,10 +959,6 @@ function sessionHero(d) {
         <p class="h-eyebrow">${esc(d.meta.project || "session")}${days !== null ? ` ${sep} ${esc(fmtDate(d.meta.started_at))} → ${esc(fmtDate(d.meta.ended_at))} ${sep} ${days} day${days === 1 ? "" : "s"}` : ""}</p>
         <h1 class="session-name">${esc(d.meta.title)}</h1>
         <div class="briefbox" id="briefbox"><span class="muted">✦ reading this session's story… first open takes a moment; cached after</span><div class="mini-progress"><i></i></div></div>
-        <p class="hstats">
-          <b>${f.turn_count.toLocaleString()}</b> turns${sep}<b>${f.human_turn_count.toLocaleString()}</b> yours${sep}<b>${f.tool_call_count.toLocaleString()}</b> tool calls${sep}<b>${agents}</b> subagent runs${sep}<b>${f.compactions}</b> compaction${f.compactions === 1 ? "" : "s"}<br>
-          <b>${fmtTok(f.total_tokens)}</b> tokens total${sep}<b>${fmtTok(fresh)}</b> fresh
-        </p>
       </div>
       ${d.score ? `
       <a class="scoreblock" href="#${d.meta.id.slice(0, 8)}/score" aria-label="Session score ${d.score.overall} out of 100 — how it's computed">
@@ -846,59 +970,81 @@ function sessionHero(d) {
     </section>`;
 }
 
-/* Home below the hero: exactly three quiet rows — fix / change / proof.
-   One plain sentence and one action each; everything else lives one click
-   away. Headlines carry human quantities, never token counts. */
-function whatNow(d, sid) {
-  const s = d.surfaces || { fixes: [], coach: [], coach_more: [], receipts: [], not_yours: [] };
-  const rows = [];
-  if (s.fixes.length) {
-    rows.push(`
-    <div class="wn-row">
-      <span class="wn-ic" aria-hidden="true">⚙</span>
-      <span class="wn-text">${s.fixes.length} small thing${s.fixes.length === 1 ? "" : "s"} can be fixed automatically — hooks &amp; settings.</span>
-      <a class="wn-act" href="#${sid}/fixes">Fix these →</a>
-    </div>`);
-  }
-  const top = s.coach[0];
-  if (top) {
-    rows.push(`
-    <div class="wn-row">
-      <span class="wn-ic" aria-hidden="true">✦</span>
-      <span class="wn-text">${esc(top.headline)}</span>
-      <a class="wn-act" href="#${sid}/recs">Show me →</a>
-    </div>`);
-  }
-  const n = s.receipts.length, m = s.not_yours.length;
-  if (n || m) {
-    rows.push(`
-    <div class="wn-row">
-      <span class="wn-ic" aria-hidden="true">≡</span>
-      <span class="wn-text">Every number above has a receipt — ${n} finding${n === 1 ? "" : "s"}${m ? `; ${m} ${m === 1 ? "was" : "were"} the provider's fault, not yours` : ""}.</span>
-      <a class="wn-act" href="#${sid}/ledger">Open the ledger →</a>
-    </div>`);
-  }
-  if (!rows.length) {
-    rows.push(`
-    <div class="wn-row">
-      <span class="wn-ic" aria-hidden="true">✓</span>
-      <span class="wn-text">Nothing flagged — a clean session. Not proof of perfection, but a good day.</span>
-      <a class="wn-act" href="#${sid}/ledger">Open the ledger →</a>
-    </div>`);
-  }
-  return `<section class="whatnow" aria-label="what now"><h2 class="wn-head">What now</h2>${rows.join("")}</section>`;
+/** The vitals band: Tokens + Est. cost as the two large anchors, then the
+    activity/behavior numbers. */
+function statsBand(d) {
+  const f = d.facts;
+  const u = f.usage || {};
+  const fresh = (u.input_tokens ?? 0) + (u.output_tokens ?? 0) + (u.cache_creation_tokens ?? 0);
+  const usd = estCost(d.per_model);
+  const agents = (d.agents || []).filter((a) => !a.on_abandoned_branch).length;
+  const days = d.meta.started_at && d.meta.ended_at
+    ? Math.max(1, Math.round((Date.parse(d.meta.ended_at) - Date.parse(d.meta.started_at)) / 86400000)) : null;
+  const tile = (sv, sl, big) => `<div class="stat${big ? " big" : ""}"><span class="sv">${sv}</span><span class="sl">${sl}</span></div>`;
+  return `<section class="statsband" aria-label="session vitals">
+    ${tile(`<em>${fmtTok(f.total_tokens)}</em>`, `tokens · ${fmtTok(fresh)} fresh`, true)}
+    ${tile(usd !== null ? `<em>$${usd.toFixed(2)}</em>` : "—", "estimated cost", true)}
+    ${tile(f.turn_count.toLocaleString(), `turns · ${f.human_turn_count.toLocaleString()} yours`)}
+    ${tile(f.tool_call_count.toLocaleString(), "tool calls")}
+    ${tile(String(agents), "subagent runs")}
+    ${tile(String(f.compactions), "compactions")}
+    ${days !== null ? tile(String(days), days === 1 ? "day" : "days") : ""}
+  </section>`;
 }
 
+/** Section cards → depth. Issues is the primary flow (issues → fix → fixed);
+    the rest are the profiler's depth views. */
 function renderHome(d) {
   const sid = d.meta.id.slice(0, 8);
+  const items = state.items || [];
+  const fixed = getFixed(sid);
+  const openIssues = items.filter((it) => !it.dismissed && !fixed.has(it.rule_id));
+  const unusedSkills = (d.inventory?.skills || []).filter((x) => !x.used);
+  const phases = (d.phases || []).length;
+  const agents = (d.agents || []).filter((a) => !a.on_abandoned_branch).length;
+
+  const navcard = (href, title, sent, count, zeroLabel) => `
+    <a class="navcard" href="${href}">
+      <span class="nc-body"><span class="nc-title">${esc(title)}</span><span class="nc-sent">${esc(sent)}</span></span>
+      <span class="nc-count${count > 0 ? "" : " zero"}">${count > 0 ? count : (zeroLabel || "✓")}</span>
+      <span class="nc-arrow">→</span>
+    </a>`;
+
+  const issueSent = openIssues.length
+    ? `top: ${headlineFor(openIssues[0]).slice(0, 76)}`
+    : "nothing flagged — a clean session (not proof of perfection)";
+
   $("view").innerHTML = `
     ${sessionHero(d)}
-    ${whatNow(d, sid)}
-    <div class="homefoot"><a href="#${sid}/activity">activity</a> · <a href="#${sid}/quality">helpers</a> · <a href="#${sid}/score">score</a> · <a href="#library">library</a></div>
+    ${statsBand(d)}
+    <div class="navcards">
+      ${navcard(`#${sid}/issues`, "Issues & fixes", issueSent, openIssues.length)}
+      ${navcard(`#${sid}/activity`, "How the work flowed", `${phases} phases · ${f_count(d)} tool calls · ${agents} delegations`, 0, "view")}
+      ${navcard(`#${sid}/quality`, "Helpers available", unusedSkills.length ? `${unusedSkills.length} skill${unusedSkills.length === 1 ? "" : "s"} sat unused this session — see what they do` : "every available helper that mattered was used", unusedSkills.length)}
+    </div>
+    <a class="navcard aboutcard" href="#${sid}/about">
+      <span class="nc-body"><span class="nc-title">How damame works</span><span class="nc-sent">The pipeline, every detector, and each one's evidence from this session</span></span>
+      <span class="nc-arrow">→</span>
+    </a>
+    <div class="homefoot"><a href="#${sid}/score">score breakdown</a> · <a href="#library">recipe library</a></div>
     <div class="grading">grading: damame ${esc(d.grading.damame_version)} · ${esc(d.grading.score_version || "")} · ir ${esc(d.grading.ir_version)} · adapter ${esc(d.grading.adapter)}@${esc(d.grading.adapter_version)} · ${Object.keys(d.grading.rule_versions).length} rules — reports are comparable only when these match</div>`;
 
   fetchBrief(d.meta.id);
   fetchRecs(d.meta.id, []);
+}
+function f_count(d) { return (d.facts.tool_call_count || 0).toLocaleString(); }
+
+/* ————— fixed-state: which issues the user has marked resolved.
+   Per-session, in localStorage — survives refresh for a clean demo. The
+   real fix agent (Phase 3) will apply the change AND record it here. ————— */
+function fixedKey(sid) { return `damame-fixed-${sid}`; }
+function getFixed(sid) {
+  try { return new Set(JSON.parse(localStorage.getItem(fixedKey(sid)) || "[]")); } catch { return new Set(); }
+}
+function setFixedRule(sid, ruleId, on) {
+  const s = getFixed(sid);
+  if (on) s.add(ruleId); else s.delete(ruleId);
+  try { localStorage.setItem(fixedKey(sid), JSON.stringify([...s])); } catch { /* private mode */ }
 }
 
 // The audit runs as a server-side background job; the UI polls status so a
@@ -985,56 +1131,239 @@ function obsBlock(d, it) {
     </div>`;
 }
 
+/** Which rules are one-click auto-fixable, and where the fix lands. */
+function fixableMap(d) {
+  const m = new Map();
+  for (const x of (d.surfaces?.fixes || [])) m.set(x.rule_id, x.destination);
+  return m;
+}
+
+function renderIssues(d) {
+  const sid = d.meta.id.slice(0, 8);
+  const fixable = fixableMap(d);
+  const fixed = getFixed(sid);
+  const items = (state.items || []).filter((it) => !it.dismissed);
+  const open = items.filter((it) => !fixed.has(it.rule_id));
+  const done = items.filter((it) => fixed.has(it.rule_id));
+  const notYours = d.surfaces?.not_yours || [];
+
+  const sevOf = (it) => it.sev >= 3 ? "major" : it.sev === 2 ? "moderate" : it.sev === 1 ? "minor" : "info";
+  const issueRow = (it) => {
+    const canFix = fixable.has(it.rule_id);
+    return `
+    <button class="issue-row sev-${sevOf(it)}" data-issue="${esc(it.rule_id)}">
+      <span class="idot" aria-hidden="true"></span>
+      <span class="iname"><b>${esc(headlineFor(it))}</b><span class="imeta">${it.findings.length} instance${it.findings.length === 1 ? "" : "s"}${cost(it) ? ` · ${esc(cost(it))}` : ""}</span></span>
+      <span class="ibadge ${canFix ? "fix" : "coach"}">${canFix ? "auto-fixable" : "you decide"}</span>
+      <span class="iarrow">→</span>
+    </button>`;
+  };
+  const fixedRow = (it) => {
+    const canFix = fixable.has(it.rule_id);
+    return `
+    <div class="fixed-row">
+      <span class="fcheck" aria-hidden="true">✓</span>
+      <span class="fname">${esc(headlineFor(it))}<em>${canFix ? esc(fixable.get(it.rule_id)) : "marked as handled"}</em></span>
+      <button class="fundo" data-undo="${esc(it.rule_id)}">undo</button>
+    </div>`;
+  };
+
+  $("view").innerHTML = `${sessionHeader(d, true)}
+    <div class="section">
+      <h2 class="eyebrow">Issues found${open.length ? ` — ${open.length}` : ""}</h2>
+      <div class="gloss">Everything damame flagged in this session, most important first. Open one for what happened, the evidence, and a fix. Auto-fixable items apply in one click; the rest show you what to change. Fixed items drop to the bottom.</div>
+      <div class="issues-wrap">
+        ${open.length ? open.map(issueRow).join("") : '<div class="empty"><b>All clear here.</b> No open issues — either a clean session or everything\'s been handled below.</div>'}
+      </div>
+      ${done.length ? `<div class="fixed-head">✓ Fixed (${done.length})</div><div class="fixed-sub">Applied or handled this session. The fix agent will later verify each one actually stopped recurring.</div>${done.map(fixedRow).join("")}` : ""}
+      ${notYours.length ? `
+      <div class="coolroom">
+        <h3>Not your inefficiency</h3>
+        ${notYours.map((x) => `<div class="cool-row"><span>${esc(x.headline)}</span><span class="lg-proof">${esc(x.proof)}</span></div>`).join("")}
+        <div class="cool-note">provider-side — never counted in your score, nothing to fix.</div>
+      </div>` : ""}
+      <div class="auditbar" id="auditbar">
+        <button id="auditbtn">Get a second opinion</button>
+        <span>an LLM cross-examines each finding against its evidence — runs on your own claude account, verdicts stay local</span>
+      </div>
+      <div class="grading">grading: damame ${esc(d.grading.damame_version)} · ${esc(d.grading.score_version || "")} · ${Object.keys(d.grading.rule_versions).length} rules · <a href="#${sid}/score">how the score works →</a></div>
+    </div>`;
+
+  // wire: open dialog per issue, undo per fixed row, audit
+  const byRule = new Map((state.items || []).map((it) => [it.rule_id, it]));
+  $("view").querySelectorAll("[data-issue]").forEach((el) => {
+    el.onclick = () => openIssue(d, byRule.get(el.getAttribute("data-issue")));
+  });
+  $("view").querySelectorAll("[data-undo]").forEach((el) => {
+    el.onclick = () => { setFixedRule(sid, el.getAttribute("data-undo"), false); renderIssues(d); };
+  });
+  const ab = $("auditbtn");
+  if (ab) ab.onclick = () => runAudit(sid);
+}
+
+function openIssue(d, it) {
+  if (!it) return;
+  const sid = d.meta.id.slice(0, 8);
+  const canFix = fixableMap(d).has(it.rule_id);
+  const dest = fixableMap(d).get(it.rule_id);
+  $("recModal").innerHTML = `
+    <button class="m-close" data-close-modal aria-label="Close dialog">✕</button>
+    <div class="m-head" id="recModalHead">${esc(headlineFor(it))}</div>
+    <div class="rc-label">what happened in this chat</div>
+    <div class="rc-text">${esc(it.why)}</div>
+    ${recipeBody(it.entry)}
+    <div class="rc-instances"><button class="navbtn" style="display:inline;width:auto;padding:4px 12px" data-instances>show the ${it.findings.length === 1 ? "instance" : it.findings.length + " instances"} (evidence) ▾</button></div>
+    <div class="m-instances"></div>
+    <button class="m-fixbtn ${canFix ? "" : "coach"}" data-fix>${canFix ? `Apply fix → ${esc(dest)}` : "Mark as handled"}</button>
+    <div class="m-fixnote">${canFix ? "Adds the hook/setting for you (mocked in this build; the fix agent will apply and verify it)." : "This one is a habit change, not a file edit — marking it handled moves it to Fixed so you can track it."}</div>`;
+  $("modalBack").classList.add("open");
+  $("recModal").querySelector("[data-close-modal]").onclick = () => $("modalBack").classList.remove("open");
+  const instBtn = $("recModal").querySelector("[data-instances]");
+  instBtn.onclick = () => {
+    const area = $("recModal").querySelector(".m-instances");
+    if (area.innerHTML) { area.innerHTML = ""; instBtn.textContent = `show the ${it.findings.length === 1 ? "instance" : it.findings.length + " instances"} (evidence) ▾`; return; }
+    area.innerHTML = it.findings.map(findingCard).join("");
+    instBtn.textContent = "hide instances ▴";
+    wireFindings(state.data);
+  };
+  $("recModal").querySelector("[data-fix]").onclick = () => {
+    setFixedRule(sid, it.rule_id, true);
+    $("modalBack").classList.remove("open");
+    renderIssues(d);
+  };
+}
+
+/* The About page: the pipeline in one line, then every detector as a card
+   showing whether it fired in THIS session and — on click — the evidence
+   (where + how) via the same finding cards used everywhere else. */
+const CAT_LABELS = {
+  "error-loop": "Error loops", "context-hygiene": "Context hygiene", "redundant-work": "Redundant work",
+  "missed-resource": "Missed capabilities", "delegation": "Missed capabilities", "prompting": "Prompting & recovery",
+  "interaction-friction": "Interaction friction", "infra": "Not your inefficiency (infrastructure)",
+};
+/* Plain-language "what it is" + "how damame detects it" per detector — the
+   mechanism, in words a newcomer can follow. Shown from the ⓘ button. */
+const HOW_DETECTED = {
+  "edit-fail-loop": { what: "Claude got stuck retrying a file edit that kept failing — guessing at the old text instead of re-reading the file.", how: "Fires on 3+ consecutive failed Edit results on the same file (major at 5). A diagnostic read in between does not break the streak — only a successful edit on that file does." },
+  "cache-thrash": { what: "The prompt cache missed, so a big chunk of the conversation was re-billed at full price instead of the ~10% cached rate.", how: "Reads the API's own cache-miss counts, groups the missed input tokens by reason, and fires at 100k missed tokens (major at 1M). Provider-side reasons are marked infrastructure and never counted against you." },
+  "duplicate-tool-call": { what: "The exact same tool call ran again and produced byte-identical output, with nothing changed in between — pure repeat.", how: "Requires identical input fingerprint AND identical output fingerprint AND no state-changing attempt between the two (and not across a compaction — that belongs to compaction-rework). Fires at 3+ repeats or 20k repeated bytes." },
+  "compaction-burn": { what: "The conversation was summarized to fit the context window repeatedly — and each summary silently drops detail.", how: "Counts compaction events in the live conversation; fires at 2+ (major at 4)." },
+  "compaction-rework": { what: "After a compaction, content the chat had already loaded got re-read — the summary kept the file names but not the file contents.", how: "Pairs a read after a compaction with a read before it that has the SAME input fingerprint AND a byte-identical output — so 'nothing changed' is proven, not guessed. Fires at 3+ re-reads or 20k re-purchased bytes per compaction." },
+  "permission-churn": { what: "You repeatedly denied Claude's permission prompts — a sign the setup fights your actual workflow.", how: "Counts permission-denial events (the user-rejected signature); fires at 3+." },
+  "bash-error-loop": { what: "The same terminal command failed again and again — usually because Claude lacked one fact only you had.", how: "Fires on 3+ consecutive failures of the same command (nonzero exit or timeout); major at 5." },
+  "abandoned-work": { what: "A large amount of built work was thrown away when you rewound the conversation — the direction check came too late.", how: "Sums the tokens on a branch discarded by a rewind (a fork made within one sitting); fires at 200k (major at 1M). Branches orphaned by a session resume are NOT your action and are filed as infrastructure." },
+  "missed-delegation": { what: "A long run of file reading happened in the main conversation while a subagent that could have done it in its own context sat unused.", how: "Fires on 15+ consecutive read-only calls in a single turn while an Explore-type agent was recorded available in that session's own environment — upgraded if a compaction happened in the same turn (proof the reading blew the context)." },
+  "oversized-context-reads": { what: "A whole large file was read end-to-end to answer a narrow question — swallowing the whale to taste a fin.", how: "Fires on a full-file read (no offset/limit) whose result is 80KB or larger. Savings are modeled — the finding states the assumption." },
+  "retry-storm": { what: "Transient API errors and auto-retries — the provider's weather, not anything you did.", how: "Fires on 3+ transient API errors. Always informational, category infrastructure, and structurally excluded from your score — it exists so provider delay is never blamed on you." },
+  "paste-relay": { what: "You worked as the data courier — pasting the same-shaped block by hand over and over, when Claude could fetch the source itself.", how: "Fires on 6+ human-entered blocks of 600+ bytes that share a normalized shape (numbers masked), totaling 15KB+. Same shape repeated means a template — and a template can be fetched by a machine." },
+  "repeated-delegation": { what: "The same task was re-improvised as a fresh subagent spawn many times, each retelling drifting a little.", how: "Normalizes every spawn's description into a task family (lowercase, digits→#, first three words) and fires at 5+ spawns in one family (major at 15). Claims no token savings — the cost is drift, which has no honest token number." },
+  "eternal-session": { what: "One chat used as a permanent workspace for weeks — every morning re-buys a giant, repeatedly-summarized context.", how: "A triple gate, all three required: 15+ resumes AND 3+ compactions AND a 7+ day span. Each alone is innocent; only the combination is the pattern." },
+  "idle-gap-notifications": { what: "Finished work repeatedly sat waiting because nothing announced it was done.", how: "Fires on 5+ gaps of 5+ minutes (summing to 30min+) between a turn finishing and your next prompt. Gaps over 2 hours or crossing a session boundary (nights) are excluded, and sessions that schedule their own wake-ups are suppressed entirely." },
+  "post-edit-ritual": { what: "The same command follows your edits again and again — a habit a hook could run for you automatically.", how: "Fires when the same normalized command follows a file edit 10+ times. The threshold was calibrated on real sessions: habitual families ran 10–48 times while incidental commands stayed at 6 or below, so 10 sits in the measured gap." },
+};
+async function renderAbout(d) {
+  const sid = d.meta.id.slice(0, 8);
+  $("view").innerHTML = `${sessionHeader(d, true)}<div class="loading">reading the detector catalog…</div>`;
+  let rules = state._rules;
+  if (!rules) { try { rules = state._rules = await api("/api/rules"); } catch { rules = []; } }
+  if (state.currentId !== d.meta.id) return; // navigated away while fetching
+
+  const byRule = new Map();
+  for (const f of d.findings) {
+    const g = byRule.get(f.rule.id) || [];
+    g.push(f);
+    byRule.set(f.rule.id, g);
+  }
+  const sevRank = { major: 3, moderate: 2, minor: 1, info: 0 };
+  const worstSev = (fs) => fs.reduce((w, f) => (sevRank[f.severity] > sevRank[w] ? f.severity : w), "info");
+
+  // group detectors by their display category, fired-first within each
+  const groups = new Map();
+  for (const r of rules) {
+    const label = CAT_LABELS[r.category] || r.category;
+    (groups.get(label) || groups.set(label, []).get(label)).push(r);
+  }
+  const firedCount = rules.filter((r) => byRule.has(r.id)).length;
+
+  const detCard = (r) => {
+    const fs = byRule.get(r.id);
+    const sev = fs ? worstSev(fs) : null;
+    const status = fs
+      ? `<span class="det-status fired ${sev}">detected ${fs.length}×</span>`
+      : `<span class="det-status clean">not here</span>`;
+    return `
+    <div class="det-card">
+      <div class="det-top" data-det="${esc(r.id)}" role="button" tabindex="0" aria-expanded="false">
+        <span class="det-name">${esc(r.id)}</span><span class="det-ver">v${esc(r.version)}</span>
+        <span class="det-what">${esc(r.summary)}</span>
+        ${status}
+        <button class="det-info" data-info="${esc(r.id)}" title="what this is & how it's detected" aria-label="what ${esc(r.id)} detects and how">i</button>
+        <span class="det-caret">▾</span>
+      </div>
+      <div class="det-ev" data-ev="${esc(r.id)}" hidden></div>
+    </div>`;
+  };
+
+  $("view").innerHTML = `${sessionHeader(d, true)}
+    <div class="section">
+      <h2 class="eyebrow">How damame works</h2>
+      <div class="pipeline">
+        <div class="flow">
+          <span class="step">parse</span><span class="arr">→</span>
+          <span class="step">metrics</span><span class="arr">→</span>
+          <span class="step">${rules.length} detectors</span><span class="arr">→</span>
+          <span class="step">score</span><span class="arr">→</span>
+          <span class="step">optional LLM audit</span>
+        </div>
+        <div class="evalline">A streaming transcript becomes typed events, one pure pass computes the metrics, ${rules.length} deterministic detectors read them (same session in → same findings out), and a published-formula score summarizes the result. The detectors are graded against manufactured ground truth — <b>recall 1.00 / precision 1.00 over 540 planted-defect sessions</b>. In this session, <b>${firedCount} of ${rules.length}</b> detectors fired.</div>
+        <div style="margin-top:14px"><a class="wn-act" href="#eval">See the ground-truth eval — run it live →</a></div>
+      </div>
+      ${[...groups.entries()].map(([label, rs]) => `
+        <div class="det-cat-head">${esc(label)}</div>
+        ${rs.map(detCard).join("")}`).join("")}
+    </div>`;
+
+  const rulesById = new Map(rules.map((r) => [r.id, r]));
+  $("view").querySelectorAll("[data-det]").forEach((row) => {
+    const toggle = () => {
+      const id = row.getAttribute("data-det");
+      const ev = $("view").querySelector(`[data-ev="${CSS.escape(id)}"]`);
+      if (!ev.hidden) { ev.hidden = true; ev.innerHTML = ""; row.setAttribute("aria-expanded", "false"); return; }
+      const fs = byRule.get(id);
+      ev.innerHTML = fs
+        ? `<div class="det-defn">Detected in this session — here is exactly where and how, with a link to the transcript line for each instance:</div>${fs.map(findingCard).join("")}`
+        : `<div class="det-clean">This detector did not fire in this session — no matching pattern crossed its threshold. That is a fact about this session, not proof of perfection.</div>`;
+      ev.hidden = false;
+      row.setAttribute("aria-expanded", "true");
+      if (fs) wireFindings(d);
+    };
+    row.onclick = toggle;
+    row.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } };
+  });
+  $("view").querySelectorAll("[data-info]").forEach((btn) => {
+    btn.onclick = (e) => { e.stopPropagation(); openDetectorInfo(btn.getAttribute("data-info"), rulesById); };
+  });
+}
+
+function openDetectorInfo(id, rulesById) {
+  const r = rulesById.get(id);
+  const info = HOW_DETECTED[id] || {};
+  $("recModal").innerHTML = `
+    <button class="m-close" data-close-modal aria-label="Close dialog">✕</button>
+    <div class="m-head" id="recModalHead">${esc(id)} <span style="font:11px var(--mono);color:var(--ink-3)">v${esc(r?.version || "")} · ${esc(r?.category || "")}</span></div>
+    <div class="rc-label">what this is</div>
+    <div class="rc-text">${esc(info.what || r?.summary || "")}</div>
+    <div class="rc-label" style="margin-top:14px">how damame detects it</div>
+    <div class="rc-text">${esc(info.how || "A deterministic rule over the session's measured metrics.")}</div>
+    <div class="m-fixnote">Deterministic — same session in, same result out. Graded against the ground-truth corpus (run <code style="font:11px var(--mono)">damame eval</code>). Full rationale: docs/rules/${esc(id)}.md</div>`;
+  $("modalBack").classList.add("open");
+  $("recModal").querySelector("[data-close-modal]").onclick = () => $("modalBack").classList.remove("open");
+}
+
 function renderDetail(d, page) {
   const items = state.items;
-  if (page === "fixes") {
-    const s = d.surfaces || { fixes: [] };
-    $("view").innerHTML = `${sessionHeader(d, true)}
-      <div class="section"><h2 class="eyebrow">Fixed for you</h2>
-        <div class="gloss">Machine-applicable items — each is a file or settings write. The fix agent will apply them as one reviewed diff and then measure what stopped happening; until then, each recipe in the <a href="#library">library</a> shows the exact lines.</div>
-        ${s.fixes.length ? `<div class="fixlist">${s.fixes.map((x) => `
-          <div class="fx-row"><span class="fx-what">${esc(x.what)}</span><span class="dest">${esc(x.destination)}</span></div>`).join("")}</div>
-        <div class="wn-actbar"><a class="wn-act" href="#library">See the recipes →</a></div>` : '<div class="empty"><b>Nothing to fix automatically.</b> No hook- or settings-shaped findings this session.</div>'}
-      </div>`;
-    return;
-  }
-  if (page === "ledger") {
-    const s = d.surfaces || { receipts: [], not_yours: [] };
-    const findingByKey = new Map((d.findings || []).map((x) => [x.dedupe_key, x]));
-    const row = (r) => {
-      const fd = findingByKey.get(r.dedupe_key);
-      return `
-      <div class="lg-row sev-${esc(r.severity)}">
-        <span class="lg-dot" aria-hidden="true"></span>
-        <div class="lg-body">
-          <div class="lg-head">${esc(r.headline)}</div>
-          <div class="lg-proof">${esc(r.proof)}</div>
-          ${fd?.audit ? `<div class="lg-audit">second opinion: accurate ${auditChip(fd.audit.accurate)} · applicable ${auditChip(fd.audit.applicable)} — independent LLM check</div>` : ""}
-          ${r.scene_prompt ? `<details class="lg-where"><summary>where → your prompt at the scene</summary><div class="lg-scene">“${esc(r.scene_prompt)}”</div></details>` : ""}
-        </div>
-        <span class="lg-sev">${esc(r.severity)}</span>
-      </div>`;
-    };
-    $("view").innerHTML = `${sessionHeader(d, true)}
-      <div class="section"><h2 class="eyebrow">The ledger</h2>
-        <div class="gloss">Every claim, with its receipt. Severity always carries a label, tokens live in the small print, and "where →" shows your own prompt at the scene.</div>
-        ${s.receipts.length ? s.receipts.map(row).join("") : '<div class="empty"><b>No findings.</b> Conservative detectors flagged nothing — not proof of perfection.</div>'}
-        ${s.not_yours.length ? `
-        <div class="coolroom">
-          <h3>Not your inefficiency</h3>
-          ${s.not_yours.map((x) => `<div class="cool-row"><span>${esc(x.headline)}</span><span class="lg-proof">${esc(x.proof)}</span></div>`).join("")}
-          <div class="cool-note">provider-side — never counted in your score.</div>
-        </div>` : ""}
-        <div class="auditbar" id="auditbar">
-          <button id="auditbtn">Get a second opinion</button>
-          <span>an LLM cross-examines each finding against its evidence — runs on your own claude account, verdicts stay local</span>
-        </div>
-        <div class="grading">grading: damame ${esc(d.grading.damame_version)} · ${esc(d.grading.score_version || "")} · ${Object.keys(d.grading.rule_versions).length} rules · <a href="#${d.meta.id.slice(0, 8)}/score">how the score works →</a></div>
-      </div>`;
-    const ab = $("auditbtn");
-    if (ab) ab.onclick = () => runAudit(d.meta.id.slice(0, 8));
-    return;
-  }
+  if (page === "issues") { renderIssues(d); return; }
+  if (page === "about") { renderAbout(d); return; }
   const sec = SECTIONS.find((x) => x.id === page);
   if (sec) {
     const list = items.filter((it) => sec.rules.includes(it.rule_id));
@@ -1667,7 +1996,125 @@ async function showRules() {
     </table></div>`;
 }
 
+async function showEval() {
+  state.view = "eval"; renderSidebar(); closeSide(); setHash("eval");
+  $("view").innerHTML = '<div class="loading">loading the ground-truth corpus…</div>';
+  let data;
+  try { data = await api("/api/eval/archetypes"); }
+  catch (e) { $("view").innerHTML = `<div class="empty">could not load the corpus: ${esc(e.message)}</div>`; return; }
+  const plants = data.archetypes.filter((a) => a.kind === "plant");
+  const negs = data.archetypes.filter((a) => a.kind === "near-miss");
+
+  const trust = [
+    ["Detectors", "planted crimes", "Manufactured sessions with a defect built in by construction, plus innocent near-misses one unit under each threshold. CI demands perfect recall on the plants and zero false positives on the innocents — one miss fails the build."],
+    ["LLM judge", "counterfeit honeypots", "Every audit batch secretly includes findings corrupted by construction (numbers ×10, evidence swapped). The judge must refute them; its catch-rate is a live, label-free accuracy score."],
+    ["AI brief", "citation gate", "The story generator never sees the transcript — only a measured digest with stable ids. Every claim must cite one; a dumb string check deletes uncited claims before render."],
+    ["Score", "ordering gate", "Planted-waste sessions must score strictly below clean ones; innocents and provider-side problems stay high — enforced in CI."],
+    ["The tool itself", "you, twice + behavior", "Two narrow feedback questions build per-rule precision, and recurrence measures whether flagged patterns actually shrink in your later sessions — behavior, not opinion."],
+  ];
+
+  const archCard = (a) => `
+    <div class="arch-card">
+      <span class="arch-badge ${a.kind === "plant" ? "plant" : "near"}">${a.kind === "plant" ? "plants a defect" : "near-miss · must stay silent"}</span>
+      <div class="an">${esc(a.archetype)}</div>
+      <span class="ak">${a.kind === "plant"
+        ? `must fire: <b style="color:var(--pod-deep)">${esc(a.expected.join(", "))}</b> · everything else must stay silent`
+        : `built one unit under a threshold — no detector may fire`}</span>
+    </div>`;
+
+  $("view").innerHTML = `
+    <span class="eyebrow">evaluation</span>
+    <h1>Ground truth — how the detectors are proven right</h1>
+    <div class="sub">On a real session there is no answer key: nobody knows the objectively correct findings for a billion-token transcript. So damame manufactures sessions where the truth is known <i>by construction</i>, runs the real production pipeline over them, and demands it gets every one right. This is that corpus — and every other layer is graded by a different mechanism, so no component grades its own homework.</div>
+
+    <div class="section">
+      <table class="trust-matrix">
+        <tr><th>layer</th><th>graded by</th><th>how</th></tr>
+        ${trust.map(([l, g, h]) => `<tr><td>${esc(l)}</td><td class="grader">${esc(g)}</td><td>${esc(h)}</td></tr>`).join("")}
+      </table>
+    </div>
+
+    <div class="evalrun">
+      <div class="evalrun-cta">
+        <button id="runEvalBtn">Run the eval now</button>
+        <span class="er-note">generates a fresh corpus in your browser session and runs the real detectors over it — a few seconds</span>
+      </div>
+      <div id="evalResult"></div>
+    </div>
+
+    <div class="section">
+      <h2 class="eyebrow">The answer keys · ${data.total} archetypes</h2>
+      <div class="gloss"><b>${plants.length} plant a defect</b> (one per detector) and <b>${negs.length} are near-miss negatives</b> engineered to sit just under a threshold — testing the decision boundary, where false positives are actually born, not just the easy cases.</div>
+      <div class="det-cat-head">Plants — a defect built in, one detector must catch it</div>
+      <div class="arch-grid">${plants.map(archCard).join("")}</div>
+      <div class="det-cat-head">Near-misses — innocent look-alikes, nothing may fire</div>
+      <div class="arch-grid">${negs.map(archCard).join("")}</div>
+    </div>
+
+    <div class="grading">reproducible by construction — a failure names the archetype and seed, and that seed regenerates the byte-identical failing session. Same from the terminal: <span class="mono">damame eval --per 20 --seed 7</span></div>`;
+
+  $("runEvalBtn").onclick = async () => {
+    const btn = $("runEvalBtn");
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    btn.disabled = true; btn.textContent = "running…";
+    const t0 = performance.now();
+    // The real work is kicked off immediately; the steps below are the actual
+    // stages of that run, revealed one at a time so the gate is watchable.
+    const runP = api("/api/eval/run?per=2&seed=7").catch((e) => ({ error: String(e.message || e) }));
+    const steps = [
+      ["generate corpus", "54 fake sessions written across 27 archetypes — 16 with a planted defect, 11 innocent near-misses"],
+      ["parse + run detectors", "the real production pipeline over every session"],
+      ["check answer keys", "did each planted defect fire — and did anything wrongly fire on an innocent"],
+      ["assert the gate", "recall = 1.00 and false positives = 0, or the build fails"],
+    ];
+    $("evalResult").innerHTML = `
+      <div class="cirun">
+        <div class="ci-check-head run" id="ciHead"><span class="ci-dot"><span class="ci-spin"></span></span><span>corpus gate — running locally…</span><span class="ci-meta" id="ciMeta"></span></div>
+        <div class="ci-steps" id="ciSteps">${steps.map((s, i) => `
+          <div class="ci-step" id="ci-step-${i}"><span class="ci-ic">○</span><span><span class="ci-name">${esc(s[0])}</span> — <span class="ci-sub">${esc(s[1])}</span></span></div>`).join("")}</div>
+      </div>`;
+    for (let i = 0; i < steps.length; i++) {
+      const el = $(`ci-step-${i}`);
+      el.classList.add("pending"); el.querySelector(".ci-ic").innerHTML = '<span class="ci-spin"></span>';
+      if (!reduce) await sleep(i === 0 ? 500 : 620);
+      el.classList.remove("pending"); el.classList.add("done"); el.querySelector(".ci-ic").textContent = "✓";
+    }
+    const r = await runP;
+    const secs = ((performance.now() - t0) / 1000).toFixed(1);
+    if (r.error) {
+      $("ciHead").className = "ci-check-head fail";
+      $("ciHead").innerHTML = `<span class="ci-dot">✕</span><span>ci / corpus gate — failed</span>`;
+      $("evalResult").insertAdjacentHTML("beforeend", `<div class="er-banner fail">run failed: ${esc(r.error)}</div>`);
+      btn.disabled = false; btn.textContent = "Run the eval again"; return;
+    }
+    const passed = r.failures.length === 0;
+    $("ciHead").className = `ci-check-head ${passed ? "pass" : "fail"}`;
+    $("ciHead").innerHTML = `<span class="ci-dot">${passed ? "✓" : "✕"}</span><span>corpus gate — ${passed ? "passed locally" : "FAILED"}</span><span class="ci-meta">${secs}s</span>`;
+    const rows = r.scores.map((s) => {
+      const rec = s.recall === null ? "—" : s.recall.toFixed(2);
+      const prec = s.precision === null ? "—" : s.precision.toFixed(2);
+      const perfect = s.recall === 1 && s.precision === 1;
+      return `<tr><td>${esc(s.rule_id)}</td><td>${s.expected_sessions}</td><td>${s.fired_when_expected}</td><td>${s.false_positives}</td><td class="${perfect ? "perfect" : ""}">${rec}</td><td class="${perfect ? "perfect" : ""}">${prec}</td></tr>`;
+    }).join("");
+    $("evalResult").insertAdjacentHTML("beforeend", `
+      <div class="er-banner ${passed ? "pass" : "fail"}" style="margin-top:14px">${passed
+        ? `✓ ${r.sessions} sessions · every planted defect caught · zero false positives`
+        : `✗ ${r.failures.length} failure(s): ${r.failures.slice(0, 4).map((f) => `${esc(f.kind)} ${esc(f.rule)} in ${esc(f.archetype)}#${f.seed}`).join(" · ")}`}</div>
+      <table class="er-table">
+        <tr><th>rule</th><th>planted</th><th>caught</th><th>false-pos</th><th>recall</th><th>precision</th></tr>
+        ${rows}
+      </table>
+      <div class="ci-yaml">Same code, two places. What you just watched ran <b>locally</b> (same machinery as <span class="mono">damame eval</span>). The <b>identical</b> gate runs on GitHub on every push/PR via <b>.github/workflows/ci.yml</b>:
+  on: [push, pull_request]  ·  node 20 & 22
+  steps: checkout → npm install → <b>npx tsc</b> → <b>npx vitest run</b>   ← the corpus test lives in here
+There a red gate blocks the merge. (Steps paced above for readability; the real run finishes in under a second.)</div>`);
+    btn.disabled = false; btn.textContent = "Run the eval again";
+  };
+}
+
 $("rulesBtn").onclick = showRules;
+$("evalBtn").onclick = showEval;
 $("overviewBtn").onclick = showOverview;
 $("libraryBtn").onclick = showLibrary;
 $("menuBtn").onclick = () => document.querySelector(".side").classList.toggle("open");

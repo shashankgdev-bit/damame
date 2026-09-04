@@ -19,6 +19,7 @@ import { buildSurfaces } from "../surfaces.js";
 import { briefWithCache, cachedBrief, type GeneratedBrief } from "@damame/brief";
 import { matchPlaybooks } from "@damame/playbooks";
 import { NO_ACTION_REFS, REGISTRY } from "@damame/registry";
+import { evaluateCorpus, generateCorpus } from "@damame/corpus";
 import { computeScore, SCORE_VERSION } from "@damame/score";
 import { detectTechniques } from "@damame/profile";
 
@@ -848,6 +849,31 @@ export async function startUiServer(opts: UiServerOptions = {}): Promise<{ url: 
           200,
           DETECTORS.map((d) => ({ id: d.id, version: d.version, category: d.category, summary: d.summary })),
         );
+        return;
+      }
+      // The ground-truth corpus: answer keys (fast) and a live eval run.
+      if (req.method === "GET" && url.pathname === "/api/eval/archetypes") {
+        const one = generateCorpus(1, 42);
+        const seen = new Map<string, { archetype: string; expected: string[]; forbidden_count: number; kind: string }>();
+        for (const s of one) {
+          const m = s.manifest;
+          if (!seen.has(m.archetype)) {
+            seen.set(m.archetype, {
+              archetype: m.archetype,
+              expected: m.expected,
+              forbidden_count: m.forbidden.length,
+              kind: m.expected.length ? "plant" : "near-miss",
+            });
+          }
+        }
+        json(res, 200, { archetypes: [...seen.values()], total: seen.size, detectors: DETECTORS.length });
+        return;
+      }
+      if (req.method === "GET" && url.pathname === "/api/eval/run") {
+        const per = Math.min(20, Math.max(1, Number(url.searchParams.get("per")) || 2));
+        const seed = Number(url.searchParams.get("seed")) || 7;
+        const result = await evaluateCorpus(generateCorpus(per, seed));
+        json(res, 200, { per, seed, ...result });
         return;
       }
       json(res, 404, { error: "not found" });
