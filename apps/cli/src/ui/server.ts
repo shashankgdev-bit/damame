@@ -422,11 +422,12 @@ function buildSessionPayload(session: Session, metrics: MetricsBundle, findings:
             event_id: event.event_id,
             kind: event.kind,
             timestamp: event.timestamp ?? null,
+            turn: event.turn_id !== undefined ? (turnIndexById.get(event.turn_id) ?? null) : null,
             snippet: excerptFor(event),
             file: event.raw_ref.file,
             line: event.raw_ref.line,
           }
-        : { event_id: ref.event_id, kind: "unknown", timestamp: null, snippet: "", file: "", line: 0 };
+        : { event_id: ref.event_id, kind: "unknown", timestamp: null, turn: null, snippet: "", file: "", line: 0 };
     }),
   }));
 

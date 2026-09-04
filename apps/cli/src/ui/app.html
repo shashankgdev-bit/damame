@@ -392,9 +392,14 @@ details.evidence summary::before { content: "▸ "; }
 details[open].evidence summary::before { content: "▾ "; }
 .ev { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px dashed var(--hair-2); font: 11px var(--mono); }
 .ev:last-child { border-bottom: 0; }
-.ev .kind { color: var(--ink-3); flex: none; width: 118px; }
+.ev .ev-turn { color: var(--pod-deep); flex: none; font-weight: 600; }
+.ev .ev-time { color: var(--ink-3); flex: none; }
+.ev .kind { color: var(--ink-3); flex: none; width: 100px; }
 .ev .snip { color: var(--ink-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev .loc { color: var(--ink-3); flex: none; }
+.f-where { margin-top: 10px; font: 12px var(--sans); color: var(--ink-2); background: var(--hair-2); border-radius: 8px; padding: 8px 12px; }
+.f-where b { color: var(--pod-deep); font-weight: 600; }
+.f-where-hint { color: var(--ink-2); }
 .fb { display: flex; gap: 10px; flex: none; align-items: center; }
 .fbq { display: flex; gap: 3px; align-items: center; font: 10px var(--mono); color: var(--ink-3); }
 .fb button { font: 11px var(--mono); border: 1px solid var(--hair); background: none; color: var(--ink-2); border-radius: 6px; padding: 2px 7px; cursor: pointer; }
@@ -565,14 +570,14 @@ h2.eyebrow { font-size: 10px; }
 .cool-note { margin-top: 8px; font: 11px var(--mono); color: var(--ink-3); }
 
 /* ————— stats band ————— */
-.statsband { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1px; margin: 30px 0 8px; background: var(--hair); border: 1px solid var(--hair); border-radius: 14px; overflow: hidden; }
-.stat { background: var(--card); padding: 18px 20px; }
-.stat .sv { font: 350 30px/1 var(--serif); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; display: block; }
-.stat .sl { font: 11px var(--mono); color: var(--ink-3); margin-top: 6px; display: block; letter-spacing: .03em; }
-.stat.big { grid-column: span 1; }
-.stat.big .sv { font-size: 40px; }
+.statsband { display: flex; flex-wrap: wrap; gap: 1px; margin: 30px 0 8px; background: var(--hair); border: 1px solid var(--hair); border-radius: 14px; overflow: hidden; }
+.stat { background: var(--card); padding: 16px 18px; flex: 1 1 108px; min-width: 0; }
+.stat.big { flex: 1.5 1 172px; }
+.stat .sv { font: 350 clamp(22px, 2.5vw, 26px)/1.05 var(--serif); letter-spacing: -0.015em; font-variant-numeric: tabular-nums; display: block; white-space: nowrap; }
+.stat.big .sv { font-size: clamp(27px, 3.1vw, 33px); }
 .stat.big .sv em { font-style: normal; color: var(--pod-deep); }
-@media (max-width: 620px) { .stat.big .sv { font-size: 32px; } .stat .sv { font-size: 25px; } }
+.stat .sl { font: 11px var(--mono); color: var(--ink-3); margin-top: 6px; display: block; letter-spacing: .03em; }
+@media (max-width: 620px) { .stat, .stat.big { flex-basis: 44%; } .stat.big .sv, .stat .sv { font-size: 23px; } }
 
 /* ————— section nav cards ————— */
 .navcards { display: grid; gap: 10px; margin-top: 22px; }
@@ -1846,13 +1851,32 @@ function findingCard(f) {
     </div>
     <div class="f-body">
       <div class="f-desc">${esc(f.description)}</div>
+      ${whereLine(f)}
       ${savLine}${auditLine}
       <details class="evidence"><summary>evidence — ${f.evidence.events.length} events · key ${esc(f.dedupe_key.slice(0, 8))}</summary>
         ${f.evidence_excerpts.map((e) => `
-          <div class="ev"><span class="kind">${esc(e.kind)}</span><span class="snip">${esc(e.snippet)}</span><span class="loc">${esc((e.file || "").split("/").pop())}:${e.line}</span></div>`).join("")}
+          <div class="ev">${e.turn != null ? `<span class="ev-turn">turn ${e.turn + 1}</span>` : ""}${e.timestamp ? `<span class="ev-time">${esc(evTime(e.timestamp))}</span>` : ""}<span class="kind">${esc(e.kind)}</span><span class="snip">${esc(e.snippet)}</span></div>`).join("")}
       </details>
     </div>
   </div>`;
+}
+
+const evTime = (iso) => { try { return new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
+
+/** A human-readable "where in the session this happened" line — turns, not
+    transcript byte-offsets. For symptom-vs-cause rules (cache-thrash) it also
+    says what to look for just before those turns. */
+function whereLine(f) {
+  const turns = [...new Set((f.turn_indexes || []))].sort((a, b) => a - b).map((t) => t + 1);
+  if (!turns.length) return "";
+  const shown = turns.slice(0, 8).join(", ") + (turns.length > 8 ? ` +${turns.length - 8} more` : "");
+  const CAUSE_HINT = {
+    "cache-thrash": "these are the turns where the cache miss was billed — a tool-set change broke the cache just before them. That can be automatic (an MCP connector attaching, or a deferred tool being surfaced on demand), not necessarily something you did.",
+    "compaction-rework": "these turns re-read content the summary had dropped — the compaction was just before.",
+    "abandoned-work": "this is the turn whose branch you rewound away from.",
+  };
+  const hint = CAUSE_HINT[f.rule.id];
+  return `<div class="f-where"><b>where:</b> turn${turns.length === 1 ? "" : "s"} ${shown}${hint ? ` — <span class="f-where-hint">${esc(hint)}</span>` : ""}</div>`;
 }
 
 function wireFindings(d) {
