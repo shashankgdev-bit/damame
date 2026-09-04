@@ -13,7 +13,7 @@ import { renderHtmlReport } from "@damame/report-html";
 import { renderTerminal } from "./render-terminal.js";
 import { feedbackStats, indexFindings, recordAnswer, type Question } from "./feedback.js";
 
-const DAMAME_VERSION = "0.6.0";
+const DAMAME_VERSION = "0.7.0";
 
 const program = new Command()
   .name("damame")

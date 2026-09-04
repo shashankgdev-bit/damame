@@ -1,6 +1,6 @@
 {
   "name": "damame",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A profiler for your AI coding sessions — evidence-linked, deterministic, local-first.",
   "license": "MIT",
   "type": "module",

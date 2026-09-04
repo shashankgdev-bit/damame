@@ -23,7 +23,7 @@ import { evaluateCorpus, generateCorpus } from "@damame/corpus";
 import { computeScore, SCORE_VERSION } from "@damame/score";
 import { detectTechniques } from "@damame/profile";
 
-const DAMAME_VERSION = "0.6.0";
+const DAMAME_VERSION = "0.7.0";
 
 interface CacheEntry {
   mtimeMs: number;
