@@ -1220,7 +1220,9 @@ function openIssue(d, it) {
     <div class="rc-instances"><button class="navbtn" style="display:inline;width:auto;padding:4px 12px" data-instances>show the ${it.findings.length === 1 ? "instance" : it.findings.length + " instances"} (evidence) ▾</button></div>
     <div class="m-instances"></div>
     <button class="m-fixbtn ${canFix ? "" : "coach"}" data-fix>${canFix ? `Apply fix → ${esc(dest)}` : "Mark as handled"}</button>
-    <div class="m-fixnote">${canFix ? "Adds the hook/setting for you (mocked in this build; the fix agent will apply and verify it)." : "This one is a habit change, not a file edit — marking it handled moves it to Fixed so you can track it."}</div>`;
+    <div class="m-fixnote"><b>The "how to fix it" step above is the prevention</b> — it's what stops this recurring.<br>${canFix
+      ? "Applying it writes the hook/setting for you (mocked in this build). The fix agent will then confirm it worked by watching whether this pattern actually drops in your later sessions — it can't recur once the hook runs the step automatically."
+      : "This is a setup/habit change only you can make (damame can't attach an MCP or change how you work). Marking it handled just tracks it — the real confirmation is behavioral: damame watches whether this pattern drops in your later sessions, and the card auto-retires when it does. Not happening again is measured, not assumed."}</div>`;
   $("modalBack").classList.add("open");
   $("recModal").querySelector("[data-close-modal]").onclick = () => $("modalBack").classList.remove("open");
   const instBtn = $("recModal").querySelector("[data-instances]");
